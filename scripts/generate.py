@@ -9,22 +9,20 @@ from importlib.resources import files
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from contract import sdk_contract
 from ruamel.yaml import YAML
 
 PACKAGE = Path(__file__).resolve().parents[1]
 SNAPSHOT = PACKAGE / "spec/openapi.json"
-SPEC = SNAPSHOT if SNAPSHOT.exists() else PACKAGE.parents[1] / "api/openapi.yaml"
+SPEC = SNAPSHOT
 OUTPUT = PACKAGE / "src/grepvine_sdk/generated"
 
 
 def main() -> None:
     yaml = YAML()
-    if SNAPSHOT.exists():
-        provenance = json.loads((PACKAGE / "spec/source.json").read_text())
-        if hashlib.sha256(SNAPSHOT.read_bytes()).hexdigest() != provenance["snapshot_sha256"]:
-            sys.exit("Snapshot checksum does not match spec/source.json")
-    spec = yaml.load(SPEC) if SNAPSHOT.exists() else sdk_contract(yaml.load(SPEC))
+    provenance = json.loads((PACKAGE / "spec/source.json").read_text())
+    if hashlib.sha256(SNAPSHOT.read_bytes()).hexdigest() != provenance["snapshot_sha256"]:
+        sys.exit("Snapshot checksum does not match spec/source.json")
+    spec = yaml.load(SPEC)
     # 0.29.1 rejects const headers. A singleton enum accepts exactly the same value.
     header = spec["components"]["parameters"]["IfNoneMatch"]["schema"]
     assert header["const"] == "*"

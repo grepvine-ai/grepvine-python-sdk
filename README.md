@@ -1,17 +1,13 @@
 # Grepvine generated Python SDK
 
-The SDK contains 14 operations: Indexes (5), Objects (6), Search (1),
-and device login (2: start authorization and poll for the token). All other
-API sections are excluded, including browser account/session management,
-API-key management, organization management, and device approval/denial.
-Existing API keys still authenticate data operations using bearer credentials.
-Device approval happens in the browser; successful polling returns an API key.
+The SDK includes all 34 public API operations: Authentication, Device login,
+API keys, Organizations and membership, Indexes, Objects, and Search.
+API keys authenticate operations that support bearer credentials; browser-account
+operations use the session authentication described by the API contract.
 
-Grepvine selects these operations using `clients/sdk-operations.json` before
-exporting `spec/openapi.json` to the independent SDK repositories. Each snapshot
-keeps its referenced types, parameters, headers, responses, and authentication
-schemes. `spec/source.json` records the source repository, commit, operation
-selection, and snapshot checksum. The server contract remains unchanged.
+Grepvine exports its full public contract as `spec/openapi.json` without filtering
+operations or components. `spec/source.json` records the source repository,
+commit, exported operation list, and snapshot checksum.
 
 Typed synchronous and asynchronous operations for the Grepvine API, for Python 3.11+.
 The distribution name is `grepvine-sdk`; its import name is `grepvine_sdk`.
@@ -187,8 +183,7 @@ Hey API's Python generator was evaluated and rejected for this implementation
 because its current operation generation does not correctly handle paths and
 request arguments. Python users need neither Node.js nor the generator.
 
-In the standalone repository, generation reads `spec/openapi.json`. In the
-Grepvine checkout, it selects operations from `../../api/openapi.yaml`. The script
+Generation reads `spec/openapi.json`. The script
 temporarily expresses the `If-None-Match` constant as a singleton enum and
 interprets the raw NDJSON body as a binary File. Both preserve wire behavior;
 the original media type is retained. The snapshot is exported from Grepvine;
@@ -196,7 +191,7 @@ change the source contract there rather than editing the snapshot.
 The raw-body template buffers NDJSON content into bytes so both sync and
 async HTTPX clients can send it. Generation fails on warnings or missing operations.
 
-Run from the SDK repository root (or `clients/python-sdk` in Grepvine):
+Run from the SDK repository root:
 
 ```sh
 uv sync --frozen

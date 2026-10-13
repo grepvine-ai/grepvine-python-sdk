@@ -52,9 +52,12 @@ import httpx
 import json
 from grepvine_sdk.generated.api.objects import put_document, put_objects, get_document
 from grepvine_sdk.generated.api.search import query_index
+from grepvine_sdk.generated.api.authentication import login
+from grepvine_sdk.generated.api.api_keys import create_api_key
+from grepvine_sdk.generated.api.organizations import create_organization
 from grepvine_sdk.generated.models import QueryRequest, Metadata
 assert {entry.name for entry in pkgutil.iter_modules(api.__path__)} == {
-    'device_login', 'indexes', 'objects', 'search'
+    'authentication', 'api_keys', 'organizations', 'device_login', 'indexes', 'objects', 'search'
 }
 assert QueryRequest(pattern='hello').to_dict()['pattern'] == 'hello'
 assert Metadata.from_dict({'n': {'type': 'integer', 'value': 123}}).to_dict()['n']['value'] == 123
