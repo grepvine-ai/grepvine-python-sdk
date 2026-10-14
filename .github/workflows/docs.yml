@@ -24,8 +24,21 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: uv version --frozen "${RELEASE_TAG#v}"
+      - name: Read the pinned design-system commit
+        id: design-system
+        run: echo "ref=$(cat docs/theme/design-system.ref)" >> "$GITHUB_OUTPUT"
+      # grepvine-design-system is private; DESIGN_SYSTEM_DEPLOY_KEY is a read-only deploy key on it.
+      - uses: actions/checkout@v7
+        with:
+          repository: grepvine-ai/grepvine-design-system
+          ref: ${{ steps.design-system.outputs.ref }}
+          path: .design-system
+          ssh-key: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
+          persist-credentials: false
       - run: uv sync --frozen
       - name: Build documentation
+        env:
+          GREPVINE_DESIGN_SYSTEM: ${{ github.workspace }}/.design-system
         run: uv run --frozen python scripts/build_docs.py
       - uses: actions/upload-pages-artifact@v4
         if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
