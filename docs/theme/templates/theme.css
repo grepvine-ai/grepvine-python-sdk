@@ -1,4 +1,4 @@
-/* Maps pdoc's colour variables onto the Grepvine tokens from design-system/tokens.css. */
+/* Maps pdoc's colour variables onto the Grepvine tokens in tokens.css. */
 :root {
     --pdoc-background: var(--ink);
 }

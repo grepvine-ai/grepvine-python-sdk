@@ -234,24 +234,15 @@ The API documentation site is built with pdoc into the git-ignored `site/`
 directory. Its landing page is this README without the development and
 automation sections, followed by the reference for the convenience layer and
 the generated operations and models. Any pdoc warning fails the build. Open
-`site/index.html` in a browser to read the result.
-
-The site is styled with the Grepvine design system, which lives in its own
-repository, [`grepvine-ai/grepvine-design-system`](https://github.com/grepvine-ai/grepvine-design-system).
-Read its README for the rules the theme follows. The build reads the design
-system from a checkout of that repository at the commit pinned in
-`docs/theme/design-system.ref`; by default it expects the checkout next to this
-one, or set `GREPVINE_DESIGN_SYSTEM` to its path:
+`site/index.html` in a browser to read the result:
 
 ```sh
-git clone https://github.com/grepvine-ai/grepvine-design-system ../grepvine-design-system
-git -C ../grepvine-design-system checkout "$(cat docs/theme/design-system.ref)"
 uv run --frozen python scripts/build_docs.py
 ```
 
-`docs/theme/templates` holds the pdoc template and stylesheet overrides that
-map pdoc's pages onto the design system's tokens and components. To adopt a
-newer design system, change the commit in `docs/theme/design-system.ref`.
+The theme lives in `docs/theme` and follows the Grepvine design system in
+[`grepvine-ai/grepvine-design-system`](https://github.com/grepvine-ai/grepvine-design-system).
+See `docs/theme/README.md` before changing it.
 
 Optional live tests create and delete a uniquely named index. Set
 `GREPVINE_SDK_TEST_ENDPOINT` (including `/v1`), `GREPVINE_SDK_TEST_API_KEY`,
@@ -306,11 +297,3 @@ Source** to **GitHub Actions**; the workflow creates the `github-pages`
 environment on its first run. The published site is public even when the
 repository is private, and Pages on a private repository requires a paid
 GitHub plan.
-
-The workflow checks out the private design-system repository at the pinned
-commit, so it needs read access to it. Create an SSH key pair, add the public
-key as a read-only deploy key on `grepvine-ai/grepvine-design-system`
-(**Settings → Deploy keys**), and store the private key in this repository as
-the Actions secret `DESIGN_SYSTEM_DEPLOY_KEY`. GitHub accepts each deploy key
-on one repository only, but one key can be stored as a secret in several, so
-the Python and TypeScript SDK repositories can share it.

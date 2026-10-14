@@ -2,7 +2,6 @@
 
 import argparse
 import importlib
-import os
 import pkgutil
 import re
 import shutil
@@ -12,9 +11,6 @@ from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parents[1]
 TEMPLATES = PACKAGE / "docs/theme/templates"
-# A checkout of grepvine-ai/grepvine-design-system at the commit in design-system.ref.
-DESIGN_SYSTEM_REF = PACKAGE / "docs/theme/design-system.ref"
-DESIGN_SYSTEM_DEFAULT = PACKAGE.parent / "grepvine-design-system"
 OUTPUT = PACKAGE / "site"
 ROOT_MODULE = "grepvine_sdk"
 REPOSITORY_URL = "https://github.com/grepvine-ai/grepvine-python-sdk"
@@ -33,19 +29,6 @@ def guide() -> tuple[str, str]:
         raise SystemExit(f"README.md no longer has the sections {sorted(missing)}")
     kept = [s for heading, s in by_heading.items() if heading not in CONTRIBUTOR_SECTIONS]
     return title.removeprefix("# ").strip(), "".join([intro, *kept])
-
-
-def design_system() -> Path:
-    """Return the design-system checkout named by GREPVINE_DESIGN_SYSTEM or the sibling clone."""
-    path = Path(os.environ.get("GREPVINE_DESIGN_SYSTEM") or DESIGN_SYSTEM_DEFAULT).resolve()
-    if not (path / "tokens.css").is_file():
-        ref = DESIGN_SYSTEM_REF.read_text().strip()
-        raise SystemExit(
-            f"No Grepvine design system at {path}. Clone "
-            "https://github.com/grepvine-ai/grepvine-design-system there and check out "
-            f"{ref}, or set GREPVINE_DESIGN_SYSTEM to an existing checkout."
-        )
-    return path
 
 
 def module_specs() -> list[str]:
@@ -74,23 +57,16 @@ def main() -> None:
     # Any pdoc warning (an unresolved reference, a module that fails to import) fails the build.
     warnings.simplefilter("error")
 
-    import jinja2
     import pdoc
     import pdoc.render
 
     title, body = guide()
-    theme = design_system()
     pdoc.render.configure(
         docformat="google",
         footer_text=f"grepvine-sdk {version('grepvine-sdk')}",
         search=True,
         show_source=True,
         template_directory=TEMPLATES,
-    )
-    # Templates include the design system's stylesheets and SVGs by their paths in that repo.
-    assert pdoc.render.env.loader is not None
-    pdoc.render.env.loader = jinja2.ChoiceLoader(
-        [pdoc.render.env.loader, jinja2.FileSystemLoader(theme)]
     )
     pdoc.render.env.globals.update(guide=body, guide_title=title, repository_url=REPOSITORY_URL)
     shutil.rmtree(output, ignore_errors=True)

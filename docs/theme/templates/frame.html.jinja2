@@ -1,6 +1,6 @@
 {#
 Grepvine page frame: the design system's stylesheets, favicon and theme switch.
-Styles layer the design system's tokens.css, then components/bundle.css (which loads
+Styles layer tokens.css, then components.css (which loads
 Tektur and Martian Mono from Google Fonts), then pdoc's own stylesheets with theme.css mapping
 pdoc's variables onto the tokens and custom.css mapping pdoc's classes onto the components.
 The theme is applied by a blocking script in <head> so the page never flashes the wrong ground.
@@ -8,7 +8,7 @@ The theme is applied by a blocking script in <head> so the page never flashes th
 {% extends "default/frame.html.jinja2" %}
 {% block favicon %}
     <link rel="icon" type="image/svg+xml"
-          href="data:image/svg+xml,{% filter urlencode %}{% include "assets/Logos/grepvine-favicon.svg" %}{% endfilter %}"/>
+          href="data:image/svg+xml,{% filter urlencode %}{% include "favicon.svg" %}{% endfilter %}"/>
 {% endblock %}
 {% block head %}
     <meta name="theme-color" content="#0b0b0e">
@@ -30,7 +30,7 @@ The theme is applied by a blocking script in <head> so the page never flashes th
 {% block style %}
     <style>{% include "resources/bootstrap-reboot.min.css" %}</style>
     <style>/*! tokens.css */{% include "tokens.css" %}</style>
-    <style>{% include "components/bundle.css" %}</style>
+    <style>{% include "components.css" %}</style>
     <style>/*! syntax-highlighting.css */{% include "syntax-highlighting.css" %}</style>
     <style>/*! theme.css */{% include "theme.css" %}</style>
     <style>/*! layout.css */{% include "layout.css" %}</style>
