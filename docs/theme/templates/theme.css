@@ -1,0 +1,23 @@
+/* Maps pdoc's colour variables onto the Grepvine tokens from design-system/tokens.css. */
+:root {
+    --pdoc-background: var(--ink);
+}
+
+.pdoc {
+    --text: var(--text-2);
+    --link: var(--lime-text);
+    --link-hover: var(--paper);
+    --code: var(--ink-2);
+    --active: var(--ink-3);
+
+    --accent: var(--ink-2);
+    --accent2: var(--rule-strong);
+
+    --nav-hover: var(--ink-3);
+    --name: var(--paper);
+    --def: var(--pink-text);
+    --annotation: var(--muted);
+}
+
+:root { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }

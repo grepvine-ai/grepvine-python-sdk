@@ -1,0 +1,100 @@
+{#
+Grepvine module page.
+scripts/build_docs.py sets the `guide`, `guide_title` and `repository_url` globals; the root package
+page renders the guide as its landing content, and every page lists its documented submodules even
+when a package's `__all__` hides them from pdoc's default navigation.
+#}
+{% extends "default/module.html.jinja2" %}
+{% block title %}
+    {%- if module.modulename == root_module_name and guide_title -%}
+        {{ guide_title }}
+    {%- else -%}
+        {{ module.modulename }} · Grepvine Python SDK
+    {%- endif -%}
+{% endblock %}
+{% block nav_title %}
+    <div class="gv-brand">
+        <a class="logo" href="{{ "../" * module.modulename.count(".") }}{{ root_module_name or module.modulename.split(".")[0] }}.html"
+           aria-label="Grepvine Python SDK home">
+            {% include "logo-mark.svg" %}
+            grepvine
+        </a>
+        <button class="theme-toggle" type="button" aria-label="Switch theme">
+            <span class="icon-sun" aria-hidden="true">{% include "assets/Icons/icon-sun.svg" %}</span>
+            <span class="icon-moon" aria-hidden="true">{% include "assets/Icons/icon-moon.svg" %}</span>
+        </button>
+    </div>
+    <p class="gv-product">python sdk</p>
+{% endblock %}
+{% block nav_index %}
+    {% if module.modulename == root_module_name and guide %}
+        {% set index = guide | to_html | attr("toc_html") %}
+        {% if index %}
+            <h2>guide</h2>
+            {{ index | safe }}
+        {% endif %}
+    {% else %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+{% block nav_submodules %}
+    {% set children = [] %}
+    {% for name in all_modules if name.rpartition(".")[0] == module.modulename %}
+        {% set _ = children.append(name) %}
+    {% endfor %}
+    {% if children %}
+        <h2>modules</h2>
+        <ul>
+            {% for name in children %}
+                <li>{{ (name, "") | link(text=name.rpartition(".")[2]) }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}
+{% block nav_members %}
+    {% if module.members %}
+        <h2>reference</h2>
+        {{ nav_members(module.members.values()) }}
+    {% endif %}
+{% endblock %}
+{% block nav_footer %}
+    <footer>
+        {% if footer_text %}<p>{{ footer_text }}</p>{% endif %}
+        {% if repository_url %}<p><a href="{{ repository_url }}">source on github ↗</a></p>{% endif %}
+    </footer>
+{% endblock %}
+{% block attribution %}
+    <a class="attribution" href="https://pdoc.dev">built with pdoc ↗</a>
+{% endblock %}
+{% block module_info %}
+    {% if module.modulename == root_module_name and guide %}
+        <section class="module-info gv-guide">
+            <h1 class="modulename"><span class="md" aria-hidden="true">#</span> {{ guide_title }}</h1>
+            <p class="gv-meta"><code>{{ module.modulename }}</code></p>
+            {{ docstring(module) }}
+            {{ guide | to_html | linkify(namespace=module.modulename) }}
+        </section>
+        {% if module.members %}
+            <h2 class="gv-reference" id="reference"><span class="md" aria-hidden="true">##</span> API reference</h2>
+        {% endif %}
+    {% else %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+{% macro module_name() %}
+    <h1 class="modulename">
+        <span class="md" aria-hidden="true">#</span>
+        {% set parts = module.modulename.split(".") %}
+        {% for part in parts %}
+            {%- set fullname = ".".join(parts[:loop.index]) -%}
+            {%- if fullname in all_modules and fullname != module.modulename -%}
+                <a href="./{{ "../" * loop.revindex0 }}{{ part }}.html">{{ part }}</a>
+            {%- else -%}
+                {{ part }}
+            {%- endif -%}
+            {%- if loop.nextitem -%}
+                <wbr>.
+            {%- endif -%}
+        {% endfor %}
+    </h1>
+{% endmacro %}
