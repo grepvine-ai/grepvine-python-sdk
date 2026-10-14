@@ -1,0 +1,12 @@
+/* Grepvine code block grammar: keywords pink, strings lime, everything else paper.
+   Code blocks stay dark in both themes; signatures sit on the page and use the theme's -text forms. */
+div.pdoc-code { background: #0b0b0e; color: #f1f1f4; }
+div.pdoc-code :is(.k, .kc, .kd, .kn, .kp, .kr, .ow) { color: #ff4fd8; }
+div.pdoc-code :is(.s, .sa, .sb, .sc, .dl, .sd, .s2, .se, .sh, .si, .sx, .sr, .s1, .ss) { color: #c4ff3d; }
+div.pdoc-code .linenos { color: #868694; }
+div.pdoc-code .hll { background-color: #18181e; }
+
+.signature.pdoc-code { background: transparent; color: var(--text-2); }
+.signature.pdoc-code :is(.k, .kc, .kd, .kn, .kp, .kr, .ow) { color: var(--pink-text); }
+.signature.pdoc-code :is(.s, .sa, .sb, .sc, .dl, .sd, .s2, .se, .sh, .si, .sx, .sr, .s1, .ss) { color: var(--lime-text); }
+.signature.pdoc-code :is(.n, .nb, .p, .o) { color: inherit; }
