@@ -241,6 +241,15 @@ and delete indexes. API endpoints may be supplied with or without `/v1`.
 The `Regenerate and validate SDK` workflow can be triggered manually. It
 regenerates from the snapshot, runs tests and builds an installed-package
 smoke test, then commits generated changes after the checks pass. Pushes and
-pull requests validate reproducibility without committing. These workflows
-do not publish packages. Grepvine’s manual `Update SDK snapshots` workflow
+pull requests validate reproducibility without committing. Grepvine’s manual `Update SDK snapshots` workflow
 updates both repositories and requests regeneration.
+
+The `Build and publish SDK` workflow runs the same checks, builds the wheel
+and source distribution, and publishes them with PyPI trusted publishing.
+Publishing a GitHub release uploads the tag's version (`v0.2.0` becomes
+`0.2.0`) to PyPI. A manual run takes a version and a target index: use
+`testpypi` to try any version on TestPyPI, or `pypi` for a pre-release
+(`0.2.0rc1`, `0.2.0.dev1`), which `pip` installs only when asked for
+explicitly or with `--pre`. Final versions go to PyPI only through a release.
+Each index needs a trusted publisher for this repository, workflow
+`publish.yml`, and a matching `pypi` or `testpypi` environment.
