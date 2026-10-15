@@ -5,50 +5,71 @@ This file covers how the SDK is built, tested, documented and released.
 
 ## How the SDK is built
 
-The client is built on code generated from the API contract:
+Most of the package is generated from the API contract by
+`openapi-python-client==0.29.1`; a small hand-written part adds what a
+generator cannot know.
+
+### Generated
 
 - `spec/openapi.json` is the full public contract, exported from
   `grepvine-ai/grepvine` without filtering operations or components.
   `spec/source.json` records the source repository, commit, the exported
   operation list, and the snapshot checksum. Change the contract in Grepvine,
   never the snapshot here.
-- `scripts/generate.py` runs `openapi-python-client==0.29.1` (HTTPX and attrs
-  models) on the snapshot and writes the private package
-  `src/grepvine/_generated`: the transport, request and response models,
-  and one module per operation with `sync_detailed` and `asyncio_detailed`
-  functions. Never edit it by hand; change the contract, the generator
-  configuration (`openapi-python-client.yaml`) or the adapter in
-  `scripts/generate.py`, and regenerate.
-- The adapter makes two equivalent changes before generating: the
-  `If-None-Match` constant becomes a singleton enum, and the NDJSON batch body
+- `sdk-operations.json` names the method of every operation: its value is the
+  resource path and method name, in camelCase (`"putObjects": ["documents",
+  "putBatch"]`). The TypeScript SDK (`grepvine-ai/grepvine-typescript-sdk`)
+  holds an identical copy, so both SDKs name every method the same way;
+  Python uses the snake_case form of each segment (`documents.put_batch`,
+  `api_keys`). Generation fails when an operation of the contract has no
+  entry, or an entry names an operation the contract lacks.
+- `scripts/generate.py` runs the generator on the snapshot and writes the
+  private package `src/grepvine/_generated`: the HTTPX transport, the attrs
+  models, one module per operation with `sync_detailed` and
+  `asyncio_detailed`, and `api/resources.py`. That module holds the resource
+  classes (`Organizations` with `members`, `Indexes`, `Documents`, `Search`,
+  `APIKeys`, `Account`, `DeviceLogin`, each with an `Async` twin) and the
+  root classes `_GeneratedClient` and `_GeneratedAsyncClient`. The custom
+  template `scripts/templates/api_init.py.jinja` renders them from the
+  generator's `endpoint_collections_by_tag` and the naming map, which
+  `generate.py` writes into the template directory as `sdk_resources.jinja`.
+  Each method reuses the generator's own `arguments` and `docstring` macros,
+  delegates to the operation's `sync_detailed` or `asyncio_detailed`, and
+  returns the decoded model of a successful answer.
+- The adapter in `generate.py` makes these changes before generating: the
+  `If-None-Match` constant becomes a singleton enum; the NDJSON batch body
   becomes a binary `File` whose bytes the template buffers so both HTTPX
-  clients can send it. The original media type is kept. Generation fails on
-  generator warnings or a missing operation.
+  clients can send it (the original media type is kept); `Idempotency-Key`
+  becomes optional and the `X-Csrf-Token` header is dropped from the
+  operations, because the client sends both itself; and the docstrings name
+  the SDK's errors. Generation fails on generator warnings or a missing
+  operation. Never edit `_generated` by hand: change the contract, the map,
+  the generator configuration (`openapi-python-client.yaml`), the template or
+  the adapter, and regenerate. Generating twice gives no diff.
 
-The hand-written code adds only what a generator cannot know, following the
-interface of the hand-written `grepvine` package in `grepvine-ai/grepvine`
-(`clients/python`), which this package replaces:
+### Hand-written
 
 | Path | Contents |
 | --- | --- |
-| `src/grepvine/_core/ops.py` | Every operation, written once as a generator of effects. The only module that calls `_generated.api`. |
-| `src/grepvine/_core/effects.py` | The effects an operation yields: call an API operation, sleep, read the clock, notify, set the session. |
-| `src/grepvine/_core/config.py` | Endpoint and API key lookup, as `gv` does it. |
-| `src/grepvine/_core/retry.py` | `RetryPolicy` and the retry decisions. |
-| `src/grepvine/_core/paging.py`, `batching.py`, `metadata.py`, `build.py`, `parse.py` | Pagination, batch planning, metadata tagging, request validation, and reading documents. |
-| `src/grepvine/_http.py` | Client state, the retrying HTTPX transports, and the hook that turns error responses into exceptions. |
-| `src/grepvine/_sync`, `src/grepvine/_async` | `Client` and `AsyncClient`, their resources and paginators. Each interprets the effects of `ops.py`. |
-| `src/grepvine/errors.py`, `models.py` | The public exceptions and result models. |
+| `src/grepvine/_client.py` | `Client` and `AsyncClient`, built on the root classes: options, bearer authentication, the session after `account.login`, the hook that raises errors, closing. |
+| `src/grepvine/errors.py` | The exceptions, and `map_error`, the one function every error answer goes through. |
+| `src/grepvine/_retry.py` | `RetryPolicy` and the retrying HTTPX transports, which also add the `Idempotency-Key` of every write. |
+| `src/grepvine/_helpers.py` | `paginate`, and subclasses of three resource classes adding `indexes.wait_until_ready`, `documents.put_many` and `device_login.authorize`. |
+| `src/grepvine/models.py` | Exports the models under their API names. |
 
-Every API request goes through a generated operation; the only HTTP the SDK
-writes itself is the NDJSON batch body above. Retries live in the HTTPX
-transport, so a retried request is the same request, idempotency key included.
-`client.http` shares that transport.
+Retries live in the HTTPX transport, so a retried request is the same
+request, idempotency key included. The client's response hook maps every
+error answer before the operation decodes it, so methods return only
+successful answers. The helpers keep the names the TypeScript SDK uses
+(`paginate`, `waitUntilReady`, `authorize`, `putMany`).
 
-`tests/test_coverage.py` checks that every operation listed in
-`spec/source.json` is called by exactly one function in `ops.py`, and that
-exactly one public method of each client uses it. When the API gains an
-operation, CI fails until it has a method on both clients.
+Loading the endpoint and API key from the environment or from `gv`'s
+configuration file is deferred: the client uses only its arguments.
+
+`tests/test_coverage.py` checks that `sdk-operations.json` names exactly the
+operations of the contract and of `spec/source.json`, and that each one is a
+method on both clients that calls that operation. When the API gains an
+operation, generation and CI fail until the map has an entry.
 
 ## Development
 
@@ -68,9 +89,9 @@ uv run --frozen python scripts/check_package.py
 uv run --frozen python scripts/build_docs.py
 ```
 
-The tests run against an in-memory Grepvine service (`tests/fake_server.py`
-and `tests/fake_accounts.py`) mounted with `httpx.MockTransport`, so they need
-no network. Most tests run once with `Client` and once with `AsyncClient`
+The tests answer requests with `httpx.MockTransport` from a scripted service
+(`tests/conftest.py`), so they need no network, and a fake clock replaces
+sleeping. Most tests run once with `Client` and once with `AsyncClient`
 through the `fx` fixture. Warnings are errors.
 
 Optional live tests in `tests/test_live.py` create and delete a uniquely
@@ -89,7 +110,10 @@ directory. Its landing page is `README.md`, followed by the reference grouped
 by resource; `scripts/build_docs.py` lists the groups and fails when an
 exported name is missing from them, when the README's sections are not the
 guide's, when a page mentions the private `_generated` package, or when a page
-uses a word the docs avoid. Any pdoc warning also fails the build. Open
+uses a word the docs avoid. The build documents the resource classes and
+models under `grepvine` and `grepvine.models`, folds the methods of each
+resource's private base class into it, and adds to the `grepvine.models` page
+a list of the models each resource uses, found from the method signatures. Any pdoc warning also fails the build. Open
 `site/index.html` to read the result.
 
 User-facing text (the README, docstrings and error messages) describes what
