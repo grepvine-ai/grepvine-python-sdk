@@ -4,11 +4,11 @@ from http import HTTPStatus
 
 import pytest
 
-from grepvine_sdk import GrepvineError
-from grepvine_sdk._core import ops
-from grepvine_sdk._core.responses import parsed
-from grepvine_sdk._generated.models import MutationBatchResult, MutationResult
-from grepvine_sdk._generated.types import Response
+from grepvine import GrepvineError
+from grepvine._core import ops
+from grepvine._core.responses import parsed
+from grepvine._generated.models import MutationBatchResult, MutationResult
+from grepvine._generated.types import Response
 
 
 def _response(body: object, status: int = 200) -> Response[object]:

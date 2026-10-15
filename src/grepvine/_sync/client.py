@@ -9,10 +9,10 @@ from typing import Any, TypeVar, cast
 
 import httpx
 
-from grepvine_sdk._core.effects import Call, Notify, Now, Op, SetSession, Sleep
-from grepvine_sdk._core.retry import RetryPolicy
-from grepvine_sdk._generated.client import Client as _OperationClient
-from grepvine_sdk._http import (
+from grepvine._core.effects import Call, Notify, Now, Op, SetSession, Sleep
+from grepvine._core.retry import RetryPolicy
+from grepvine._generated.client import Client as _OperationClient
+from grepvine._http import (
     UNSET,
     ClientConfig,
     ClientState,
@@ -21,14 +21,14 @@ from grepvine_sdk._http import (
     check_response,
     http_client_options,
 )
-from grepvine_sdk._sync.resources import (
+from grepvine._sync.resources import (
     Account,
     APIKeys,
     DeviceLogin,
     Indexes,
     Organizations,
 )
-from grepvine_sdk.errors import GrepvineError, TransportError
+from grepvine.errors import GrepvineError, TransportError
 
 T = TypeVar("T")
 
@@ -142,8 +142,8 @@ class Client:
     def __repr__(self) -> str:
         resolved = self._state.resolved
         if resolved is None:
-            return "<grepvine_sdk.Client unresolved>"
-        return f"<grepvine_sdk.Client endpoint={resolved.endpoint!r}>"
+            return "<grepvine.Client unresolved>"
+        return f"<grepvine.Client endpoint={resolved.endpoint!r}>"
 
     def _http_clients(self) -> tuple[httpx.Client, _OperationClient]:
         """The HTTPX client for :attr:`http` and the one operations use, built for the settings."""

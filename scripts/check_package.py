@@ -10,8 +10,8 @@ PACKAGE = Path(__file__).resolve().parents[1]
 
 def main() -> None:
     project = tomllib.loads((PACKAGE / "pyproject.toml").read_text())["project"]
-    wheel = PACKAGE / "dist" / f"grepvine_sdk-{project['version']}-py3-none-any.whl"
-    with TemporaryDirectory(prefix="grepvine-sdk-wheel-") as directory:
+    wheel = PACKAGE / "dist" / f"grepvine-{project['version']}-py3-none-any.whl"
+    with TemporaryDirectory(prefix="grepvine-wheel-") as directory:
         environment = Path(directory) / "venv"
         requirements = Path(directory) / "requirements.txt"
         subprocess.run(
@@ -48,12 +48,12 @@ import asyncio
 import importlib.util
 import json
 import httpx
-import grepvine_sdk
-from grepvine_sdk import AsyncClient, Client, NotFoundError, RetryPolicy
-from grepvine_sdk.models import APIKey, IndexData, MutationResult, SearchResult, User
-assert importlib.util.find_spec('grepvine_sdk.generated') is None
-assert not hasattr(grepvine_sdk, 'AuthenticatedClient')
-assert repr(grepvine_sdk.default_client) == '<grepvine_sdk.Client unresolved>'
+import grepvine
+from grepvine import AsyncClient, Client, NotFoundError, RetryPolicy
+from grepvine.models import APIKey, IndexData, MutationResult, SearchResult, User
+assert importlib.util.find_spec('grepvine.generated') is None
+assert not hasattr(grepvine, 'AuthenticatedClient')
+assert repr(grepvine.default_client) == '<grepvine.Client unresolved>'
 INDEX = {
     'id': '00000000-0000-0000-0000-000000000001', 'organization': 'acme', 'name': 'docs',
     'canonical_id': 'c', 'description': '', 'tags': {}, 'state': 'ready',

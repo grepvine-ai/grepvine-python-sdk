@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from grepvine_sdk._core import paths
+from grepvine._core import paths
 
 
 def test_parse_index_ref() -> None:

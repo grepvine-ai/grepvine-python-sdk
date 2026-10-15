@@ -13,11 +13,11 @@ from typing import Any, Final
 
 import httpx
 
-from grepvine_sdk._core.config import NOT_LOGGED_IN_MESSAGE, resolve_credentials
-from grepvine_sdk._core.effects import Session
-from grepvine_sdk._core.retry import BackoffThen, Deliver, Fail, PauseThen, RetryPolicy, decide
-from grepvine_sdk._version import __version__
-from grepvine_sdk.errors import ConfigurationError, map_error
+from grepvine._core.config import NOT_LOGGED_IN_MESSAGE, resolve_credentials
+from grepvine._core.effects import Session
+from grepvine._core.retry import BackoffThen, Deliver, Fail, PauseThen, RetryPolicy, decide
+from grepvine._version import __version__
+from grepvine.errors import ConfigurationError, map_error
 
 
 class _Unset:
@@ -213,7 +213,7 @@ class ClientState:
 
 
 class _Retrying:
-    """The retry loop shared by both transports; see :mod:`grepvine_sdk._core.retry`.
+    """The retry loop shared by both transports; see :mod:`grepvine._core.retry`.
 
     The same request (same body, same ``Idempotency-Key``) is sent on every
     attempt. A 429 that exhausted the wait budget is returned with the time
@@ -334,7 +334,7 @@ class AsyncRetryTransport(httpx.AsyncBaseTransport):
 
 
 def raise_for_error(response: httpx.Response) -> None:
-    """Raise the :class:`~grepvine_sdk.APIError` an error response stands for."""
+    """Raise the :class:`~grepvine.APIError` an error response stands for."""
     if response.status_code < 400:
         return
     waited = response.extensions.get(THROTTLED_WAIT)

@@ -17,7 +17,7 @@ from datetime import datetime
 from itertools import accumulate
 from typing import Any, Generic, Literal, NamedTuple, Protocol, TypeAlias, TypeVar
 
-from grepvine_sdk._core.metadata import untag
+from grepvine._core.metadata import untag
 
 __all__ = [
     "APIKey",
@@ -262,7 +262,7 @@ class DocumentError:
     the document's ``if_match`` or ``if_none_match`` condition did not hold, and
     ``"not_found"`` when a document to delete does not exist. ``message`` is
     the service's sentence about it. The three fields mean what they mean on
-    :class:`~grepvine_sdk.errors.APIError`.
+    :class:`~grepvine.errors.APIError`.
     """
 
     code: str
@@ -292,7 +292,7 @@ class MutationResult:
     ``error``. In the list forms of ``put`` and ``delete``, every document has a
     result; one the write left unchanged has an ``error`` saying why, and no
     revision. The single-document forms raise the matching
-    :class:`~grepvine_sdk.errors.APIError` instead.
+    :class:`~grepvine.errors.APIError` instead.
     """
 
     key: str

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from grepvine_sdk._async.client import AsyncClient
-from grepvine_sdk._async.paginator import AsyncPaginator
-from grepvine_sdk._async.resources import (
+from grepvine._async.client import AsyncClient
+from grepvine._async.paginator import AsyncPaginator
+from grepvine._async.resources import (
     AsyncAccount,
     AsyncAPIKeys,
     AsyncDeviceLogin,
@@ -14,11 +14,11 @@ from grepvine_sdk._async.resources import (
     AsyncMembers,
     AsyncOrganizations,
 )
-from grepvine_sdk._core.retry import RetryPolicy
-from grepvine_sdk._http import ClientConfig
-from grepvine_sdk._sync.client import Client
-from grepvine_sdk._sync.paginator import Paginator
-from grepvine_sdk._sync.resources import (
+from grepvine._core.retry import RetryPolicy
+from grepvine._http import ClientConfig
+from grepvine._sync.client import Client
+from grepvine._sync.paginator import Paginator
+from grepvine._sync.resources import (
     Account,
     APIKeys,
     DeviceLogin,
@@ -28,8 +28,8 @@ from grepvine_sdk._sync.resources import (
     Members,
     Organizations,
 )
-from grepvine_sdk._version import __version__
-from grepvine_sdk.errors import (
+from grepvine._version import __version__
+from grepvine.errors import (
     APIError,
     AuthenticationError,
     ConfigurationError,
@@ -47,7 +47,7 @@ from grepvine_sdk.errors import (
     ServerError,
     TransportError,
 )
-from grepvine_sdk.models import (
+from grepvine.models import (
     APIKey,
     APIKeyCreated,
     ContentRange,

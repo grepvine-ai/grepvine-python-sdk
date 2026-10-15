@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from grepvine_sdk import (
+from grepvine import (
     AsyncIndex,
     Client,
     ConflictError,

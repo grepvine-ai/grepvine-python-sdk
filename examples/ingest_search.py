@@ -4,7 +4,7 @@ import argparse
 import os
 import uuid
 
-import grepvine_sdk
+import grepvine
 
 
 def main() -> None:
@@ -19,7 +19,7 @@ def main() -> None:
 
     # The endpoint and API key come from GREPVINE_API_ENDPOINT and GREPVINE_API_KEY, or from
     # ~/.grepvine/config.yaml as written by `gv login`.
-    with grepvine_sdk.Client() as client:
+    with grepvine.Client() as client:
         ref = f"{organization}/example-python-{uuid.uuid4().hex[:8]}"
         index = client.indexes.create(ref, description="Python SDK example", wait=True)
         print(f"Created index {index.ref}")

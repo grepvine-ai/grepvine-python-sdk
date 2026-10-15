@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
-from grepvine_sdk.errors import GrepvineError
+from grepvine.errors import GrepvineError
 
 T = TypeVar("T")
 

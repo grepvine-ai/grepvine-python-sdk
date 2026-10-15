@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 import httpx
 import pytest
 
-from grepvine_sdk import (
+from grepvine import (
     Client,
     PartialBatchError,
     RateLimitedError,
@@ -14,7 +14,7 @@ from grepvine_sdk import (
     ServerError,
     TransportError,
 )
-from grepvine_sdk._core.retry import (
+from grepvine._core.retry import (
     BackoffThen,
     Deliver,
     Fail,
@@ -22,8 +22,8 @@ from grepvine_sdk._core.retry import (
     decide,
     retry_after_seconds,
 )
-from grepvine_sdk.errors import APIError, InvalidRequestError, map_error
-from grepvine_sdk.models import MutationResult
+from grepvine.errors import APIError, InvalidRequestError, map_error
+from grepvine.models import MutationResult
 from tests.conftest import Flavor
 from tests.fake_server import API_KEY, FakeGrepvine
 
@@ -190,7 +190,7 @@ async def test_429_without_retry_after_and_budget(fx: Flavor, fake: FakeGrepvine
 async def test_partial_batch_error_wraps_rate_limit(
     fx: Flavor, fake: FakeGrepvine, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import grepvine_sdk._core.ops as ops_module
+    import grepvine._core.ops as ops_module
 
     fake.add_index("acme/docs")
     fake.add_document("acme/docs", "a", "x")

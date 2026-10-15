@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from grepvine_sdk import Client
+from grepvine import Client
 from tests.conftest import ENDPOINT, Flavor
 from tests.fake_server import API_KEY, FakeGrepvine
 
@@ -61,7 +61,7 @@ def test_http_follows_reconfiguration(fake: FakeGrepvine) -> None:
 
 
 def test_responses_the_sdk_cannot_read_raise_grepvine_errors(fake: FakeGrepvine) -> None:
-    from grepvine_sdk import GrepvineError
+    from grepvine import GrepvineError
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"unexpected": True})

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 
 if TYPE_CHECKING:
-    from grepvine_sdk.models import MutationResult
+    from grepvine.models import MutationResult
 
 __all__ = [
     "APIError",
@@ -117,7 +117,7 @@ class PreconditionFailedError(APIError):
     """An ``if_match`` or ``if_none_match`` condition did not hold (HTTP 412).
 
     Only the single-document forms raise it. The list forms report a failed
-    condition in the document's :attr:`~grepvine_sdk.MutationResult.error`.
+    condition in the document's :attr:`~grepvine.MutationResult.error`.
     """
 
 

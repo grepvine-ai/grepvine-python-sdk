@@ -14,22 +14,22 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from grepvine_sdk._core import build, parse
-from grepvine_sdk._core.batching import (
+from grepvine._core import build, parse
+from grepvine._core.batching import (
     MAX_BATCH_RECORDS,
     BatchChunk,
     PutRecord,
     load_content,
     plan_batches,
 )
-from grepvine_sdk._core.effects import Call, Notify, Now, Op, Session, SetSession, Sleep
-from grepvine_sdk._core.metadata import MetadataInput, document_metadata
-from grepvine_sdk._core.paging import PageSource, resolve_page_size, validate_page_token
-from grepvine_sdk._core.paths import check_key
-from grepvine_sdk._core.responses import parsed
-from grepvine_sdk._generated import models as api
-from grepvine_sdk._generated.api.api_keys import create_api_key, list_api_keys, revoke_api_key
-from grepvine_sdk._generated.api.authentication import (
+from grepvine._core.effects import Call, Notify, Now, Op, Session, SetSession, Sleep
+from grepvine._core.metadata import MetadataInput, document_metadata
+from grepvine._core.paging import PageSource, resolve_page_size, validate_page_token
+from grepvine._core.paths import check_key
+from grepvine._core.responses import parsed
+from grepvine._generated import models as api
+from grepvine._generated.api.api_keys import create_api_key, list_api_keys, revoke_api_key
+from grepvine._generated.api.authentication import (
     change_password,
     get_current_user,
     get_username_availability,
@@ -37,20 +37,20 @@ from grepvine_sdk._generated.api.authentication import (
     logout,
     register_user,
 )
-from grepvine_sdk._generated.api.device_login import (
+from grepvine._generated.api.device_login import (
     approve_device_authorization,
     deny_device_authorization,
     poll_device_token,
     start_device_authorization,
 )
-from grepvine_sdk._generated.api.indexes import (
+from grepvine._generated.api.indexes import (
     create_index,
     delete_index,
     get_index,
     list_indexes,
     update_index,
 )
-from grepvine_sdk._generated.api.objects import (
+from grepvine._generated.api.objects import (
     delete_document,
     delete_objects,
     get_document,
@@ -58,7 +58,7 @@ from grepvine_sdk._generated.api.objects import (
     put_document,
     put_objects,
 )
-from grepvine_sdk._generated.api.organizations import (
+from grepvine._generated.api.organizations import (
     add_organization_member,
     create_organization,
     delete_organization,
@@ -69,9 +69,9 @@ from grepvine_sdk._generated.api.organizations import (
     transfer_organization_ownership,
     update_organization_member,
 )
-from grepvine_sdk._generated.api.search import query_index
-from grepvine_sdk._generated.types import UNSET, File
-from grepvine_sdk.errors import (
+from grepvine._generated.api.search import query_index
+from grepvine._generated.types import UNSET, File
+from grepvine.errors import (
     ConflictError,
     GrepvineError,
     InvalidRequestError,
@@ -79,7 +79,7 @@ from grepvine_sdk.errors import (
     PartialBatchError,
     PreconditionFailedError,
 )
-from grepvine_sdk.models import (
+from grepvine.models import (
     APIKey,
     APIKeyCreated,
     DeviceAuthorization,
@@ -96,7 +96,7 @@ from grepvine_sdk.models import (
 )
 
 if TYPE_CHECKING:
-    from grepvine_sdk._core.batching import Content
+    from grepvine._core.batching import Content
 
 SESSION_COOKIES = ("__Host-grepvine-session", "grepvine-session")
 """The session cookie, and its name on a development service without HTTPS."""
@@ -312,7 +312,7 @@ def authorize_device_op(
 
     Polling follows the service's interval and slows down when asked to. A
     denied or expired login raises the service's
-    :class:`~grepvine_sdk.InvalidRequestError` (code ``"access_denied"`` or
+    :class:`~grepvine.InvalidRequestError` (code ``"access_denied"`` or
     ``"expired_token"``); running past ``timeout`` or the login's own expiry
     raises :class:`TimeoutError`.
     """
@@ -387,7 +387,7 @@ def wait_until_ready_op(
     """Read the index until its state is ``ready``.
 
     An index that is being deleted never becomes ready, so it raises
-    :class:`~grepvine_sdk.GrepvineError` at once; running past ``timeout``
+    :class:`~grepvine.GrepvineError` at once; running past ``timeout``
     raises :class:`TimeoutError`.
     """
     if timeout is not None and timeout <= 0:

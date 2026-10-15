@@ -6,7 +6,7 @@ import uuid
 import httpx
 import pytest
 
-from grepvine_sdk import (
+from grepvine import (
     APIKey,
     APIKeyCreated,
     AuthenticationError,

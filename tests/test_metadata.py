@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime, timedelta, timezone
 
 import pytest
 
-from grepvine_sdk._core.metadata import (
+from grepvine._core.metadata import (
     MAX_FIELDS,
     default_metadata,
     document_metadata,

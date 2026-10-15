@@ -11,17 +11,17 @@ from typing import Any, TypeVar, cast
 
 import httpx
 
-from grepvine_sdk._async.resources import (
+from grepvine._async.resources import (
     AsyncAccount,
     AsyncAPIKeys,
     AsyncDeviceLogin,
     AsyncIndexes,
     AsyncOrganizations,
 )
-from grepvine_sdk._core.effects import Call, Notify, Now, Op, SetSession, Sleep
-from grepvine_sdk._core.retry import RetryPolicy
-from grepvine_sdk._generated.client import Client as _OperationClient
-from grepvine_sdk._http import (
+from grepvine._core.effects import Call, Notify, Now, Op, SetSession, Sleep
+from grepvine._core.retry import RetryPolicy
+from grepvine._generated.client import Client as _OperationClient
+from grepvine._http import (
     UNSET,
     AsyncRetryTransport,
     ClientConfig,
@@ -30,13 +30,13 @@ from grepvine_sdk._http import (
     acheck_response,
     http_client_options,
 )
-from grepvine_sdk.errors import GrepvineError, TransportError
+from grepvine.errors import GrepvineError, TransportError
 
 T = TypeVar("T")
 
 
 class AsyncClient:
-    """An asynchronous Grepvine client with the same methods as :class:`~grepvine_sdk.Client`.
+    """An asynchronous Grepvine client with the same methods as :class:`~grepvine.Client`.
 
     Create it inside the event loop that will use it, and close it there with
     ``await client.aclose()`` or ``async with``.
@@ -146,8 +146,8 @@ class AsyncClient:
     def __repr__(self) -> str:
         resolved = self._state.resolved
         if resolved is None:
-            return "<grepvine_sdk.AsyncClient unresolved>"
-        return f"<grepvine_sdk.AsyncClient endpoint={resolved.endpoint!r}>"
+            return "<grepvine.AsyncClient unresolved>"
+        return f"<grepvine.AsyncClient endpoint={resolved.endpoint!r}>"
 
     def _http_clients(self) -> tuple[httpx.AsyncClient, _OperationClient]:
         """The HTTPX client for :attr:`http` and the one operations use, built for the settings."""

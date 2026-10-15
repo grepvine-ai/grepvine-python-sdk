@@ -8,8 +8,8 @@ from pathlib import Path
 import httpx
 import pytest
 
-import grepvine_sdk as grepvine
-from grepvine_sdk import Client, ConfigurationError
+import grepvine as grepvine
+from grepvine import Client, ConfigurationError
 from tests.fake_server import API_KEY, FakeGrepvine
 
 
@@ -34,7 +34,7 @@ def test_import_does_not_read_configuration(tmp_path: Path) -> None:
     }
     env.pop("GREPVINE_API_KEY", None)
     code = (
-        "import grepvine_sdk as grepvine\n"
+        "import grepvine as grepvine\n"
         "assert grepvine.default_client._state.resolved is None\n"
         "assert 'unresolved' in repr(grepvine.default_client)\n"
         "try:\n"
@@ -63,7 +63,7 @@ def test_configure_rebinds_existing_resources(fake: FakeGrepvine) -> None:
 
     assert organizations.get("acme").name == "acme"
     assert client.config.api_key == API_KEY
-    assert repr(client) == "<grepvine_sdk.Client endpoint='http://grepvine.test/v1'>"
+    assert repr(client) == "<grepvine.Client endpoint='http://grepvine.test/v1'>"
 
 
 def test_configure_none_returns_to_the_chain(tmp_path: Path) -> None:
