@@ -35,3 +35,6 @@ check_untyped_defs = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
+markers = [
+  "integration: needs a live Grepvine endpoint (GREPVINE_SDK_TEST_ENDPOINT, GREPVINE_SDK_TEST_API_KEY, GREPVINE_SDK_TEST_ORGANIZATION)",
+]
