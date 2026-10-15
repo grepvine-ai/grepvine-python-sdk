@@ -1,0 +1,93 @@
+{#
+Rendered as api/__init__.py; scripts/generate.py moves the result to api/resources.py.
+Resource classes for the operations, rendered from the naming map in sdk-operations.json.
+scripts/generate.py writes the map as `resources` (nested classes first) and `roots` into
+sdk_resources.jinja. Every method takes the operation's own arguments, delegates to the
+operation module and returns the decoded model of a successful answer; the client's HTTPX
+hooks raise error answers before they reach a method.
+#}
+{% from "sdk_resources.jinja" import resources, roots %}
+{% from "endpoint_macros.py.jinja" import arguments, kwargs as keyword_arguments, docstring %}
+{% set endpoints = {} %}
+{% set imports = [] %}
+{% for tag, collection in endpoint_collections_by_tag.items() %}
+{% for endpoint in collection.endpoints %}
+{% set _ = endpoints.update({endpoint.name | string: endpoint}) %}
+{% set _ = imports.append("from ." + tag + " import " + endpoint.name) %}
+{% for relative in endpoint.relative_imports %}
+{% set _ = imports.append(relative | replace("from ...", "from ..", 1)) %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
+{% macro success_type(endpoint) -%}
+{% set types = [] %}
+{% for response in endpoint.responses.patterns if response.status_code.range[1] < 400 %}
+{% set type_ = response.prop.get_type_string() | as_unembedded_code %}
+{% if type_ != "Any" and type_ not in types %}{% set _ = types.append(type_) %}{% endif %}
+{% endfor %}
+{{ types | join(" | ") if types else "None" }}
+{%- endmacro %}
+{% macro resource(item, is_async) %}
+{% set prefix = "Async" if is_async else "" %}
+class {{ prefix }}{{ item.name }}:
+    """{{ item.title }}"""
+{% for attribute, child in item.children %}
+
+    {{ attribute }}: {{ prefix }}{{ child }}
+{% endfor %}
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+{% for attribute, child in item.children %}
+        self.{{ attribute }} = {{ prefix }}{{ child }}(client)
+{% endfor %}
+{% for method, operation in item.methods %}
+{% set endpoint = endpoints[python_identifier(operation) | string] %}
+{% set module = endpoint.name %}
+{% set returns = success_type(endpoint) | trim %}
+
+    {{ "async " if is_async }}def {{ method }}(
+        self,
+        {{ arguments(endpoint, include_client=False) | indent(8) }}
+    ) -> {{ returns }}:
+        {{ docstring(endpoint, returns, False) | indent(8) }}
+        {{ "response = " if returns != "None" }}{{ "await " if is_async }}{{ module }}.{{ "asyncio_detailed" if is_async else "sync_detailed" }}(
+            {{ keyword_arguments(endpoint, include_client=False) | indent(12) }}
+            client=self._client,
+        )
+{% if returns != "None" %}
+        return cast({{ returns }}, response.parsed)
+{% endif %}
+{% endfor %}
+
+
+{% endmacro %}
+"""Resource classes for every API operation, one method per operation."""
+
+from typing import Any, cast
+
+from ..client import Client
+{% for line in imports | unique | sort %}
+{{ line }}
+{% endfor %}
+
+
+{% for is_async in [False, True] %}
+{% for item in resources %}
+{{ resource(item, is_async) }}
+{% endfor %}
+class _Generated{{ "Async" if is_async }}Client:
+    """The API's resources."""
+
+{% for attribute, name in roots %}
+    {{ attribute }}: {{ "Async" if is_async }}{{ name }}
+{% endfor %}
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+{% for attribute, name in roots %}
+        self.{{ attribute }} = {{ "Async" if is_async }}{{ name }}(client)
+{% endfor %}
+
+
+{% endfor %}
