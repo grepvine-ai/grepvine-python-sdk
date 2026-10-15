@@ -17,18 +17,15 @@ def _get_kwargs(
     index: str,
     key: str,
     *,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
-    headers["Idempotency-Key"] = idempotency_key
+    if not isinstance(idempotency_key, Unset):
+        headers["Idempotency-Key"] = idempotency_key
 
     if not isinstance(if_match, Unset):
         headers["If-Match"] = if_match
-
-    if not isinstance(x_csrf_token, Unset):
-        headers["X-Csrf-Token"] = x_csrf_token
 
     _kwargs: dict[str, Any] = {
         "method": "delete",
@@ -83,9 +80,8 @@ def sync_detailed(
     key: str,
     *,
     client: AuthenticatedClient | Client,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | MutationResult]:
     """Delete one document
 
@@ -97,13 +93,12 @@ def sync_detailed(
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
         key (str):
-        idempotency_key (str):
+        idempotency_key (str | Unset):
         if_match (str | Unset):
-        x_csrf_token (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | MutationResult]
@@ -115,7 +110,6 @@ def sync_detailed(
         key=key,
         idempotency_key=idempotency_key,
         if_match=if_match,
-        x_csrf_token=x_csrf_token,
     )
 
     response = client.get_httpx_client().request(
@@ -131,9 +125,8 @@ def sync(
     key: str,
     *,
     client: AuthenticatedClient | Client,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | MutationResult | None:
     """Delete one document
 
@@ -145,13 +138,12 @@ def sync(
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
         key (str):
-        idempotency_key (str):
+        idempotency_key (str | Unset):
         if_match (str | Unset):
-        x_csrf_token (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | MutationResult
@@ -164,7 +156,6 @@ def sync(
         client=client,
         idempotency_key=idempotency_key,
         if_match=if_match,
-        x_csrf_token=x_csrf_token,
     ).parsed
 
 
@@ -174,9 +165,8 @@ async def asyncio_detailed(
     key: str,
     *,
     client: AuthenticatedClient | Client,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | MutationResult]:
     """Delete one document
 
@@ -188,13 +178,12 @@ async def asyncio_detailed(
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
         key (str):
-        idempotency_key (str):
+        idempotency_key (str | Unset):
         if_match (str | Unset):
-        x_csrf_token (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | MutationResult]
@@ -206,7 +195,6 @@ async def asyncio_detailed(
         key=key,
         idempotency_key=idempotency_key,
         if_match=if_match,
-        x_csrf_token=x_csrf_token,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -220,9 +208,8 @@ async def asyncio(
     key: str,
     *,
     client: AuthenticatedClient | Client,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | MutationResult | None:
     """Delete one document
 
@@ -234,13 +221,12 @@ async def asyncio(
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
         key (str):
-        idempotency_key (str):
+        idempotency_key (str | Unset):
         if_match (str | Unset):
-        x_csrf_token (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | MutationResult
@@ -254,6 +240,5 @@ async def asyncio(
             client=client,
             idempotency_key=idempotency_key,
             if_match=if_match,
-            x_csrf_token=x_csrf_token,
         )
     ).parsed

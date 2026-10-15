@@ -5,22 +5,18 @@ from urllib.parse import quote
 import httpx
 
 from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
+from ...types import Response
 
 from ...models.error import Error
 from ...models.transfer_ownership_request import TransferOwnershipRequest
-from ...types import Unset
 
 
 def _get_kwargs(
     organization: str,
     *,
     body: TransferOwnershipRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
-    if not isinstance(x_csrf_token, Unset):
-        headers["X-Csrf-Token"] = x_csrf_token
 
     _kwargs: dict[str, Any] = {
         "method": "put",
@@ -65,7 +61,6 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: TransferOwnershipRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Any | Error]:
     """Transfer organization ownership
 
@@ -73,12 +68,11 @@ def sync_detailed(
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (TransferOwnershipRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Any | Error]
@@ -87,7 +81,6 @@ def sync_detailed(
     kwargs = _get_kwargs(
         organization=organization,
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = client.get_httpx_client().request(
@@ -102,7 +95,6 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: TransferOwnershipRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Any | Error | None:
     """Transfer organization ownership
 
@@ -110,12 +102,11 @@ def sync(
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (TransferOwnershipRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Any | Error
@@ -125,7 +116,6 @@ def sync(
         organization=organization,
         client=client,
         body=body,
-        x_csrf_token=x_csrf_token,
     ).parsed
 
 
@@ -134,7 +124,6 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: TransferOwnershipRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Any | Error]:
     """Transfer organization ownership
 
@@ -142,12 +131,11 @@ async def asyncio_detailed(
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (TransferOwnershipRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Any | Error]
@@ -156,7 +144,6 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         organization=organization,
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -169,7 +156,6 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: TransferOwnershipRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Any | Error | None:
     """Transfer organization ownership
 
@@ -177,12 +163,11 @@ async def asyncio(
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (TransferOwnershipRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Any | Error
@@ -193,6 +178,5 @@ async def asyncio(
             organization=organization,
             client=client,
             body=body,
-            x_csrf_token=x_csrf_token,
         )
     ).parsed

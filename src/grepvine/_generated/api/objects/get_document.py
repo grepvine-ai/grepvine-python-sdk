@@ -97,8 +97,8 @@ def sync_detailed(
         range_ (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | File]
@@ -139,8 +139,8 @@ def sync(
         range_ (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | File
@@ -176,8 +176,8 @@ async def asyncio_detailed(
         range_ (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | File]
@@ -216,8 +216,8 @@ async def asyncio(
         range_ (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | File

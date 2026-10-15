@@ -19,22 +19,19 @@ def _get_kwargs(
     index: str,
     *,
     body: PutDocumentForm,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
     if_none_match: PutDocumentIfNoneMatch | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
-    headers["Idempotency-Key"] = idempotency_key
+    if not isinstance(idempotency_key, Unset):
+        headers["Idempotency-Key"] = idempotency_key
 
     if not isinstance(if_match, Unset):
         headers["If-Match"] = if_match
 
     if not isinstance(if_none_match, Unset):
         headers["If-None-Match"] = str(if_none_match)
-
-    if not isinstance(x_csrf_token, Unset):
-        headers["X-Csrf-Token"] = x_csrf_token
 
     _kwargs: dict[str, Any] = {
         "method": "put",
@@ -92,10 +89,9 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: PutDocumentForm,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
     if_none_match: PutDocumentIfNoneMatch | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | MutationResult]:
     """Store one document
 
@@ -111,15 +107,14 @@ def sync_detailed(
         index (str): An index name, unique in its organization. A name keeps the case it was
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
-        idempotency_key (str):
+        idempotency_key (str | Unset):
         if_match (str | Unset):
         if_none_match (PutDocumentIfNoneMatch | Unset):
-        x_csrf_token (str | Unset):
         body (PutDocumentForm):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | MutationResult]
@@ -132,7 +127,6 @@ def sync_detailed(
         idempotency_key=idempotency_key,
         if_match=if_match,
         if_none_match=if_none_match,
-        x_csrf_token=x_csrf_token,
     )
 
     response = client.get_httpx_client().request(
@@ -148,10 +142,9 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: PutDocumentForm,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
     if_none_match: PutDocumentIfNoneMatch | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | MutationResult | None:
     """Store one document
 
@@ -167,15 +160,14 @@ def sync(
         index (str): An index name, unique in its organization. A name keeps the case it was
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
-        idempotency_key (str):
+        idempotency_key (str | Unset):
         if_match (str | Unset):
         if_none_match (PutDocumentIfNoneMatch | Unset):
-        x_csrf_token (str | Unset):
         body (PutDocumentForm):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | MutationResult
@@ -189,7 +181,6 @@ def sync(
         idempotency_key=idempotency_key,
         if_match=if_match,
         if_none_match=if_none_match,
-        x_csrf_token=x_csrf_token,
     ).parsed
 
 
@@ -199,10 +190,9 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: PutDocumentForm,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
     if_none_match: PutDocumentIfNoneMatch | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | MutationResult]:
     """Store one document
 
@@ -218,15 +208,14 @@ async def asyncio_detailed(
         index (str): An index name, unique in its organization. A name keeps the case it was
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
-        idempotency_key (str):
+        idempotency_key (str | Unset):
         if_match (str | Unset):
         if_none_match (PutDocumentIfNoneMatch | Unset):
-        x_csrf_token (str | Unset):
         body (PutDocumentForm):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | MutationResult]
@@ -239,7 +228,6 @@ async def asyncio_detailed(
         idempotency_key=idempotency_key,
         if_match=if_match,
         if_none_match=if_none_match,
-        x_csrf_token=x_csrf_token,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -253,10 +241,9 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: PutDocumentForm,
-    idempotency_key: str,
+    idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
     if_none_match: PutDocumentIfNoneMatch | Unset = UNSET,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | MutationResult | None:
     """Store one document
 
@@ -272,15 +259,14 @@ async def asyncio(
         index (str): An index name, unique in its organization. A name keeps the case it was
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
-        idempotency_key (str):
+        idempotency_key (str | Unset):
         if_match (str | Unset):
         if_none_match (PutDocumentIfNoneMatch | Unset):
-        x_csrf_token (str | Unset):
         body (PutDocumentForm):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | MutationResult
@@ -295,6 +281,5 @@ async def asyncio(
             idempotency_key=idempotency_key,
             if_match=if_match,
             if_none_match=if_none_match,
-            x_csrf_token=x_csrf_token,
         )
     ).parsed

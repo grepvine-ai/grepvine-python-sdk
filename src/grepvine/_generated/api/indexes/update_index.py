@@ -5,12 +5,11 @@ from urllib.parse import quote
 import httpx
 
 from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
+from ...types import Response
 
 from ...models.error import Error
 from ...models.index import Index
 from ...models.update_index_request import UpdateIndexRequest
-from ...types import Unset
 
 
 def _get_kwargs(
@@ -18,11 +17,8 @@ def _get_kwargs(
     index: str,
     *,
     body: UpdateIndexRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
-    if not isinstance(x_csrf_token, Unset):
-        headers["X-Csrf-Token"] = x_csrf_token
 
     _kwargs: dict[str, Any] = {
         "method": "patch",
@@ -75,7 +71,6 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateIndexRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | Index]:
     """Update an index
 
@@ -89,13 +84,12 @@ def sync_detailed(
         index (str): An index name, unique in its organization. A name keeps the case it was
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (UpdateIndexRequest): The fields to change. A field that is absent is left as it is;
             at least one must be present.
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | Index]
@@ -105,7 +99,6 @@ def sync_detailed(
         organization=organization,
         index=index,
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = client.get_httpx_client().request(
@@ -121,7 +114,6 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateIndexRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | Index | None:
     """Update an index
 
@@ -135,13 +127,12 @@ def sync(
         index (str): An index name, unique in its organization. A name keeps the case it was
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (UpdateIndexRequest): The fields to change. A field that is absent is left as it is;
             at least one must be present.
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | Index
@@ -152,7 +143,6 @@ def sync(
         index=index,
         client=client,
         body=body,
-        x_csrf_token=x_csrf_token,
     ).parsed
 
 
@@ -162,7 +152,6 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateIndexRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | Index]:
     """Update an index
 
@@ -176,13 +165,12 @@ async def asyncio_detailed(
         index (str): An index name, unique in its organization. A name keeps the case it was
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (UpdateIndexRequest): The fields to change. A field that is absent is left as it is;
             at least one must be present.
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | Index]
@@ -192,7 +180,6 @@ async def asyncio_detailed(
         organization=organization,
         index=index,
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -206,7 +193,6 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateIndexRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | Index | None:
     """Update an index
 
@@ -220,13 +206,12 @@ async def asyncio(
         index (str): An index name, unique in its organization. A name keeps the case it was
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (UpdateIndexRequest): The fields to change. A field that is absent is left as it is;
             at least one must be present.
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | Index
@@ -238,6 +223,5 @@ async def asyncio(
             index=index,
             client=client,
             body=body,
-            x_csrf_token=x_csrf_token,
         )
     ).parsed
