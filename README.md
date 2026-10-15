@@ -290,7 +290,8 @@ Each index needs a trusted publisher for this repository, workflow
 
 The `Documentation` workflow builds the API documentation on every pull request
 and push to `main`, so a broken docstring reference fails CI. Publishing a
-GitHub release, or running the workflow manually, also deploys the site to
+GitHub release (not a pre-release), or running the workflow manually, also
+deploys the site to
 GitHub Pages at the repository's default project URL. The site documents the
 latest release only. Before the first deployment, set **Settings → Pages →
 Source** to **GitHub Actions**; the workflow creates the `github-pages`
