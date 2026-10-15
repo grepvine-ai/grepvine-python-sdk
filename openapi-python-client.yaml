@@ -1,4 +1,4 @@
-package_name_override: generated
+package_name_override: _generated
 project_name_override: grepvine-sdk
 package_version_override: 0.1.0
 content_type_overrides:
