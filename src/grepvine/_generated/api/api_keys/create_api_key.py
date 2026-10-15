@@ -4,22 +4,18 @@ from typing import Any
 import httpx
 
 from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
+from ...types import Response
 
 from ...models.api_key_created import APIKeyCreated
 from ...models.create_api_key_request import CreateAPIKeyRequest
 from ...models.error import Error
-from ...types import Unset
 
 
 def _get_kwargs(
     *,
     body: CreateAPIKeyRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
-    if not isinstance(x_csrf_token, Unset):
-        headers["X-Csrf-Token"] = x_csrf_token
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -62,17 +58,15 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateAPIKeyRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[APIKeyCreated | Error]:
     """Create an API key
 
     Args:
-        x_csrf_token (str | Unset):
         body (CreateAPIKeyRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[APIKeyCreated | Error]
@@ -80,7 +74,6 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = client.get_httpx_client().request(
@@ -94,17 +87,15 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: CreateAPIKeyRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> APIKeyCreated | Error | None:
     """Create an API key
 
     Args:
-        x_csrf_token (str | Unset):
         body (CreateAPIKeyRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         APIKeyCreated | Error
@@ -113,7 +104,6 @@ def sync(
     return sync_detailed(
         client=client,
         body=body,
-        x_csrf_token=x_csrf_token,
     ).parsed
 
 
@@ -121,17 +111,15 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateAPIKeyRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[APIKeyCreated | Error]:
     """Create an API key
 
     Args:
-        x_csrf_token (str | Unset):
         body (CreateAPIKeyRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[APIKeyCreated | Error]
@@ -139,7 +127,6 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -151,17 +138,15 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: CreateAPIKeyRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> APIKeyCreated | Error | None:
     """Create an API key
 
     Args:
-        x_csrf_token (str | Unset):
         body (CreateAPIKeyRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         APIKeyCreated | Error
@@ -171,6 +156,5 @@ async def asyncio(
         await asyncio_detailed(
             client=client,
             body=body,
-            x_csrf_token=x_csrf_token,
         )
     ).parsed

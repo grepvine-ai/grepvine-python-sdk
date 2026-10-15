@@ -5,21 +5,15 @@ from urllib.parse import quote
 import httpx
 
 from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
+from ...types import Response
 
 from ...models.error import Error
-from ...types import Unset
 from uuid import UUID
 
 
 def _get_kwargs(
     api_key_id: UUID,
-    *,
-    x_csrf_token: str | Unset = UNSET,
 ) -> dict[str, Any]:
-    headers: dict[str, Any] = {}
-    if not isinstance(x_csrf_token, Unset):
-        headers["X-Csrf-Token"] = x_csrf_token
 
     _kwargs: dict[str, Any] = {
         "method": "delete",
@@ -28,7 +22,6 @@ def _get_kwargs(
         ),
     }
 
-    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -64,17 +57,15 @@ def sync_detailed(
     api_key_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Any | Error]:
     """Revoke an API key
 
     Args:
         api_key_id (UUID):
-        x_csrf_token (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Any | Error]
@@ -82,7 +73,6 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         api_key_id=api_key_id,
-        x_csrf_token=x_csrf_token,
     )
 
     response = client.get_httpx_client().request(
@@ -96,17 +86,15 @@ def sync(
     api_key_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Any | Error | None:
     """Revoke an API key
 
     Args:
         api_key_id (UUID):
-        x_csrf_token (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Any | Error
@@ -115,7 +103,6 @@ def sync(
     return sync_detailed(
         api_key_id=api_key_id,
         client=client,
-        x_csrf_token=x_csrf_token,
     ).parsed
 
 
@@ -123,17 +110,15 @@ async def asyncio_detailed(
     api_key_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Any | Error]:
     """Revoke an API key
 
     Args:
         api_key_id (UUID):
-        x_csrf_token (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Any | Error]
@@ -141,7 +126,6 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         api_key_id=api_key_id,
-        x_csrf_token=x_csrf_token,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -153,17 +137,15 @@ async def asyncio(
     api_key_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Any | Error | None:
     """Revoke an API key
 
     Args:
         api_key_id (UUID):
-        x_csrf_token (str | Unset):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Any | Error
@@ -173,6 +155,5 @@ async def asyncio(
         await asyncio_detailed(
             api_key_id=api_key_id,
             client=client,
-            x_csrf_token=x_csrf_token,
         )
     ).parsed

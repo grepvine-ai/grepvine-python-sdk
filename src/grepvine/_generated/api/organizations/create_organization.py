@@ -4,22 +4,18 @@ from typing import Any
 import httpx
 
 from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
+from ...types import Response
 
 from ...models.create_organization_request import CreateOrganizationRequest
 from ...models.error import Error
 from ...models.organization import Organization
-from ...types import Unset
 
 
 def _get_kwargs(
     *,
     body: CreateOrganizationRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
-    if not isinstance(x_csrf_token, Unset):
-        headers["X-Csrf-Token"] = x_csrf_token
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -67,17 +63,15 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateOrganizationRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | Organization]:
     """Create an organization
 
     Args:
-        x_csrf_token (str | Unset):
         body (CreateOrganizationRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | Organization]
@@ -85,7 +79,6 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = client.get_httpx_client().request(
@@ -99,17 +92,15 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: CreateOrganizationRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | Organization | None:
     """Create an organization
 
     Args:
-        x_csrf_token (str | Unset):
         body (CreateOrganizationRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | Organization
@@ -118,7 +109,6 @@ def sync(
     return sync_detailed(
         client=client,
         body=body,
-        x_csrf_token=x_csrf_token,
     ).parsed
 
 
@@ -126,17 +116,15 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateOrganizationRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | Organization]:
     """Create an organization
 
     Args:
-        x_csrf_token (str | Unset):
         body (CreateOrganizationRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | Organization]
@@ -144,7 +132,6 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -156,17 +143,15 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: CreateOrganizationRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | Organization | None:
     """Create an organization
 
     Args:
-        x_csrf_token (str | Unset):
         body (CreateOrganizationRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | Organization
@@ -176,6 +161,5 @@ async def asyncio(
         await asyncio_detailed(
             client=client,
             body=body,
-            x_csrf_token=x_csrf_token,
         )
     ).parsed

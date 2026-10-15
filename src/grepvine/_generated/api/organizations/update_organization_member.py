@@ -5,12 +5,11 @@ from urllib.parse import quote
 import httpx
 
 from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
+from ...types import Response
 
 from ...models.error import Error
 from ...models.member import Member
 from ...models.update_member_request import UpdateMemberRequest
-from ...types import Unset
 
 
 def _get_kwargs(
@@ -18,11 +17,8 @@ def _get_kwargs(
     user: str,
     *,
     body: UpdateMemberRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
-    if not isinstance(x_csrf_token, Unset):
-        headers["X-Csrf-Token"] = x_csrf_token
 
     _kwargs: dict[str, Any] = {
         "method": "put",
@@ -70,7 +66,6 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateMemberRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | Member]:
     """Change an organization member role
 
@@ -81,12 +76,11 @@ def sync_detailed(
         user (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (UpdateMemberRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | Member]
@@ -96,7 +90,6 @@ def sync_detailed(
         organization=organization,
         user=user,
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = client.get_httpx_client().request(
@@ -112,7 +105,6 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateMemberRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | Member | None:
     """Change an organization member role
 
@@ -123,12 +115,11 @@ def sync(
         user (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (UpdateMemberRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | Member
@@ -139,7 +130,6 @@ def sync(
         user=user,
         client=client,
         body=body,
-        x_csrf_token=x_csrf_token,
     ).parsed
 
 
@@ -149,7 +139,6 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateMemberRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Response[Error | Member]:
     """Change an organization member role
 
@@ -160,12 +149,11 @@ async def asyncio_detailed(
         user (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (UpdateMemberRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Response[Error | Member]
@@ -175,7 +163,6 @@ async def asyncio_detailed(
         organization=organization,
         user=user,
         body=body,
-        x_csrf_token=x_csrf_token,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -189,7 +176,6 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateMemberRequest,
-    x_csrf_token: str | Unset = UNSET,
 ) -> Error | Member | None:
     """Change an organization member role
 
@@ -200,12 +186,11 @@ async def asyncio(
         user (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        x_csrf_token (str | Unset):
         body (UpdateMemberRequest):
 
     Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        grepvine.APIError: The service answered with an error.
+        grepvine.TransportError: The request could not be delivered.
 
     Returns:
         Error | Member
@@ -217,6 +202,5 @@ async def asyncio(
             user=user,
             client=client,
             body=body,
-            x_csrf_token=x_csrf_token,
         )
     ).parsed
