@@ -1,300 +1,420 @@
-# Grepvine generated Python SDK
+# Grepvine Python SDK
 
-The SDK includes all 34 public API operations: Authentication, Device login,
-API keys, Organizations and membership, Indexes, Objects, and Search.
-API keys authenticate operations that support bearer credentials; browser-account
-operations use the session authentication described by the API contract.
-
-Grepvine exports its full public contract as `spec/openapi.json` without filtering
-operations or components. `spec/source.json` records the source repository,
-commit, exported operation list, and snapshot checksum.
-
-Typed synchronous and asynchronous operations for the Grepvine API, for Python 3.11+.
-The distribution name is `grepvine-sdk`; its import name is `grepvine_sdk`.
-It can coexist with the separate handwritten `grepvine` package.
+The Python SDK for Grepvine, a search service for large collections of text:
+regular-expression and literal search over every line of every document, with
+metadata filters and paged results. It covers the whole Grepvine API:
+organizations and their members, indexes, documents, search, API keys, user
+accounts and device login.
 
 ## Installation
 
 ```sh
-pip install grepvine-sdk
+pip install grepvine
 # or
-uv add grepvine-sdk
+uv add grepvine
 ```
 
-The package requires Python 3.11 or later.
+Python 3.11 or later. The package is imported as `grepvine`, ships type
+hints, and has both a synchronous and an asynchronous client.
 
 ## Authentication
 
-API keys authenticate the convenience clients and every operation that accepts
-bearer credentials. Pass the key as `api_key` to `GrepvineClient` or
-`AsyncGrepvineClient`, or as `token` to the generated `AuthenticatedClient`.
-Clients do not read local configuration or environment variables automatically.
-Browser-account operations use session authentication instead: use the
-generated `Client`, configure its cookies, and supply the CSRF token through the
-operation's `x_csrf_token` argument.
-
-## Convenience API
-
-Use `GrepvineClient` for synchronous calls and `AsyncGrepvineClient` for
-asynchronous calls. Their methods handle request encoding, idempotency keys,
-API errors, and search continuation.
+Pass your API key, and the endpoint when you use a service other than
+`https://api.grepvine.ai`:
 
 ```python
-from grepvine_sdk import GrepvineClient
+import grepvine
 
-with GrepvineClient(api_key="gvk_your_api_key", endpoint="http://localhost:8080") as client:
-    index = client.indexes.get("local/docs")
-    index.documents.put("hello.txt", "hello world", metadata={"kind": "guide"})
-    index.documents.put_many([
-        {"key": "other.txt", "content": "hello again", "metadata": {"kind": "note"}},
-    ])
-    for hit in index.search("hello", literal=True, filter="kind = 'guide'"):
-        print(hit.key, hit.text)
+client = grepvine.Client(api_key="gvk_...", endpoint="https://grepvine.example.com")
 ```
+
+The SDK reads no environment variables or configuration files; pass the values
+from wherever your application keeps them. An endpoint may be given with or
+without `/v1`. A `Client` also takes `timeout` (seconds, or an
+`httpx.Timeout`), `retry` (a `RetryPolicy`, see [Errors](#errors)) and
+`transport` (an `httpx` transport, such as `httpx.MockTransport` in tests).
+Use it as a context manager, or call `close()`, to release its connections.
+To obtain a key without a browser session, see [Device login](#device-login).
+
+The client's resources follow the API: `client.organizations` (with
+`client.organizations.members`), `client.indexes`, `client.documents`,
+`client.search`, `client.api_keys`, `client.account` and
+`client.device_login`. Each method takes the operation's path parameters
+(`organization`, `index`, `key`) positionally, and its query parameters and
+request body (`body=`, a model from `grepvine.models`) by name. It returns
+the API's response model, or `None` for an empty answer.
+
+## Organizations
 
 ```python
-from grepvine_sdk import AsyncGrepvineClient
+from grepvine.models import (
+    AddMemberRequest,
+    AddMemberRequestRole,
+    CreateOrganizationRequest,
+    TransferOwnershipRequest,
+    UpdateMemberRequest,
+    UpdateMemberRequestRole,
+)
 
-async with AsyncGrepvineClient(api_key="gvk_your_api_key", endpoint="http://localhost:8080") as client:
-    index = client.indexes.get("local/docs")
-    await index.documents.put("hello.txt", "hello world", metadata={"kind": "guide"})
-    await index.documents.put_many([{"key": "other.txt", "content": "hello again"}])
-    async for hit in index.search("hello", literal=True):
-        print(hit.key, hit.text)
+for org in grepvine.paginate(client.organizations.list):
+    print(org.name, org.role)
+
+org = client.organizations.get("my-org")
+client.organizations.create(body=CreateOrganizationRequest(name="my-org"))  # you become its owner
+
+members = client.organizations.members
+members.add("my-org", body=AddMemberRequest(user="bob", role=AddMemberRequestRole.DEVELOPER))
+members.update("my-org", "bob", body=UpdateMemberRequest(role=UpdateMemberRequestRole.ADMIN))
+for member in grepvine.paginate(members.list, organization="my-org"):
+    print(member.user.name, member.role)
+members.remove("my-org", "bob")
+
+# The old owner becomes an admin.
+client.organizations.transfer_ownership("my-org", body=TransferOwnershipRequest(user="carol"))
+client.organizations.delete("my-org")  # deletion completes in the background
 ```
 
-`indexes.get("organization/index")` creates a handle without a request.
-Use `index.info()` to fetch its current state. `indexes.create(ref,
-description=..., tags=...)` creates an index; `index.wait_ready(timeout=30)`
-polls until it is ready. `index.delete()` requests deletion. Await network
-methods in async mode. Python context managers close the relevant HTTPX
-client; `close()` / `aclose()` are also available.
+Organizations and user accounts share one namespace, so an organization name
+must not be taken by a user either. Adding, changing and removing members
+needs the admin or owner role; transferring ownership and deleting the
+organization need the owner role.
 
-`put` accepts text, bytes, or a binary file object. Caller-owned files remain
-open. Metadata accepts strings, booleans, finite numbers and timezone-aware
-`datetime` values; the wrapper supplies the API's type tags. `if_match` and
-`if_none_match=True` provide write preconditions.
+## Indexes
 
-One `put_many` call sends **one batch**, up to 2,048 text documents and
-16 MiB of UTF-8 content. It validates/encodes the complete batch before any
-request. It does not split or retry automatically. Each write gets a new
-idempotency key unless `idempotency_key=...` is supplied. Supply a stable key
-and the same data when implementing retries.
+```python
+from grepvine.models import CreateIndexRequest, IndexTagChanges, IndexTags, UpdateIndexRequest
 
-`ApiError` exposes `status`, `code`, `reason`, `request_id`, `retry_after`
-(seconds or None), and response headers. `BatchError` retains all `results`,
-including successes, plus `failures` and `request_id`. Use
-`raise_on_error=False` to receive batch results without raising on individual
-failures. HTTPX transport exceptions and async cancellation propagate.
+client.indexes.create(
+    "my-org",
+    body=CreateIndexRequest(
+        name="my-index",
+        description="# Product docs\n\nEvery guide we publish.",  # Markdown, optional
+        tags=IndexTags.from_dict({"team": "search", "commit": "3f9c2a1"}),  # optional
+    ),
+)
+index = client.indexes.wait_until_ready("my-org", "my-index", timeout=60)
+print(index.state, index.document_count, index.tags["commit"])
 
-Search is a lazy sync/async iterator over the API's JSON responses, including
-empty responses with a continuation token. It is regex by default; use
-`literal=True`. Options include `filter`, `case_sensitive`, `whole_word`,
-`multiline`, `lines_before`, `lines_after`, and `amount` (1–200).
+for summary in grepvine.paginate(client.indexes.list, organization="my-org", prefix="docs-"):
+    print(f"{summary.name}: {summary.document_count} documents")
 
-After setting the environment variables shown below, run the complete examples:
+# Set one tag and remove another; tags left out stay as they are.
+changes = IndexTagChanges.from_dict({"team": "platform", "commit": None})
+client.indexes.update("my-org", "my-index", body=UpdateIndexRequest(tags=changes))
+client.indexes.delete("my-org", "my-index")  # deletion completes in the background
+```
+
+A new index is `creating` for a moment before it is `ready`.
+`indexes.wait_until_ready(organization, index, timeout=..., interval=...)`
+reads the index until it is ready and returns it. It raises `TimeoutError`
+after `timeout` seconds (300 by default), and `GrepvineError` for an index
+that is being deleted.
+
+An index's `description` is Markdown, at most 16,384 characters, and empty
+when none was set. `update` sends only the fields you set, so changing the
+description leaves the tags alone and the other way round. Changing a
+description or tags needs the admin or owner role.
+
+## Search
+
+```python
+from grepvine.models import QueryRequest, QueryRequestMode
+
+query = QueryRequest(
+    pattern="hello world",
+    mode=QueryRequestMode.LITERAL,  # the default is a regular expression
+    case_sensitive=False,
+    whole_word=True,  # literal mode only
+    filter_="path STARTSWITH 'src/' AND size < 100000",
+    lines_before=2,
+    lines_after=2,
+)
+for result in grepvine.paginate(
+    client.search.query, organization="my-org", index="my-index", body=query
+):
+    print(f"{result.key}:{result.line_number}: {result.text}")
+```
+
+`client.search.query` returns one `QueryPage`; `grepvine.paginate` walks
+every page. A result carries the covered `text`, its `line_number`, the
+context lines, and the `matches` as byte offsets within the document.
+
+Filters are expressions over document metadata, such as
+`path STARTSWITH 'docs/' AND mtime >= (CURRENT_DATE - INTERVAL '3 days')`.
+`documents.put_many` records `path` and `size` metadata on every document it
+stores, so filters on those fields work without extra effort.
+
+## Documents
+
+```python
+results = client.documents.put_many(
+    "my-org",
+    "my-index",
+    [
+        {"key": "a.txt", "content": "alpha", "metadata": {"lang": "en"}},
+        {"key": "b.txt", "content": b"beta", "if_none_match": True},
+        {"key": "c.txt", "content": "gamma", "if_match": revision},
+    ],
+)
+for result in results:
+    if result.error:
+        print(f"{result.key} was not stored: {result.error.error}")
+
+for document in grepvine.paginate(
+    client.documents.list, organization="my-org", index="my-index", prefix="notes/"
+):
+    print(document.key, document.content_bytes, document.searchable)
+
+file = client.documents.get("my-org", "my-index", "a.txt")
+print(file.payload.read())
+
+client.documents.delete("my-org", "my-index", "a.txt")
+```
+
+`put_many` stores text documents in as few requests as possible, at most
+2,048 documents and 16 MiB of text per request, and returns one
+`MutationResult` per document in input order. Content is a `str` or UTF-8
+`bytes`. Metadata values may be `str`, `int`, `float`, `bool`, or `datetime`;
+the SDK tags them for the API, and adds `path` (the key) and `size` fields,
+which your own fields override. A document may carry up to 64 metadata
+fields.
+
+A document whose `if_match` or `if_none_match` condition fails is left
+unchanged and the others are written; its result has no `revision`, and its
+`error` has the `code` `"precondition_failed"`. If a request fails after
+earlier requests were answered, `put_many` raises `PartialBatchError` with
+`committed` (the results so far), `failed_keys` (the documents of the failed
+request; the service may have written some of them) and `pending_keys` (the
+documents never sent). If the first request fails, the SDK raises its error
+unchanged. To finish an interrupted call safely, pass an `idempotency_key` of
+at least 16 characters and repeat the call with the same key and the same
+documents: no document is written twice.
+
+For a binary document, or one larger than 16 MiB, use `documents.put` with a
+`PutDocumentForm`. Documents can be up to 1 GiB; content that is valid UTF-8
+and at most 100 MiB is searchable, and anything else is stored and served but
+never matched by a search. `documents.put_batch` and `documents.delete_batch`
+send one request each, and `documents.delete` removes one document; with
+`if_match`, a failed condition on `put` or `delete` raises
+`PreconditionFailedError`.
+
+## Pagination
+
+Every list method, and `search.query`, returns one page: its `results` and a
+`pagination` with `next_page_id` and `has_next`. `grepvine.paginate` takes
+the method and its arguments by name and yields every result, following
+`next_page_id` while `has_next` is true:
+
+```python
+for index in grepvine.paginate(client.indexes.list, organization="acme"):
+    print(index.name)
+
+page = client.indexes.list("acme", amount=100)  # one page of up to 100
+later = client.indexes.list("acme", amount=100, page=page.pagination.next_page_id)
+```
+
+A page may be empty while more results follow, especially in search;
+`paginate` keeps going until the service reports the end. A `next_page_id` is
+valid for 15 minutes and only with the same arguments, including `amount`;
+otherwise the service answers with `InvalidPageError`. With `AsyncClient`,
+iterate with `async for`.
+
+## Errors
+
+Every error is a `GrepvineError`. Errors from the service are `APIError`
+subclasses with `status_code`, `code`, `reason`, `message`, `request_id` and,
+when the service sent one, `retry_after`:
+
+| Exception | When |
+|---|---|
+| `InvalidRequestError` | The request was rejected; fix the input. `InvalidPageError` for a bad page token. |
+| `AuthenticationError` | The API key is missing or not valid. |
+| `PermissionDeniedError` | The key may not perform the action. |
+| `NotFoundError` | The resource does not exist or is not visible. |
+| `ConflictError` | The request conflicts with the current state, such as creating an index that exists. |
+| `PreconditionFailedError` | An `if_match` or `if_none_match` condition failed on a single-document write. |
+| `PayloadTooLargeError` | A document or batch is over its size limit. |
+| `RangeNotSatisfiableError` | A byte range does not overlap the document. |
+| `RateLimitedError` | The service kept asking the client to slow down for longer than the client was willing to wait. |
+| `ServerError` | The service failed on every attempt. |
+
+`ConfigurationError` means the endpoint is not an `http` or `https` URL.
+`TransportError` means the request could not be delivered. `PartialBatchError`
+is described under [Documents](#documents).
+
+The SDK retries on its own. A `429` waits for the interval the service asks
+for in `Retry-After` (with jitter, up to a minute at a time and ten minutes in
+total per request). A `5xx` answer or a connection failure is retried twice
+more with a short backoff. Every write carries an `Idempotency-Key` that
+stays the same across retries, so a retried write is applied once. Pass
+`retry=grepvine.RetryPolicy(...)` to change these bounds.
+
+## Asynchronous use
+
+`AsyncClient` takes the same arguments and has the same resources and
+methods, awaited. Create it inside the event loop that will use it:
+
+```python
+import asyncio
+
+import grepvine
+from grepvine.models import QueryRequest
+
+
+async def main() -> None:
+    async with grepvine.AsyncClient(api_key="gvk_...") as client:
+        await client.indexes.wait_until_ready("my-org", "my-index")
+        await client.documents.put_many("my-org", "my-index", [{"key": "a.txt", "content": "alpha"}])
+        query = QueryRequest(pattern="alpha")
+        async for result in grepvine.paginate(
+            client.search.query, organization="my-org", index="my-index", body=query
+        ):
+            print(result.key, result.line_number)
+
+
+asyncio.run(main())
+```
+
+## API keys
+
+A signed-in user manages their API keys through `client.api_keys`:
+
+```python
+from grepvine.models import CreateAPIKeyRequest
+
+key = client.api_keys.create(body=CreateAPIKeyRequest(name="ci"))  # 1 to 128 characters
+print(key.key)  # the secret, shown only now
+
+for listed in grepvine.paginate(client.api_keys.list):
+    print(listed.id, listed.name, listed.prefix, listed.last_used_at, listed.revoked_at)
+
+client.api_keys.revoke(key.id)
+```
+
+A listing shows each key's `prefix`, never its secret. A revoked key stays in
+the listing with its `revoked_at` time, and requests that use it fail with
+`AuthenticationError`.
+
+## Account
+
+`client.account` registers users, signs them in and out, and changes their
+password. The API key is the way to authenticate everything else; a session is
+for scripts that start from a username and password, such as end-to-end tests
+that create an account and its first API key. Create the client without an
+API key for them:
+
+```python
+from grepvine.models import ChangePasswordRequest, LoginRequest, RegisterRequest
+
+client = grepvine.Client(endpoint="https://grepvine.example.com")
+
+if client.account.username_availability("alice").available:
+    client.account.register(
+        body=RegisterRequest(name="alice", email="alice@example.com", password="a long passphrase")
+    )
+client.account.login(body=LoginRequest(identifier="alice", password="a long passphrase"))
+
+print(client.account.me().email)
+client.account.change_password(
+    body=ChangePasswordRequest(current_password="a long passphrase", new_password="a longer one!")
+)
+client.account.logout()
+```
+
+`login` starts a session on the client: later requests carry its cookie and
+CSRF token. A taken username or email address raises `ConflictError` with
+code `"username_taken"` or `"email_taken"`, and wrong credentials raise
+`AuthenticationError`. Passwords are at least 12 characters.
+
+## Device login
+
+Device login gives an API key to a program, such as a command-line tool or an
+agent, once a person approves it in a signed-in browser. `authorize` does the
+program's part in one call: it starts the login, hands the code to `on_code`
+to show, and waits for the person's decision, polling at the interval the
+service asks for and slowing down when asked to.
+
+```python
+from grepvine.models import DeviceAuthorization
+
+
+def show(authorization: DeviceAuthorization) -> None:
+    print(f"Open {authorization.verification_uri_complete}")
+    print(f"and check that it shows {authorization.user_code}")
+
+
+with grepvine.Client() as anonymous:  # starting a device login needs no API key
+    key = anonymous.device_login.authorize("my laptop", on_code=show, timeout=600)
+client = grepvine.Client(api_key=key.key)
+```
+
+A denied login raises `InvalidRequestError` with code `"access_denied"`, and
+an expired one with `"expired_token"`. A login that is not approved within
+`timeout` seconds, or before it expires, raises `TimeoutError`.
+
+The steps are also available one at a time: the program calls
+`device_login.start` and `device_login.poll`, and the person, or a tool
+acting for them, calls `device_login.approve` or `device_login.deny` with the
+user code. `poll` raises `InvalidRequestError` with code
+`"authorization_pending"` while the person has not decided, and `"slow_down"`
+when polled more often than the authorization's `interval`.
+
+## Other requests
+
+`client.http` is the `httpx.Client` (an `httpx.AsyncClient` for
+`AsyncClient`) the client sends its requests with: it has the endpoint,
+credentials, timeout and retries, and raises the SDK's errors. Use it for
+anything the methods above do not cover, such as streaming a large document
+to a file:
+
+```python
+from urllib.parse import quote
+
+path = f"/organizations/my-org/indexes/my-index/objects/{quote('videos/demo.mp4', safe='')}"
+with client.http.stream("GET", path) as response, open("demo.mp4", "wb") as file:
+    for chunk in response.iter_bytes():
+        file.write(chunk)
+```
+
+Paths are relative to the endpoint's `/v1`.
+
+## Thread safety
+
+A `Client` may be shared between threads. An iterator from `paginate` is not
+thread-safe.
+
+## Limits worth knowing
+
+- One document: at most 1 GiB, and a single upload must finish within the
+  service's request deadline of 35 seconds.
+- One batch: at most 2,048 documents and 16 MiB of text.
+- Keys: 1 to 1,024 characters. Organization and index names: letters, digits,
+  and hyphens, starting with a letter. A name keeps the case it was created
+  with, and any spelling that differs only in case refers to the same
+  organization or index.
+- `lines_before` and `lines_after`: at most 20 each.
+- Tags: at most 64 per index. A key is 1 to 128 characters without whitespace
+  or control characters; a value is at most 1,024 characters without control
+  characters.
+
+## Examples
+
+The `examples` directory holds complete programs. They read the API key from
+`GREPVINE_API_KEY` and, for a service other than the default, the endpoint from
+`GREPVINE_API_ENDPOINT`, and pass them to the client:
 
 ```sh
-uv run --frozen python examples/convenience_sync.py
-uv run --frozen python examples/convenience_async.py
+export GREPVINE_ORGANIZATION=my-org
+python examples/ingest_search.py        # add --keep-index to keep the documents
+python examples/ingest_search_async.py
+python examples/device_login.py
 ```
 
-The generated `Client` and `AuthenticatedClient` exports remain unchanged.
-`convenience_client.raw` is the generated authenticated client and can be
-passed to any raw operation, including device-login operations.
+The ingest example creates a uniquely named index, stores three documents,
+searches them with and without a metadata filter, and deletes the index at
+the end. The organization must exist, and the key needs permission to create
+and delete indexes.
 
-## Raw generated API
+## License
 
-```python
-from grepvine_sdk import AuthenticatedClient
-from grepvine_sdk.generated.api.search import query_index
-from grepvine_sdk.generated.models import Error, QueryPage, QueryRequest
-
-with AuthenticatedClient(
-    base_url="https://api.grepvine.ai/v1",
-    token="gvk_your_api_key",
-) as client:
-    response = query_index.sync_detailed(
-        "acme", "notes", client=client, body=QueryRequest(pattern="hello")
-    )
-    if isinstance(response.parsed, Error):
-        print(response.status_code, response.parsed, response.headers.get("X-Request-ID"))
-    elif isinstance(response.parsed, QueryPage):
-        print(response.parsed.results)
-```
-
-Each operation provides `sync`, `sync_detailed`, `asyncio`, and
-`asyncio_detailed` functions when it has a response body.
-The detailed variants expose HTTP status, headers, raw bytes, and the decoded
-result. Declared API errors are decoded as `Error`, rather than raised.
-Network/timeout errors are HTTPX exceptions. Always inspect the result.
-For asynchronous use:
-
-```python
-async with AuthenticatedClient(base_url="https://api.grepvine.ai/v1", token="gvk_your_api_key") as client:
-    response = await query_index.asyncio_detailed(
-        "acme", "notes", client=client, body=QueryRequest(pattern="hello")
-    )
-```
-
-Supply the full versioned API URL, including `/v1`. Credentials are per client.
-Clients do not read local configuration or environment variables automatically.
-Use `Client` for anonymous or session-authenticated operations. Configure
-cookies on that client and supply the CSRF token on state changes using the
-operation's `x_csrf_token` argument.
-
-## Uploads, downloads, and continuation
-
-```python
-from io import BytesIO
-import json
-import uuid
-
-from grepvine_sdk import File
-from grepvine_sdk.generated.api.objects import put_document, put_objects
-from grepvine_sdk.generated.models import PutDocumentForm
-
-with AuthenticatedClient(base_url="https://api.grepvine.ai/v1", token="gvk_your_api_key") as client:
-    single = put_document.sync_detailed(
-        "acme", "notes", client=client, idempotency_key=str(uuid.uuid4()),
-        body=PutDocumentForm(
-            key="hello.txt",
-            content=File(payload=BytesIO(b"hello"), file_name="hello.txt"),
-            metadata=json.dumps({"lang": {"type": "string", "value": "en"}}),
-        ),
-    )
-    records = [{"key": "other.txt", "content": "hello again"}]
-    payload = "".join(json.dumps(record) + "\n" for record in records).encode("utf-8")
-    batch = put_objects.sync_detailed(
-        "acme", "notes", client=client, idempotency_key=str(uuid.uuid4()),
-        body=File(payload=BytesIO(payload)),
-    )
-    print(batch.parsed)  # inspect every document result's error
-```
-
-Data mutations require an `idempotency_key`. When retrying, preserve that
-key and the complete original body. The SDK does not retry automatically.
-Detailed error responses expose `Retry-After` and `X-Request-ID`.
-
-List/search operations return one response at a time. When
-`pagination.has_next` is true, pass `pagination.next_page_id` as `page`,
-preserving the original request. Pagination is explicit.
-Generated models serialize tagged metadata and support full int64 values.
-For updates, `UNSET` means absent; null tag values remove the named tags.
-
-`get_document.sync_detailed` returns binary bytes in `response.content`
-and a `File` in `response.parsed`, with revision/range/metadata headers in
-`response.headers`. Generated download functions buffer the complete response.
-For large downloads use `client.get_httpx_client().stream(...)` or
-`client.get_async_httpx_client().stream(...)`, consuming chunks inside the
-HTTPX stream context. Encode each path parameter using
-`urllib.parse.quote(value, safe="")`. Configure timeouts with
-`timeout=httpx.Timeout(seconds)`. Async task cancellation propagates through
-HTTPX; context managers close connections.
-
-Grepvine currently exposes no REST SSE operation. This package has no SSE
-parser or generated streaming search function. Adding SSE requires a separate
-API/server change and a tested synchronous/asynchronous streaming adapter.
-
-## Generation and development
-
-This package uses `openapi-python-client==0.29.1` with HTTPX and attrs models.
-Hey API's Python generator was evaluated and rejected for this implementation
-because its current operation generation does not correctly handle paths and
-request arguments. Python users need neither Node.js nor the generator.
-
-Generation reads `spec/openapi.json`. The script
-temporarily expresses the `If-None-Match` constant as a singleton enum and
-interprets the raw NDJSON body as a binary File. Both preserve wire behavior;
-the original media type is retained. The snapshot is exported from Grepvine;
-change the source contract there rather than editing the snapshot.
-The raw-body template buffers NDJSON content into bytes so both sync and
-async HTTPX clients can send it. Generation fails on warnings or missing operations.
-
-Run from the SDK repository root:
-
-```sh
-uv sync --frozen
-uv run --frozen python scripts/generate.py
-uv run --frozen ruff check .
-uv run --frozen ruff format --check .
-uv run --frozen mypy
-uv run --frozen pytest
-uv build
-uv run --frozen python scripts/check_package.py
-```
-
-Generated files live under `src/grepvine_sdk/generated`. Never edit them:
-change the contract, configuration, or generator adapter and regenerate.
-Exports, docs, tests, and scripts remain separate. Builds create a wheel
-and source distribution with typing information and a license.
-The distribution name is provisional until registry availability is checked before release.
-
-The API documentation site is built with pdoc into the git-ignored `site/`
-directory. Its landing page is this README without the development and
-automation sections, followed by the reference for the convenience layer and
-the generated operations and models. Any pdoc warning fails the build. Open
-`site/index.html` in a browser to read the result:
-
-```sh
-uv run --frozen python scripts/build_docs.py
-```
-
-The theme lives in `docs/theme` and follows the Grepvine design system in
-[`grepvine-ai/grepvine-design-system`](https://github.com/grepvine-ai/grepvine-design-system).
-See `docs/theme/README.md` before changing it.
-
-Optional live tests create and delete a uniquely named index. Set
-`GREPVINE_SDK_TEST_ENDPOINT` (including `/v1`), `GREPVINE_SDK_TEST_API_KEY`,
-and `GREPVINE_SDK_TEST_ORGANIZATION`, then run `uv run --frozen pytest`.
-The ordinary HTTP fixture tests require no running service.
-
-## Runnable ingest and search example
-
-The example creates a uniquely named index, stores one document with multipart
-content and two documents in an NDJSON batch, then searches immediately. It
-follows continuation tokens and demonstrates a metadata filter, returning
-three matches overall and two matching `kind = 'guide'`.
-
-After installing development dependencies, run from the repository root:
-
-```sh
-export GREPVINE_API_ENDPOINT=http://localhost:8080
-export GREPVINE_ORGANIZATION=local
-export GREPVINE_API_KEY='your-api-key'
-uv run --frozen python examples/ingest_search.py
-```
-
-The example requests deletion of its own index in a `finally` block. Add
-`--keep-index` to keep the documents for inspection.
-The organization must already exist, and the key needs permission to create
-and delete indexes. API endpoints may be supplied with or without `/v1`.
-
-## Repository automation
-
-The `Regenerate and validate SDK` workflow can be triggered manually. It
-regenerates from the snapshot, runs tests and builds an installed-package
-smoke test, then commits generated changes after the checks pass. Pushes and
-pull requests validate reproducibility without committing. Grepvine’s manual `Update SDK snapshots` workflow
-updates both repositories and requests regeneration.
-
-The `Build and publish SDK` workflow runs the same checks, builds the wheel
-and source distribution, and publishes them with PyPI trusted publishing.
-Publishing a GitHub release uploads the tag's version (`v0.2.0` becomes
-`0.2.0`) to PyPI. A manual run takes a version and a target index: use
-`testpypi` to try any version on TestPyPI, or `pypi` for a pre-release
-(`0.2.0rc1`, `0.2.0.dev1`), which `pip` installs only when asked for
-explicitly or with `--pre`. Final versions go to PyPI only through a release.
-Each index needs a trusted publisher for this repository, workflow
-`publish.yml`, and a matching `pypi` or `testpypi` environment.
-
-The `Documentation` workflow builds the API documentation on every pull request
-and push to `main`, so a broken docstring reference fails CI. Publishing a
-GitHub release (not a pre-release), or running the workflow manually, also
-deploys the site to
-GitHub Pages at the repository's default project URL. The site documents the
-latest release only. Before the first deployment, set **Settings → Pages →
-Source** to **GitHub Actions**; the workflow creates the `github-pages`
-environment on its first run. The published site is public even when the
-repository is private, and Pages on a private repository requires a paid
-GitHub plan.
+Proprietary. See `LICENSE`.

@@ -1,8 +1,9 @@
 {#
 Grepvine module page.
-scripts/build_docs.py sets the `guide`, `guide_title` and `repository_url` globals; the root package
-page renders the guide as its landing content, and every page lists its documented submodules even
-when a package's `__all__` hides them from pdoc's default navigation.
+scripts/build_docs.py sets the `guide`, `guide_title`, `reference_groups` and `repository_url`
+globals; the root package page renders the guide as its landing content followed by the reference
+grouped by resource, and every page lists its documented submodules even when a package's `__all__`
+hides them from pdoc's default navigation.
 #}
 {% extends "default/module.html.jinja2" %}
 {% block title %}
@@ -52,9 +53,50 @@ when a package's `__all__` hides them from pdoc's default navigation.
     {% endif %}
 {% endblock %}
 {% block nav_members %}
-    {% if module.members %}
+    {% if module.modulename == root_module_name and reference_groups %}
+        {% for title, names in reference_groups %}
+            {% set members = [] %}
+            {% for name in names %}{% set _ = members.append(module.members[name]) %}{% endfor %}
+            <h2>{{ title | lower }}</h2>
+            {{ nav_members(members) }}
+        {% endfor %}
+    {% elif module.members %}
         <h2>reference</h2>
         {{ nav_members(module.members.values()) }}
+    {% endif %}
+{% endblock %}
+{% block module_contents %}
+    {% if module.modulename == root_module_name and reference_groups %}
+        {% for title, names in reference_groups %}
+            <h3 class="gv-reference-group" id="reference-{{ title | lower | replace(" ", "-") }}">
+                <span class="md" aria-hidden="true">###</span> {{ title }}
+            </h3>
+            {% set members = [] %}
+            {% for name in names %}{% set _ = members.append(module.members[name]) %}{% endfor %}
+            {% for m in members if is_public(m) | trim %}
+                <section id="{{ m.qualname or m.name }}">
+                    {{ member(m) }}
+                    {% if m.kind == "class" %}
+                        {% for m in m.own_members if m.kind != "class" and is_public(m) | trim %}
+                            <div id="{{ m.qualname }}" class="classattr">
+                                {{ member(m) }}
+                            </div>
+                        {% endfor %}
+                        {% set inherited_members = inherited(m) | trim %}
+                        {% if inherited_members %}
+                            <div class="inherited">
+                                <h5>Inherited Members</h5>
+                                <dl>
+                                    {{ inherited_members }}
+                                </dl>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </section>
+            {% endfor %}
+        {% endfor %}
+    {% else %}
+        {{ super() }}
     {% endif %}
 {% endblock %}
 {% block nav_footer %}

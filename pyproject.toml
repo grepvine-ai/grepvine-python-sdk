@@ -1,7 +1,7 @@
 [project]
-name = "grepvine-sdk"
+name = "grepvine"
 version = "0.1.0"
-description = "Generated Python SDK for the Grepvine API"
+description = "Python SDK for the Grepvine search API"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "LicenseRef-Proprietary"
@@ -15,7 +15,7 @@ build-backend = "hatchling.build"
 include = ["src", "README.md", "LICENSE", "pyproject.toml"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/grepvine_sdk"]
+packages = ["src/grepvine"]
 
 [dependency-groups]
 dev = ["openapi-python-client==0.29.1", "pytest>=8,<10", "anyio>=4,<5", "ruff==0.15.13", "mypy>=1.16,<2", "types-python-dateutil>=2.9", "pdoc==16.0.0"]
@@ -23,10 +23,12 @@ dev = ["openapi-python-client==0.29.1", "pytest>=8,<10", "anyio>=4,<5", "ruff==0
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-extend-exclude = ["src/grepvine_sdk/generated"]
+extend-exclude = ["src/grepvine/_generated"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+# The package re-exports the names listed in each module's __all__.
+per-file-ignores = { "src/grepvine/__init__.py" = ["F403", "F405"] }
 
 [tool.mypy]
 files = ["src", "tests", "scripts", "examples"]
@@ -35,3 +37,6 @@ check_untyped_defs = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
+markers = [
+  "integration: needs a live Grepvine endpoint (GREPVINE_SDK_TEST_ENDPOINT, GREPVINE_SDK_TEST_API_KEY, GREPVINE_SDK_TEST_ORGANIZATION)",
+]

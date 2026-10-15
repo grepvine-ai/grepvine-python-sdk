@@ -57,14 +57,14 @@ jobs:
             echo "::error::Manual runs publish only pre-release versions to PyPI; publish a GitHub release for $version"
             exit 1
           fi
-          echo "Publishing grepvine-sdk $version to $repository (pre-release: $prerelease)"
+          echo "Publishing grepvine $version to $repository (pre-release: $prerelease)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "repository=$repository" >> "$GITHUB_OUTPUT"
       - run: uv sync --frozen
       - name: Check generated files are current
         run: |
           uv run --frozen python scripts/generate.py
-          git diff --exit-code -- src/grepvine_sdk/generated
+          git diff --exit-code -- src/grepvine/_generated
       - name: Lint and type-check
         run: |
           uv run --frozen ruff check .
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment:
       name: ${{ needs.build.outputs.repository }}
-      url: ${{ needs.build.outputs.repository == 'pypi' && 'https://pypi.org' || 'https://test.pypi.org' }}/project/grepvine-sdk/${{ needs.build.outputs.version }}/
+      url: ${{ needs.build.outputs.repository == 'pypi' && 'https://pypi.org' || 'https://test.pypi.org' }}/project/grepvine/${{ needs.build.outputs.version }}/
     permissions:
       id-token: write
     steps:
