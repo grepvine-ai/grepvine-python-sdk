@@ -1,105 +1,78 @@
-"""Every API operation has exactly one home on the client.
-
-``spec/source.json`` lists the operations of the API. Each one must be called
-by exactly one function in ``grepvine._core.ops`` (the only module that
-calls API operations), and that function must be used by exactly one public
-method of the synchronous client's resources and one of the asynchronous
-client's. A new operation therefore fails this test until it has a method.
-"""
+"""Every API operation has exactly one method on both clients, named by sdk-operations.json."""
 
 from __future__ import annotations
 
 import ast
+import inspect
 import json
 import re
-from collections import defaultdict
-from functools import cache
 from pathlib import Path
 
 import pytest
 
+import grepvine
+
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "src" / "grepvine"
-OPERATIONS: list[str] = json.loads((ROOT / "spec" / "source.json").read_text())["operations"]
-API_PREFIX = "grepvine._generated.api."
+OPERATIONS: dict[str, list[str]] = json.loads((ROOT / "sdk-operations.json").read_text())
+SPEC = json.loads((ROOT / "spec/openapi.json").read_text())
+SPEC_OPERATIONS = {
+    operation["operationId"]
+    for path in SPEC["paths"].values()
+    for operation in path.values()
+    if isinstance(operation, dict) and "operationId" in operation
+}
 
 
-def _module_name(operation_id: str) -> str:
-    """The generated module of an operation: ``listAPIKeys`` is ``list_api_keys``."""
-    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", "_", operation_id)
-    return words.lower()
+def snake(name: str) -> str:
+    """``transferOwnership`` is ``transfer_ownership``; ``listAPIKeys`` is ``list_api_keys``."""
+    return re.sub(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", "_", name).lower()
 
 
-def _api_imports(tree: ast.Module) -> set[str]:
-    return {
-        alias.asname or alias.name
-        for node in ast.walk(tree)
-        if isinstance(node, ast.ImportFrom) and (node.module or "").startswith(API_PREFIX)
-        for alias in node.names
+def test_map_covers_exactly_the_api() -> None:
+    assert set(OPERATIONS) == SPEC_OPERATIONS
+    assert set(json.loads((ROOT / "spec/source.json").read_text())["operations"]) == SPEC_OPERATIONS
+
+
+def test_each_method_is_used_once() -> None:
+    paths = [tuple(path) for path in OPERATIONS.values()]
+    assert len(set(paths)) == len(paths)
+
+
+@pytest.mark.parametrize("client_class", [grepvine.Client, grepvine.AsyncClient])
+@pytest.mark.parametrize("operation", sorted(OPERATIONS))
+def test_method_calls_its_operation(client_class: type, operation: str) -> None:
+    client = client_class()
+    target = client
+    for segment in OPERATIONS[operation]:
+        target = getattr(target, snake(segment))
+    assert inspect.iscoroutinefunction(target) == (client_class is grepvine.AsyncClient)
+    source = inspect.getsource(target)
+    called = {
+        node.func.value.id
+        for node in ast.walk(ast.parse(inspect.cleandoc("\n" + source)))
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.attr in ("sync_detailed", "asyncio_detailed")
     }
+    assert called == {snake(operation)}
 
 
-@cache
-def _homes() -> dict[str, list[str]]:
-    """Each API operation module, with the ops functions that call it."""
-    tree = ast.parse((PACKAGE / "_core" / "ops.py").read_text())
-    modules = _api_imports(tree)
-    homes: dict[str, list[str]] = defaultdict(list)
-    for node in tree.body:
-        if isinstance(node, ast.FunctionDef):
-            used = {n.id for n in ast.walk(node) if isinstance(n, ast.Name) and n.id in modules}
-            for module in used:
-                homes[module].append(node.name)
-    return homes
-
-
-@cache
-def _callers(flavor: str) -> dict[str, list[str]]:
-    """Each ops function, with the resource methods of one client flavor that use it."""
-    tree = ast.parse((PACKAGE / flavor / "resources.py").read_text())
-    callers: dict[str, list[str]] = defaultdict(list)
-    for cls in tree.body:
-        if not isinstance(cls, ast.ClassDef):
-            continue
-        for method in cls.body:
-            if not isinstance(method, ast.FunctionDef | ast.AsyncFunctionDef):
-                continue
-            used = {
-                n.attr
-                for n in ast.walk(method)
-                if isinstance(n, ast.Attribute)
-                and isinstance(n.value, ast.Name)
-                and n.value.id == "ops"
-            }
-            for function in used:
-                callers[function].append(f"{cls.name}.{method.name}")
-    return callers
-
-
-def test_operation_ids_map_to_generated_modules() -> None:
-    assert _module_name("listAPIKeys") == "list_api_keys"
-    assert _module_name("revokeAPIKey") == "revoke_api_key"
-    assert _module_name("getUsernameAvailability") == "get_username_availability"
-    generated = {path.stem for path in (PACKAGE / "_generated" / "api").rglob("*.py")}
-    assert {_module_name(op) for op in OPERATIONS} <= generated
-
-
-def test_only_ops_calls_api_operations() -> None:
-    for path in PACKAGE.rglob("*.py"):
-        if "_generated" in path.parts or path.name == "ops.py":
-            continue
-        assert not _api_imports(ast.parse(path.read_text())), path
-
-
-def test_no_operation_outside_the_spec_is_called() -> None:
-    assert set(_homes()) <= {_module_name(op) for op in OPERATIONS}
-
-
-@pytest.mark.parametrize("operation_id", OPERATIONS)
-@pytest.mark.parametrize("flavor", ["_sync", "_async"])
-def test_every_operation_has_exactly_one_method(operation_id: str, flavor: str) -> None:
-    homes = _homes().get(_module_name(operation_id), [])
-    assert len(homes) == 1, f"{operation_id} is called by {homes or 'no function'} in ops.py"
-    methods = _callers(flavor).get(homes[0], [])
-    assert len(methods) == 1, f"{operation_id} ({homes[0]}) is used by {methods or 'no method'}"
-    assert not methods[0].split(".")[1].startswith("_"), methods[0]
+def test_resources_have_no_other_operation_methods() -> None:
+    expected: dict[str, set[str]] = {}
+    for path in OPERATIONS.values():
+        expected.setdefault(snake(path[-2]), set()).add(snake(path[-1]))
+    helpers = {
+        "indexes": {"wait_until_ready"},
+        "documents": {"put_many"},
+        "device_login": {"authorize"},
+    }
+    client = grepvine.Client()
+    for name, methods in expected.items():
+        resource = getattr(client, name, None) or client.organizations.members
+        public = {
+            attribute
+            for attribute in dir(resource)
+            if not attribute.startswith("_") and callable(getattr(resource, attribute))
+        }
+        assert public == methods | helpers.get(name, set()), name

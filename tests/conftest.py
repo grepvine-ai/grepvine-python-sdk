@@ -1,18 +1,86 @@
-"""Shared fixtures: the fake service and a client of either flavour."""
+"""Shared fixtures: a scripted service on httpx.MockTransport, a fake clock, and both clients."""
 
 from __future__ import annotations
 
 import inspect
-from collections.abc import AsyncIterator, Iterable
+import json
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
 import pytest
 
-from grepvine import AsyncClient, Client
-from tests.fake_server import API_KEY, FakeGrepvine
+from grepvine import AsyncClient, Client, RetryPolicy, _retry
 
-ENDPOINT = "http://grepvine.test"
+Handler = Callable[[httpx.Request], httpx.Response]
+API_KEY = "gvk_test"
+NO_JITTER = RetryPolicy(retry_after_jitter=0.0)
+
+
+def index_json(name: str = "docs", state: str = "ready") -> dict[str, Any]:
+    return {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "organization": "acme",
+        "name": name,
+        "canonical_id": "c",
+        "description": "",
+        "tags": {},
+        "state": state,
+        "document_count": 0,
+        "content_bytes": 0,
+        "created_at": "2026-01-01T00:00:00Z",
+    }
+
+
+def page_json(results: list[Any], next_page_id: str = "") -> dict[str, Any]:
+    return {
+        "results": results,
+        "pagination": {"next_page_id": next_page_id, "has_next": bool(next_page_id)},
+    }
+
+
+def error(status: int, code: str, message: str = "failed", **headers: str) -> httpx.Response:
+    body = {"code": code, "reason": "test", "error": message}
+    return httpx.Response(status, json=body, headers=headers)
+
+
+class Service:
+    """Answers requests from a queue of handlers or a routing function, and records them."""
+
+    def __init__(self) -> None:
+        self.requests: list[httpx.Request] = []
+        self.queue: list[httpx.Response | Handler | Exception] = []
+        self.route: Handler = lambda request: error(404, "not_found", "no route")
+
+    def reply(self, *answers: httpx.Response | Handler | Exception) -> None:
+        self.queue.extend(answers)
+
+    def handle(self, request: httpx.Request) -> httpx.Response:
+        request.read()
+        self.requests.append(request)
+        answer = self.queue.pop(0) if self.queue else self.route
+        if isinstance(answer, Exception):
+            raise answer
+        return answer if isinstance(answer, httpx.Response) else answer(request)
+
+    def json(self, position: int = -1) -> Any:
+        return json.loads(self.requests[position].content)
+
+
+class Clock:
+    """Replaces the SDK's clock and sleeps: sleeping advances the time and is recorded."""
+
+    def __init__(self) -> None:
+        self.now = 1000.0
+        self.sleeps: list[float] = []
+
+    def sleep(self, seconds: float) -> None:
+        self.sleeps.append(seconds)
+        self.now += seconds
+
+    async def async_sleep(self, seconds: float) -> None:
+        self.sleep(seconds)
 
 
 @pytest.fixture(scope="session")
@@ -21,59 +89,51 @@ def anyio_backend() -> str:
 
 
 @pytest.fixture
-def fake() -> FakeGrepvine:
-    return FakeGrepvine()
+def service() -> Service:
+    return Service()
 
 
-def no_sleep(seconds: float) -> None:
-    """A sleep that returns at once; tests inspect the requested durations instead."""
-
-
-async def no_async_sleep(seconds: float) -> None:
-    """The asynchronous twin of :func:`no_sleep`."""
-
-
-@pytest.fixture
-def client(fake: FakeGrepvine) -> Iterable[Client]:
-    with Client(
-        api_key=API_KEY, endpoint=ENDPOINT, transport=httpx.MockTransport(fake.handle)
-    ) as sync_client:
-        sync_client._sleep = no_sleep
-        yield sync_client
+@pytest.fixture(autouse=True)
+def clock(monkeypatch: pytest.MonkeyPatch) -> Clock:
+    fake = Clock()
+    monkeypatch.setattr(_retry, "sleep", fake.sleep)
+    monkeypatch.setattr(_retry, "async_sleep", fake.async_sleep)
+    monkeypatch.setattr(_retry, "monotonic", lambda: fake.now)
+    return fake
 
 
 class Flavor:
-    """Lets one test body drive either client.
+    """Drives either client from one test body: ``await fx.run(fx.client.indexes.get(...))``."""
 
-    ``run`` awaits a value when it is awaitable and returns it otherwise;
-    ``collect`` drains a synchronous or asynchronous iterable into a list.
-    """
-
-    def __init__(self, client: Client | AsyncClient, name: str) -> None:
-        self.client = client
-        self.name = name
-        self.is_async = name == "async"
+    def __init__(self, client: Client | AsyncClient) -> None:
+        self.client: Any = client
+        self.is_async = isinstance(client, AsyncClient)
 
     async def run(self, value: Any) -> Any:
-        if inspect.isawaitable(value):
-            return await value
-        return value
+        return await value if inspect.isawaitable(value) else value
 
     async def collect(self, iterable: Any) -> list[Any]:
-        if self.is_async:
-            return [item async for item in iterable]
-        return list(iterable)
+        return [item async for item in iterable] if self.is_async else list(iterable)
+
+
+@asynccontextmanager
+async def connect(kind: str, service: Service, **options: Any) -> AsyncIterator[Flavor]:
+    """Open a client of the given kind on the service; ``options`` override the defaults."""
+    options = {"api_key": API_KEY, "retry": NO_JITTER, **options}
+    if kind == "sync":
+        with Client(transport=httpx.MockTransport(service.handle), **options) as client:
+            yield Flavor(client)
+    else:
+        async with AsyncClient(transport=httpx.MockTransport(service.handle), **options) as aclient:
+            yield Flavor(aclient)
 
 
 @pytest.fixture(params=["sync", "async"])
-async def fx(request: pytest.FixtureRequest, fake: FakeGrepvine) -> AsyncIterator[Flavor]:
-    transport = httpx.MockTransport(fake.handle)
-    kwargs: dict[str, Any] = {"api_key": API_KEY, "endpoint": ENDPOINT}
-    if request.param == "sync":
-        with Client(transport=transport, **kwargs) as sync_client:
-            sync_client._sleep = no_sleep
-            yield Flavor(sync_client, "sync")
-    else:
-        async with AsyncClient(transport=transport, **kwargs) as async_client:
-            async_client._sleep = no_async_sleep
-            yield Flavor(async_client, "async")
+def kind(request: pytest.FixtureRequest) -> str:
+    return str(request.param)
+
+
+@pytest.fixture
+async def fx(kind: str, service: Service) -> AsyncIterator[Flavor]:
+    async with connect(kind, service) as flavor:
+        yield flavor

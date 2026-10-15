@@ -49,11 +49,10 @@ import importlib.util
 import json
 import httpx
 import grepvine
-from grepvine import AsyncClient, Client, NotFoundError, RetryPolicy
-from grepvine.models import APIKey, IndexData, MutationResult, SearchResult, User
+from grepvine import AsyncClient, Client, NotFoundError, RetryPolicy, paginate
+from grepvine.models import Index, IndexSummary, MutationResult, QueryRequest
 assert importlib.util.find_spec('grepvine.generated') is None
 assert not hasattr(grepvine, 'AuthenticatedClient')
-assert repr(grepvine.default_client) == '<grepvine.Client unresolved>'
 INDEX = {
     'id': '00000000-0000-0000-0000-000000000001', 'organization': 'acme', 'name': 'docs',
     'canonical_id': 'c', 'description': '', 'tags': {}, 'state': 'ready',
@@ -64,7 +63,12 @@ def handler(request):
     path = request.url.path
     if path == '/v1/organizations/acme/indexes/docs':
         return httpx.Response(200, json=INDEX)
+    if path == '/v1/organizations/acme/indexes':
+        return httpx.Response(200, json={
+            'results': [INDEX], 'pagination': {'has_next': False, 'next_page_id': ''}
+        })
     if path.endswith('objects:batch'):
+        assert request.headers['Idempotency-Key']
         record = json.loads(request.content.decode().strip())
         assert record['metadata']['kind'] == {'type': 'string', 'value': 'guide'}
         assert record['metadata']['path'] == {'type': 'string', 'value': 'a'}
@@ -76,12 +80,14 @@ def handler(request):
     return httpx.Response(404, json={'code': 'not_found', 'reason': 'resource', 'error': 'no'})
 options = {'api_key': 'gvk', 'endpoint': 'https://example.test'}
 documents = [{'key': 'a', 'content': 'hello', 'metadata': {'kind': 'guide'}}]
+query = QueryRequest(pattern='hello')
 with Client(transport=httpx.MockTransport(handler), retry=RetryPolicy(), **options) as client:
-    index = client.indexes.get('acme/docs')
-    assert isinstance(index.data, IndexData)
-    [result] = index.documents.put(documents)
+    assert isinstance(client.indexes.wait_until_ready('acme', 'docs'), Index)
+    [summary] = paginate(client.indexes.list, organization='acme')
+    assert isinstance(summary, IndexSummary)
+    [result] = client.documents.put_many('acme', 'docs', documents)
     assert isinstance(result, MutationResult) and result.revision == 'r1'
-    assert list(index.search('hello')) == []
+    assert list(paginate(client.search.query, organization='acme', index='docs', body=query)) == []
     assert client.http.get('/organizations/acme/indexes/docs').json()['name'] == 'docs'
     try:
         client.organizations.get('missing')
@@ -91,9 +97,10 @@ with Client(transport=httpx.MockTransport(handler), retry=RetryPolicy(), **optio
         raise SystemExit('expected NotFoundError')
 async def check_async():
     async with AsyncClient(transport=httpx.MockTransport(handler), **options) as client:
-        index = await client.indexes.get('acme/docs')
-        assert (await index.documents.put(documents))[0].revision == 'r1'
-        assert [hit async for hit in index.search('hello')] == []
+        assert (await client.indexes.get('acme', 'docs')).name == 'docs'
+        assert (await client.documents.put_many('acme', 'docs', documents))[0].revision == 'r1'
+        hits = paginate(client.search.query, organization='acme', index='docs', body=query)
+        assert [hit async for hit in hits] == []
 asyncio.run(check_async())
 print('Installed wheel sync and async client requests passed')
 """,

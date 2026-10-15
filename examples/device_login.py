@@ -4,7 +4,7 @@ import os
 import socket
 
 import grepvine
-from grepvine import DeviceAuthorization
+from grepvine.models import DeviceAuthorization
 
 
 def show(authorization: DeviceAuthorization) -> None:
@@ -13,13 +13,14 @@ def show(authorization: DeviceAuthorization) -> None:
 
 
 def main() -> None:
-    # Starting a device login needs no credentials; only the endpoint is read.
-    with grepvine.Client(endpoint=os.environ.get("GREPVINE_API_ENDPOINT")) as client:
+    endpoint = os.environ.get("GREPVINE_API_ENDPOINT", "https://api.grepvine.ai")
+    # Starting a device login needs no credentials.
+    with grepvine.Client(endpoint=endpoint) as client:
         key = client.device_login.authorize(
             f"python-sdk on {socket.gethostname()}", on_code=show, timeout=600
         )
-        print(f"Issued API key {key.prefix}... named {key.name!r}")
-        client.configure(api_key=key.key)
+    print(f"Issued API key {key.prefix}... named {key.name!r}")
+    with grepvine.Client(api_key=key.key, endpoint=endpoint) as client:
         print(f"Signed in as {client.account.me().name}")
 
 

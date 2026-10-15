@@ -27,6 +27,8 @@ extend-exclude = ["src/grepvine/_generated"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+# The package re-exports the names listed in each module's __all__.
+per-file-ignores = { "src/grepvine/__init__.py" = ["F403", "F405"] }
 
 [tool.mypy]
 files = ["src", "tests", "scripts", "examples"]
