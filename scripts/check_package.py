@@ -44,47 +44,58 @@ def main() -> None:
                 "-I",
                 "-c",
                 """
-import pkgutil
-import grepvine_sdk.generated.api as api
-from grepvine_sdk import AuthenticatedClient, GrepvineClient, AsyncGrepvineClient
 import asyncio
-import httpx
+import importlib.util
 import json
-from grepvine_sdk.generated.api.objects import put_document, put_objects, get_document
-from grepvine_sdk.generated.api.search import query_index
-from grepvine_sdk.generated.api.authentication import login
-from grepvine_sdk.generated.api.api_keys import create_api_key
-from grepvine_sdk.generated.api.organizations import create_organization
-from grepvine_sdk.generated.models import QueryRequest, Metadata
-assert {entry.name for entry in pkgutil.iter_modules(api.__path__)} == {
-    'authentication', 'api_keys', 'organizations', 'device_login', 'indexes', 'objects', 'search'
+import httpx
+import grepvine_sdk
+from grepvine_sdk import AsyncClient, Client, NotFoundError, RetryPolicy
+from grepvine_sdk.models import APIKey, IndexData, MutationResult, SearchResult, User
+assert importlib.util.find_spec('grepvine_sdk.generated') is None
+assert not hasattr(grepvine_sdk, 'AuthenticatedClient')
+assert repr(grepvine_sdk.default_client) == '<grepvine_sdk.Client unresolved>'
+INDEX = {
+    'id': '00000000-0000-0000-0000-000000000001', 'organization': 'acme', 'name': 'docs',
+    'canonical_id': 'c', 'description': '', 'tags': {}, 'state': 'ready',
+    'document_count': 0, 'content_bytes': 0, 'created_at': '2026-01-01T00:00:00Z',
 }
-assert QueryRequest(pattern='hello').to_dict()['pattern'] == 'hello'
-assert Metadata.from_dict({'n': {'type': 'integer', 'value': 123}}).to_dict()['n']['value'] == 123
-with AuthenticatedClient(base_url='https://example.test/v1', token='gvk') as client:
-    assert client.get_httpx_client().headers['Authorization'] == 'Bearer gvk'
 def handler(request):
     assert request.headers['Authorization'] == 'Bearer gvk'
-    if request.url.path.endswith('objects:batch'):
+    path = request.url.path
+    if path == '/v1/organizations/acme/indexes/docs':
+        return httpx.Response(200, json=INDEX)
+    if path.endswith('objects:batch'):
         record = json.loads(request.content.decode().strip())
         assert record['metadata']['kind'] == {'type': 'string', 'value': 'guide'}
+        assert record['metadata']['path'] == {'type': 'string', 'value': 'a'}
         return httpx.Response(200, json={'results': [{'key': 'a', 'revision': 'r1'}]})
-    return httpx.Response(200, json={
-        'results': [], 'pagination': {'has_next': False, 'next_page_id': ''}
-    })
-options = {'api_key': 'gvk', 'httpx_args': {'transport': httpx.MockTransport(handler)}}
+    if path.endswith('/query'):
+        return httpx.Response(200, json={
+            'results': [], 'pagination': {'has_next': False, 'next_page_id': ''}
+        })
+    return httpx.Response(404, json={'code': 'not_found', 'reason': 'resource', 'error': 'no'})
+options = {'api_key': 'gvk', 'endpoint': 'https://example.test', 'env': {}}
 documents = [{'key': 'a', 'content': 'hello', 'metadata': {'kind': 'guide'}}]
-with GrepvineClient(**options) as client:
+with Client(transport=httpx.MockTransport(handler), retry=RetryPolicy(), **options) as client:
     index = client.indexes.get('acme/docs')
-    assert index.documents.put_many(documents)[0].revision == 'r1'
+    assert isinstance(index.data, IndexData)
+    [result] = index.documents.put(documents)
+    assert isinstance(result, MutationResult) and result.revision == 'r1'
     assert list(index.search('hello')) == []
+    assert client.http.get('/organizations/acme/indexes/docs').json()['name'] == 'docs'
+    try:
+        client.organizations.get('missing')
+    except NotFoundError as exc:
+        assert exc.code == 'not_found'
+    else:
+        raise SystemExit('expected NotFoundError')
 async def check_async():
-    async with AsyncGrepvineClient(**options) as client:
-        index = client.indexes.get('acme/docs')
-        assert (await index.documents.put_many(documents))[0].revision == 'r1'
+    async with AsyncClient(transport=httpx.MockTransport(handler), **options) as client:
+        index = await client.indexes.get('acme/docs')
+        assert (await index.documents.put(documents))[0].revision == 'r1'
         assert [hit async for hit in index.search('hello')] == []
 asyncio.run(check_async())
-print('Installed wheel raw and sync/async convenience requests passed')
+print('Installed wheel sync and async client requests passed')
 """,
             ],
             cwd=directory,

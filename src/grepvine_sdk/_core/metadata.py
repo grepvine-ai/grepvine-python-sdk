@@ -14,7 +14,7 @@ from typing import Any, Final, TypeAlias
 MetadataValue: TypeAlias = str | int | float | bool | datetime
 """A plain metadata value the SDK can tag."""
 
-MetadataInput: TypeAlias = Mapping[str, "MetadataValue | Mapping[str, Any]"]
+MetadataInput: TypeAlias = Mapping[str, MetadataValue | Mapping[str, Any]]
 """Metadata as given to the SDK: plain values, or already tagged ``{"type", "value"}`` objects."""
 
 TYPE_TAGS: Final = frozenset({"string", "integer", "number", "boolean", "timestamp"})

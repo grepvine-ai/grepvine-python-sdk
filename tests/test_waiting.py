@@ -64,7 +64,7 @@ async def test_create_with_wait_returns_a_ready_index(fx: Flavor, fake: FakeGrep
     original = fake._create_index
 
     def create_creating(request: httpx.Request, organization: str) -> httpx.Response:
-        response = original(request, organization)
+        original(request, organization)
         for index in fake.indexes.values():
             index.state = "creating"
         return httpx.Response(201, json=next(iter(fake.indexes.values())).to_json())

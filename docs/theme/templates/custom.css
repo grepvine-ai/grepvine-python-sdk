@@ -111,12 +111,13 @@ body {
     padding-top: 3rem;
     border-top: var(--border) solid var(--rule-strong);
 }
-.gv-guide h3, .pdoc .module-info .docstring h3 {
+.gv-guide h3, .pdoc .gv-reference-group, .pdoc .module-info .docstring h3 {
     font-size: var(--text-card-title);
     line-height: 1.2;
     letter-spacing: -0.01em;
     margin: 2rem 0 0.75rem;
 }
+.pdoc .gv-reference-group { margin-top: 3rem; }
 .gv-guide p, .pdoc .docstring p { max-width: 72ch; }
 
 /* Code ---------------------------------------------------------------------------- */

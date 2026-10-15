@@ -14,28 +14,107 @@ TEMPLATES = PACKAGE / "docs/theme/templates"
 OUTPUT = PACKAGE / "site"
 ROOT_MODULE = "grepvine_sdk"
 REPOSITORY_URL = "https://github.com/grepvine-ai/grepvine-python-sdk"
-# README sections about maintaining this repository rather than using the SDK.
-CONTRIBUTOR_SECTIONS = {"Generation and development", "Repository automation"}
+# The guide's sections, in the order every Grepvine SDK uses.
+GUIDE_SECTIONS = [
+    "Installation",
+    "Authentication",
+    "Organizations",
+    "Indexes",
+    "Search",
+    "Documents",
+    "Pagination",
+    "Errors",
+    "Asynchronous use",
+    "API keys",
+    "Account",
+    "Device login",
+]
+# The reference on the landing page, by resource, in the guide's order. Every name the package
+# exports must appear exactly once.
+REFERENCE_GROUPS = {
+    "Clients and configuration": [
+        "Client",
+        "AsyncClient",
+        "ClientConfig",
+        "RetryPolicy",
+        "configure",
+        "default_client",
+        "organizations",
+        "indexes",
+    ],
+    "Organizations": [
+        "Organizations",
+        "AsyncOrganizations",
+        "Organization",
+        "Members",
+        "AsyncMembers",
+        "Member",
+    ],
+    "Indexes": ["Indexes", "AsyncIndexes", "Index", "AsyncIndex", "IndexData"],
+    "Search": ["SearchResult", "Match", "ContextLine", "Span"],
+    "Documents": [
+        "Documents",
+        "AsyncDocuments",
+        "Document",
+        "DocumentSummary",
+        "MutationResult",
+        "DocumentError",
+        "ContentRange",
+    ],
+    "Pagination": ["Paginator", "AsyncPaginator", "Page"],
+    "Errors": [
+        "GrepvineError",
+        "APIError",
+        "InvalidRequestError",
+        "InvalidPageError",
+        "AuthenticationError",
+        "PermissionDeniedError",
+        "NotFoundError",
+        "ConflictError",
+        "PreconditionFailedError",
+        "PayloadTooLargeError",
+        "RangeNotSatisfiableError",
+        "RateLimitedError",
+        "ServerError",
+        "ConfigurationError",
+        "TransportError",
+        "PartialBatchError",
+    ],
+    "API keys": ["APIKeys", "AsyncAPIKeys", "APIKey", "APIKeyCreated"],
+    "Account": ["Account", "AsyncAccount", "User"],
+    "Device login": ["DeviceLogin", "AsyncDeviceLogin", "DeviceAuthorization"],
+}
+# Words the published site never uses: whether code is generated is not the reader's concern.
+AVOIDED_WORDS = re.compile(r"\b(generated|raw|convenience|wrappers?|layers?)\b", re.IGNORECASE)
 
 
 def guide() -> tuple[str, str]:
-    """Return the README title and its user-facing sections as the landing-page guide."""
+    """Return the README title and body, checking its sections are the guide's."""
     title, _, body = (PACKAGE / "README.md").read_text().partition("\n")
     if not title.startswith("# "):
         raise SystemExit("README.md must start with a level-one heading")
-    intro, *sections = re.split(r"^(?=## )", body, flags=re.MULTILINE)
-    by_heading = {s.partition("\n")[0].removeprefix("## ").strip(): s for s in sections}
-    if missing := CONTRIBUTOR_SECTIONS - by_heading.keys():
-        raise SystemExit(f"README.md no longer has the sections {sorted(missing)}")
-    kept = [s for heading, s in by_heading.items() if heading not in CONTRIBUTOR_SECTIONS]
-    return title.removeprefix("# ").strip(), "".join([intro, *kept])
+    headings = re.findall(r"^## (.+)$", body, flags=re.MULTILINE)
+    if headings[: len(GUIDE_SECTIONS)] != GUIDE_SECTIONS:
+        raise SystemExit(f"README.md sections must start with {GUIDE_SECTIONS}, not {headings}")
+    return title.removeprefix("# ").strip(), body
+
+
+def reference_groups() -> list[tuple[str, list[str]]]:
+    """The landing page's reference groups, checked against the package's exports."""
+    root = importlib.import_module(ROOT_MODULE)
+    exported = [name for name in root.__all__ if not name.startswith("__")]
+    grouped = [name for names in REFERENCE_GROUPS.values() for name in names]
+    if sorted(grouped) != sorted(exported):
+        missing = sorted(set(exported) - set(grouped))
+        extra = sorted(set(grouped) - set(exported))
+        raise SystemExit(f"REFERENCE_GROUPS is out of date: missing {missing}, unknown {extra}")
+    return list(REFERENCE_GROUPS.items())
 
 
 def module_specs() -> list[str]:
     """Return pdoc specs covering every public module.
 
-    pdoc does not descend into submodules a package leaves out of its `__all__`, such as
-    `grepvine_sdk.generated`, so those are added as specs of their own.
+    Private modules such as `_generated` stay out of the site.
     """
     from pdoc.extract import walk_specs
 
@@ -48,6 +127,20 @@ def module_specs() -> list[str]:
             specs.append(info.name)
             covered.update(walk_specs([info.name]))
     return specs
+
+
+def check_site(output: Path) -> None:
+    """Fail when a page mentions the private package or a word the docs avoid."""
+    problems = []
+    for page in sorted(output.rglob("*.html")):
+        text = page.read_text()
+        if "_generated" in text:
+            problems.append(f"{page.relative_to(output)} mentions _generated")
+        visible = re.sub(r"<(script|style)\b.*?</\1>|<[^>]+>", " ", text, flags=re.DOTALL)
+        for word in sorted({match.lower() for match in AVOIDED_WORDS.findall(visible)}):
+            problems.append(f"{page.relative_to(output)} says {word!r}")
+    if problems:
+        raise SystemExit("\n".join(problems))
 
 
 def main() -> None:
@@ -68,9 +161,15 @@ def main() -> None:
         show_source=True,
         template_directory=TEMPLATES,
     )
-    pdoc.render.env.globals.update(guide=body, guide_title=title, repository_url=REPOSITORY_URL)
+    pdoc.render.env.globals.update(
+        guide=body,
+        guide_title=title,
+        reference_groups=reference_groups(),
+        repository_url=REPOSITORY_URL,
+    )
     shutil.rmtree(output, ignore_errors=True)
     pdoc.pdoc(*module_specs(), output_directory=output)
+    check_site(output)
     # GitHub Pages must serve the files as they are, without a Jekyll build.
     (output / ".nojekyll").touch()
     print(f"Documentation written to {output}")
