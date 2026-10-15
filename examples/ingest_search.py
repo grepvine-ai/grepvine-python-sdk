@@ -1,10 +1,11 @@
-"""Ingest documents, search them with a metadata filter, and clean up the demo index."""
+"""Store documents, search them with a metadata filter, and delete the demo index."""
 
 import argparse
 import os
 import uuid
 
 import grepvine
+from grepvine.models import CreateIndexRequest, QueryRequest, QueryRequestMode
 
 
 def main() -> None:
@@ -18,18 +19,25 @@ def main() -> None:
         parser.error("set GREPVINE_ORGANIZATION")
 
     with grepvine.Client(
-        api_key=os.environ["GREPVINE_API_KEY"], endpoint=os.environ.get("GREPVINE_API_ENDPOINT")
+        api_key=os.environ["GREPVINE_API_KEY"],
+        endpoint=os.environ.get("GREPVINE_API_ENDPOINT", "https://api.grepvine.ai"),
     ) as client:
-        ref = f"{organization}/example-python-{uuid.uuid4().hex[:8]}"
-        index = client.indexes.create(ref, description="Python SDK example", wait=True)
-        print(f"Created index {index.ref}")
+        name = f"example-python-{uuid.uuid4().hex[:8]}"
+        client.indexes.create(
+            organization, body=CreateIndexRequest(name=name, description="Python SDK example")
+        )
+        client.indexes.wait_until_ready(organization, name)
+        print(f"Created index {organization}/{name}")
         try:
-            documents = index.documents
-            documents.put(
-                "docs/welcome.txt", "hello from the Python SDK\n", metadata={"kind": "guide"}
-            )
-            results = documents.put(
+            results = client.documents.put_many(
+                organization,
+                name,
                 [
+                    {
+                        "key": "docs/welcome.txt",
+                        "content": "hello from the Python SDK\n",
+                        "metadata": {"kind": "guide"},
+                    },
                     {
                         "key": "docs/reference.txt",
                         "content": "hello from the reference guide\n",
@@ -40,31 +48,39 @@ def main() -> None:
                         "content": "hello from a personal note\n",
                         "metadata": {"kind": "note"},
                     },
-                ]
+                ],
             )
-            # Each document of a list write has its own result.
+            # Each document has its own result.
             for result in results:
-                if not result.ok:
-                    raise RuntimeError(f"{result.key} was not stored: {result.error}")
-            print(f"Stored {1 + len(results)} documents")
+                if result.error:
+                    raise RuntimeError(f"{result.key} was not stored: {result.error.error}")
+            print(f"Stored {len(results)} documents")
 
-            print('Search: literal "hello", one result per page')
-            matches = 0
-            for page in index.search("hello", regex=False, page_size=1).pages():
-                for hit in page.results:
-                    print(f"  {hit.key}:{hit.line_number}: {hit.text.rstrip()}")
-                    matches += 1
+            print('Search: literal "hello"')
+            literal = QueryRequest(pattern="hello", mode=QueryRequestMode.LITERAL)
+            hits = list(
+                grepvine.paginate(
+                    client.search.query, organization=organization, index=name, body=literal
+                )
+            )
+            for hit in hits:
+                print(f"  {hit.key}:{hit.line_number}: {hit.text.rstrip()}")
             print("Search: literal \"hello\", filtered by kind = 'guide'")
-            filtered = list(index.search("hello", regex=False, filter="kind = 'guide'"))
-            print(f"Found {matches} matches and {len(filtered)} filtered matches")
-            if matches != 3 or len(filtered) != 2:
-                raise RuntimeError(f"Expected 3 and 2 matches, got {matches} and {len(filtered)}")
+            literal.filter_ = "kind = 'guide'"
+            filtered = list(
+                grepvine.paginate(
+                    client.search.query, organization=organization, index=name, body=literal
+                )
+            )
+            print(f"Found {len(hits)} matches and {len(filtered)} filtered matches")
+            if len(hits) != 3 or len(filtered) != 2:
+                raise RuntimeError(f"Expected 3 and 2 matches, got {len(hits)} and {len(filtered)}")
         finally:
             if args.keep_index:
-                print(f"Kept index {index.ref}")
+                print(f"Kept index {organization}/{name}")
             else:
-                index.delete()
-                print(f"Deletion requested for {index.ref}")
+                client.indexes.delete(organization, name)
+                print(f"Deletion requested for {organization}/{name}")
 
 
 if __name__ == "__main__":

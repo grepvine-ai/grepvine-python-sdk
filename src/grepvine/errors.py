@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import httpx
 
-if TYPE_CHECKING:
-    from grepvine.models import MutationResult
+from grepvine.models import MutationResult
 
 __all__ = [
     "APIError",
@@ -36,7 +35,7 @@ class GrepvineError(Exception):
 
 
 class ConfigurationError(GrepvineError):
-    """The client is not configured: no API key, or an unusable endpoint or configuration file."""
+    """The client cannot be used as configured, for example with an endpoint that is not a URL."""
 
 
 class TransportError(GrepvineError):
@@ -93,7 +92,7 @@ class InvalidPageError(InvalidRequestError):
     """The page token is invalid.
 
     Tokens expire after 15 minutes and are valid only with the same arguments,
-    including ``page_size``, as the request that produced them.
+    including ``amount``, as the request that produced them.
     """
 
 
@@ -116,8 +115,8 @@ class ConflictError(APIError):
 class PreconditionFailedError(APIError):
     """An ``if_match`` or ``if_none_match`` condition did not hold (HTTP 412).
 
-    Only the single-document forms raise it. The list forms report a failed
-    condition in the document's :attr:`~grepvine.MutationResult.error`.
+    ``documents.put`` and ``documents.delete`` raise it. The batch methods
+    report a failed condition in the document's result instead.
     """
 
 
@@ -138,13 +137,13 @@ class ServerError(APIError):
 
 
 class PartialBatchError(GrepvineError):
-    """A list-form write failed after the service had answered some of its requests.
+    """``documents.put_many`` failed after the service had answered some of its requests.
 
     ``committed`` holds the results of the documents the service answered for,
     in input order; a document it left unchanged carries an ``error`` there.
     ``failed_keys`` are the keys of the request that failed; the service may
     have applied some of them before the failure. ``pending_keys`` were never
-    attempted. ``__cause__`` is the underlying error. When the write was given
+    attempted. ``__cause__`` is the underlying error. When the call was given
     an ``idempotency_key``, repeating it with the same key and the same
     documents finishes it without applying any document twice.
     """
@@ -157,7 +156,7 @@ class PartialBatchError(GrepvineError):
         pending_keys: Sequence[str],
         cause: GrepvineError,
     ) -> None:
-        applied = sum(1 for result in committed if result.ok)
+        applied = sum(1 for result in committed if not result.error)
         unchanged = len(committed) - applied
         left = f", {unchanged} were left unchanged," if unchanged else ""
         super().__init__(
@@ -183,52 +182,25 @@ _BY_STATUS: dict[int, type[APIError]] = {
 }
 
 
-def parse_retry_after(headers: Mapping[str, str]) -> int | None:
-    """Return the ``Retry-After`` header as whole seconds, or None when absent or unusable."""
-    value = headers.get("retry-after", "").strip()
-    if not value.isdigit():
-        return None
-    return int(value)
+def map_error(response: httpx.Response) -> APIError:
+    """Translate an error response into the matching :class:`APIError` subclass.
 
-
-def _error_body(response: httpx.Response) -> tuple[str, str, str]:
+    Every error answer goes through this function. The response body must have been read.
+    """
     try:
         body: Any = json.loads(response.content)
     except ValueError:
         body = None
-    if not isinstance(body, Mapping):
-        return "request_failed", "http", f"HTTP {response.status_code}"
-    code = body.get("code")
-    reason = body.get("reason")
-    message = body.get("error")
-    return (
-        str(code) if code else "request_failed",
-        str(reason) if reason else "http",
-        str(message) if message else f"HTTP {response.status_code}",
-    )
-
-
-def map_error(response: httpx.Response, *, message_suffix: str = "") -> APIError:
-    """Translate an error response into the matching :class:`APIError` subclass.
-
-    The response body must have been read.
-    """
+    body = body if isinstance(body, Mapping) else {}
     status = response.status_code
-    code, reason, message = _error_body(response)
-    cls: type[APIError]
-    if status == 400 and code == "invalid_page":
-        cls = InvalidPageError
-    elif status in _BY_STATUS:
-        cls = _BY_STATUS[status]
-    elif status >= 500:
-        cls = ServerError
-    else:
-        cls = APIError
-    return cls(
+    code = str(body.get("code") or "request_failed")
+    cls = _BY_STATUS.get(status, ServerError if status >= 500 else APIError)
+    retry_after = response.headers.get("retry-after", "").strip()
+    return (InvalidPageError if code == "invalid_page" and status == 400 else cls)(
         status_code=status,
         code=code,
-        reason=reason,
-        message=message + message_suffix,
+        reason=str(body.get("reason") or "http"),
+        message=str(body.get("error") or f"HTTP {status}"),
         request_id=response.headers.get("x-request-id") or None,
-        retry_after=parse_retry_after(response.headers),
+        retry_after=int(retry_after) if retry_after.isdigit() else None,
     )

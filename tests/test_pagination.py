@@ -1,144 +1,83 @@
+"""paginate follows next_page_id while has_next, through empty pages, for any list or search."""
+
 from __future__ import annotations
 
+import httpx
 import pytest
 
-from grepvine import AsyncClient, Client, GrepvineError, Page
-from grepvine._core.paging import (
-    MAX_PAGE_SIZE,
-    PageSource,
-    resolve_page_size,
-    validate_page_token,
-)
-from grepvine._generated.api.objects import list_documents
-from grepvine._generated.models import DocumentPage
-from tests.fake_server import API_KEY, FakeGrepvine
+import grepvine
+from grepvine.models import IndexSummary, QueryRequest, QueryResult
+from tests.conftest import Flavor, Service, index_json, page_json
+
+pytestmark = pytest.mark.anyio
 
 
-def _page(results: tuple[str, ...], token: str | None, page_size: int = 10) -> Page[str]:
-    return Page(
-        results=results, next_page_id=token, has_next=token is not None, page_size=page_size
+def summary(name: str) -> dict[str, object]:
+    return index_json(name)
+
+
+async def test_follows_pages_including_empty_ones(fx: Flavor, service: Service) -> None:
+    service.reply(
+        httpx.Response(200, json=page_json([summary("a"), summary("b")], "p2")),
+        httpx.Response(200, json=page_json([], "p3")),
+        httpx.Response(200, json=page_json([summary("c")])),
     )
-
-
-def _source(
-    limit: int | None = None, start: str | None = None, page_size: int = 10
-) -> PageSource[str]:
-    return PageSource(
-        operation=list_documents,
-        page_model=DocumentPage,
-        args=("acme", "docs"),
-        kwargs={"prefix": "p"},
-        page_size=page_size,
-        limit=limit,
-        start_page=start,
-        parse_item=lambda data: str(data["v"]),
+    items = await fx.collect(
+        grepvine.paginate(fx.client.indexes.list, organization="acme", prefix="x", amount=2)
     )
+    assert all(isinstance(item, IndexSummary) for item in items)
+    assert [item.name for item in items] == ["a", "b", "c"]
+    params = [dict(request.url.params) for request in service.requests]
+    assert params == [
+        {"amount": "2", "prefix": "x"},
+        {"amount": "2", "prefix": "x", "page": "p2"},
+        {"amount": "2", "prefix": "x", "page": "p3"},
+    ]
 
 
-def test_resolve_page_size_defaults() -> None:
-    assert resolve_page_size(None, None) == MAX_PAGE_SIZE
-    assert resolve_page_size(None, 5) == 5
-    assert resolve_page_size(None, 500) == MAX_PAGE_SIZE
-    assert resolve_page_size(None, 0) == MAX_PAGE_SIZE
-    assert resolve_page_size(7, 5) == 7
-    with pytest.raises(ValueError, match="limit"):
-        resolve_page_size(None, -1)
-    with pytest.raises(ValueError, match="page_size"):
-        resolve_page_size(0, None)
-    with pytest.raises(ValueError, match="page_size"):
-        resolve_page_size(201, None)
+async def test_single_page(fx: Flavor, service: Service) -> None:
+    service.reply(httpx.Response(200, json=page_json([])))
+    assert await fx.collect(grepvine.paginate(fx.client.organizations.list)) == []
+    assert len(service.requests) == 1
 
 
-def test_validate_page_token() -> None:
-    assert validate_page_token(None) is None
-    assert validate_page_token("") is None
-    assert validate_page_token("abc") == "abc"
-    with pytest.raises(ValueError, match="too long"):
-        validate_page_token("x" * 4097)
-
-
-def test_cursor_requests_constant_amount_and_follows_tokens() -> None:
-    cursor = _source().cursor()
-    spec = cursor.next_request()
-    assert spec is not None
-    assert spec.operation is list_documents
-    assert spec.args == ("acme", "docs")
-    assert spec.kwargs == {"prefix": "p", "amount": 10}
-
-    assert cursor.feed(_page((), "t1")).results == ()
-    spec = cursor.next_request()
-    assert spec is not None
-    assert spec.kwargs == {"prefix": "p", "amount": 10, "page": "t1"}
-
-    cursor.feed(_page(("a",), None))
-    assert cursor.next_request() is None
-
-
-def test_cursor_clips_to_limit_and_stops() -> None:
-    cursor = _source(limit=3).cursor()
-    assert cursor.next_request() is not None
-    page = cursor.feed(_page(("a", "b"), "t1"))
-    assert page.results == ("a", "b")
-    assert cursor.next_request() is not None
-    page = cursor.feed(_page(("c", "d"), "t2"))
-    assert page.results == ("c",)
-    assert page.next_page_id == "t2"
-    assert cursor.next_request() is None
-
-
-def test_cursor_with_zero_limit_sends_nothing() -> None:
-    assert _source(limit=0).cursor().next_request() is None
-
-
-def test_cursor_starts_at_the_given_token() -> None:
-    spec = _source(start="resume").cursor().next_request()
-    assert spec is not None
-    assert spec.kwargs["page"] == "resume"
-
-
-def test_cursor_rejects_a_page_that_does_not_advance() -> None:
-    cursor = _source().cursor()
-    cursor.next_request()
-    with pytest.raises(GrepvineError, match="did not advance"):
-        cursor.feed(Page(results=(), next_page_id=None, has_next=True, page_size=10))
-    cursor = _source(start="same").cursor()
-    cursor.next_request()
-    with pytest.raises(GrepvineError, match="did not advance"):
-        cursor.feed(_page((), "same"))
-
-
-def test_page_from_json_normalizes_tokens() -> None:
-    page = Page._from_json(
-        {"results": [{"v": 1}], "pagination": {"next_page_id": "", "has_next": False}},
-        lambda d: d["v"],
-        5,
+async def test_search_pages_resend_the_query(fx: Flavor, service: Service) -> None:
+    hit = {
+        "key": "a.txt",
+        "revision": "r1",
+        "line_number": 3,
+        "last_line_number": 3,
+        "line_start_offset": 0,
+        "line_end_offset": 5,
+        "text_start_offset": 0,
+        "text_line_number": 3,
+        "text": "hello",
+        "matches": [],
+        "text_truncated": False,
+        "matches_truncated": False,
+    }
+    service.reply(
+        httpx.Response(200, json=page_json([], "q2")),
+        httpx.Response(200, json=page_json([hit])),
     )
-    assert page == Page(results=(1,), next_page_id=None, has_next=False, page_size=5)
-    page = Page._from_json(
-        {"results": [], "pagination": {"next_page_id": "t", "has_next": True}}, lambda d: d, 5
+    hits = await fx.collect(
+        grepvine.paginate(
+            fx.client.search.query,
+            organization="acme",
+            index="docs",
+            body=QueryRequest(pattern="hel+o"),
+        )
     )
-    assert (page.next_page_id, page.has_next) == ("t", True)
-    page = Page._from_json(
-        {"results": [], "pagination": {"next_page_id": "t", "has_next": False}}, lambda d: d, 5
-    )
-    assert page.next_page_id is None
-    page = Page._from_json({"results": [], "common_prefixes": ["a/"]}, lambda d: d, 5)
-    assert page.common_prefixes == ("a/",)
+    assert [type(hit) for hit in hits] == [QueryResult]
+    assert hits[0].text == "hello"
+    assert [service.json(n)["pattern"] for n in range(2)] == ["hel+o", "hel+o"]
+    assert service.requests[1].url.params["page"] == "q2"
 
 
-def test_sync_paginator_rejects_async_iteration(client: Client, fake: FakeGrepvine) -> None:
-    fake.add_organization("acme")
-    with pytest.raises(TypeError, match="synchronous"):
-        client.organizations.list().__aiter__()
-
-
-@pytest.mark.anyio
-async def test_async_paginator_rejects_sync_iteration(fake: FakeGrepvine) -> None:
-    import httpx
-
-    async with AsyncClient(
-        api_key=API_KEY, endpoint="http://grepvine.test", transport=httpx.MockTransport(fake.handle)
-    ) as client:
-        with pytest.raises(TypeError, match="asynchronous"):
-            list(client.organizations.list())
-        assert "organizations" in repr(client.organizations.list())
+def test_sync_iterator_is_lazy(service: Service) -> None:
+    service.route = lambda request: httpx.Response(200, json=page_json([summary("a")], "more"))
+    with grepvine.Client(transport=httpx.MockTransport(service.handle)) as client:
+        pages = grepvine.paginate(client.indexes.list, organization="acme")
+        assert service.requests == []
+        assert [next(pages).name, next(pages).name] == ["a", "a"]
+    assert len(service.requests) == 2

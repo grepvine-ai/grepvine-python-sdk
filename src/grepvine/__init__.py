@@ -1,138 +1,65 @@
 """Python SDK for the Grepvine search API."""
 
-from __future__ import annotations
+from importlib.metadata import version
 
-from grepvine._async.client import AsyncClient
-from grepvine._async.paginator import AsyncPaginator
-from grepvine._async.resources import (
-    AsyncAccount,
-    AsyncAPIKeys,
-    AsyncDeviceLogin,
-    AsyncDocuments,
-    AsyncIndex,
-    AsyncIndexes,
-    AsyncMembers,
-    AsyncOrganizations,
-)
-from grepvine._core.retry import RetryPolicy
-from grepvine._http import ClientConfig
-from grepvine._sync.client import Client
-from grepvine._sync.paginator import Paginator
-from grepvine._sync.resources import (
+from grepvine import models
+from grepvine._client import *
+from grepvine._generated.api.resources import (
     Account,
     APIKeys,
-    DeviceLogin,
-    Documents,
-    Index,
-    Indexes,
+    AsyncAccount,
+    AsyncAPIKeys,
+    AsyncMembers,
+    AsyncOrganizations,
+    AsyncSearch,
     Members,
     Organizations,
+    Search,
 )
-from grepvine._version import __version__
-from grepvine.errors import (
-    APIError,
-    AuthenticationError,
-    ConfigurationError,
-    ConflictError,
-    GrepvineError,
-    InvalidPageError,
-    InvalidRequestError,
-    NotFoundError,
-    PartialBatchError,
-    PayloadTooLargeError,
-    PermissionDeniedError,
-    PreconditionFailedError,
-    RangeNotSatisfiableError,
-    RateLimitedError,
-    ServerError,
-    TransportError,
-)
-from grepvine.models import (
-    APIKey,
-    APIKeyCreated,
-    ContentRange,
-    ContextLine,
-    DeviceAuthorization,
-    Document,
-    DocumentError,
-    DocumentSummary,
-    IndexData,
-    Match,
-    Member,
-    MutationResult,
-    Organization,
-    Page,
-    SearchResult,
-    Span,
-    User,
-)
+from grepvine._helpers import *
+from grepvine._retry import RetryPolicy
+from grepvine.errors import *
 
-default_client: Client = Client()
-"""The client behind :data:`organizations` and :data:`indexes`; change it with :func:`configure`."""
-
-organizations: Organizations = default_client.organizations
-indexes: Indexes = default_client.indexes
-configure = default_client.configure
-
+__version__ = version("grepvine")
 __all__ = [
-    "APIError",
-    "APIKey",
-    "APIKeyCreated",
-    "APIKeys",
-    "Account",
-    "AsyncAPIKeys",
-    "AsyncAccount",
-    "AsyncClient",
-    "AsyncDeviceLogin",
-    "AsyncDocuments",
-    "AsyncIndex",
-    "AsyncIndexes",
-    "AsyncMembers",
-    "AsyncOrganizations",
-    "AsyncPaginator",
-    "AuthenticationError",
+    "__version__",
+    "models",
+    "paginate",
     "Client",
-    "ClientConfig",
-    "ConfigurationError",
-    "ConflictError",
-    "ContentRange",
-    "ContextLine",
-    "DeviceAuthorization",
-    "DeviceLogin",
-    "Document",
-    "DocumentError",
-    "DocumentSummary",
-    "Documents",
-    "GrepvineError",
-    "Index",
-    "IndexData",
-    "Indexes",
-    "InvalidPageError",
-    "InvalidRequestError",
-    "Match",
-    "Member",
-    "Members",
-    "MutationResult",
-    "NotFoundError",
-    "Organization",
+    "AsyncClient",
+    "RetryPolicy",
     "Organizations",
-    "Page",
-    "Paginator",
-    "PartialBatchError",
-    "PayloadTooLargeError",
+    "AsyncOrganizations",
+    "Members",
+    "AsyncMembers",
+    "Indexes",
+    "AsyncIndexes",
+    "Documents",
+    "AsyncDocuments",
+    "DocumentInput",
+    "MetadataValue",
+    "Search",
+    "AsyncSearch",
+    "APIKeys",
+    "AsyncAPIKeys",
+    "Account",
+    "AsyncAccount",
+    "DeviceLogin",
+    "AsyncDeviceLogin",
+    "GrepvineError",
+    "APIError",
+    "InvalidRequestError",
+    "InvalidPageError",
+    "AuthenticationError",
     "PermissionDeniedError",
+    "NotFoundError",
+    "ConflictError",
     "PreconditionFailedError",
+    "PayloadTooLargeError",
     "RangeNotSatisfiableError",
     "RateLimitedError",
-    "RetryPolicy",
-    "SearchResult",
     "ServerError",
-    "Span",
+    "ConfigurationError",
     "TransportError",
-    "User",
-    "__version__",
-    "configure",
-    "default_client",
-    "indexes",
-    "organizations",
+    "PartialBatchError",
 ]
