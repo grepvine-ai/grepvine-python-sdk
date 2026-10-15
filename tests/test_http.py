@@ -45,7 +45,6 @@ def test_http_follows_reconfiguration(fake: FakeGrepvine) -> None:
     client = Client(
         api_key="gvk_old-0000000000000000",
         endpoint="http://one.test",
-        env={},
         transport=httpx.MockTransport(fake.handle),
     )
     first = client.http
@@ -66,8 +65,6 @@ def test_responses_the_sdk_cannot_read_raise_grepvine_errors(fake: FakeGrepvine)
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"unexpected": True})
 
-    client = Client(
-        api_key=API_KEY, endpoint=ENDPOINT, env={}, transport=httpx.MockTransport(handler)
-    )
+    client = Client(api_key=API_KEY, endpoint=ENDPOINT, transport=httpx.MockTransport(handler))
     with pytest.raises(GrepvineError, match="cannot read"):
         client.organizations.get("acme")

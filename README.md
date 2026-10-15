@@ -19,36 +19,27 @@ hints, and has both a synchronous and an asynchronous client.
 
 ## Authentication
 
-The SDK finds its endpoint and API key the way the `gv` command-line client
-does, so a machine where `gv login` has run needs no configuration:
-
-1. `GREPVINE_API_ENDPOINT` (or `GREPVINE_ENDPOINT`) and `GREPVINE_API_KEY` in
-   the environment.
-2. `endpoint` and `api_key` in `~/.grepvine/config.yaml`, the file `gv login`
-   writes. The file must be readable by its owner only (mode `0600`).
-3. The default endpoint, `https://api.grepvine.ai`.
-
-Nothing is read until the first request. To point the default client
-elsewhere, call `configure`:
+Pass your API key, and the endpoint when you use a service other than
+`https://api.grepvine.ai`:
 
 ```python
 import grepvine
 
-grepvine.configure(api_key="gvk_...", endpoint="https://grepvine.example.com")
-```
-
-To work with several configurations at once, create clients:
-
-```python
 client = grepvine.Client(api_key="gvk_...", endpoint="https://grepvine.example.com")
 ```
 
-A `Client` takes `timeout` (seconds, or an `httpx.Timeout`), `retry` (a
-`RetryPolicy`), and `config_path` (another configuration file). Explicit
-arguments win over the environment and the file. An endpoint may be given with
-or without `/v1`. A missing API key raises `ConfigurationError` on the first
-request that needs one. To obtain a key without a browser session, see
-[Device login](#device-login).
+The SDK reads no environment variables or configuration files; pass the values
+from wherever your application keeps them. The module-level functions such as
+`grepvine.indexes` use a default client that you set up with `configure`:
+
+```python
+grepvine.configure(api_key="gvk_...")
+```
+
+A `Client` also takes `timeout` (seconds, or an `httpx.Timeout`) and `retry` (a
+`RetryPolicy`). An endpoint may be given with or without `/v1`. A missing API
+key raises `ConfigurationError` on the first request that needs one. To obtain
+a key without a browser session, see [Device login](#device-login).
 
 ## Organizations
 
@@ -457,9 +448,9 @@ each iteration of a paginator starts over from the beginning.
 
 ## Examples
 
-The `examples` directory holds complete programs. Set `GREPVINE_API_KEY`
-(and `GREPVINE_API_ENDPOINT` for a service other than the default) or run
-`gv login` first, then:
+The `examples` directory holds complete programs. They read the API key from
+`GREPVINE_API_KEY` and, for a service other than the default, the endpoint from
+`GREPVINE_API_ENDPOINT`, and pass them to the client:
 
 ```sh
 export GREPVINE_ORGANIZATION=my-org

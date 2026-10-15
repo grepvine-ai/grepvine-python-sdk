@@ -1,5 +1,6 @@
 """Obtain an API key for this machine by approving a device login in the browser."""
 
+import os
 import socket
 
 import grepvine
@@ -13,7 +14,7 @@ def show(authorization: DeviceAuthorization) -> None:
 
 def main() -> None:
     # Starting a device login needs no credentials; only the endpoint is read.
-    with grepvine.Client() as client:
+    with grepvine.Client(endpoint=os.environ.get("GREPVINE_API_ENDPOINT")) as client:
         key = client.device_login.authorize(
             f"python-sdk on {socket.gethostname()}", on_code=show, timeout=600
         )

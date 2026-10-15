@@ -213,7 +213,6 @@ def test_threads_share_the_pause(fake: FakeGrepvine) -> None:
         api_key=API_KEY,
         endpoint="http://grepvine.test",
         transport=httpx.MockTransport(fake.handle),
-        env={},
     )
     client._sleep = sleeps.append
     client._clock = lambda: 0.0

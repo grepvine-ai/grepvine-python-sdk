@@ -74,7 +74,7 @@ def handler(request):
             'results': [], 'pagination': {'has_next': False, 'next_page_id': ''}
         })
     return httpx.Response(404, json={'code': 'not_found', 'reason': 'resource', 'error': 'no'})
-options = {'api_key': 'gvk', 'endpoint': 'https://example.test', 'env': {}}
+options = {'api_key': 'gvk', 'endpoint': 'https://example.test'}
 documents = [{'key': 'a', 'content': 'hello', 'metadata': {'kind': 'guide'}}]
 with Client(transport=httpx.MockTransport(handler), retry=RetryPolicy(), **options) as client:
     index = client.indexes.get('acme/docs')

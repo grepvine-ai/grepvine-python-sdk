@@ -9,7 +9,9 @@ import grepvine
 
 async def main() -> None:
     organization = os.environ["GREPVINE_ORGANIZATION"]
-    async with grepvine.AsyncClient() as client:
+    async with grepvine.AsyncClient(
+        api_key=os.environ["GREPVINE_API_KEY"], endpoint=os.environ.get("GREPVINE_API_ENDPOINT")
+    ) as client:
         ref = f"{organization}/example-python-async-{uuid.uuid4().hex[:8]}"
         index = await client.indexes.create(ref, wait=True)
         print(f"Created index {index.ref}")

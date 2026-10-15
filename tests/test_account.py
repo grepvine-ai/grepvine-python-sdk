@@ -25,7 +25,7 @@ pytestmark = pytest.mark.anyio
 async def anonymous(request: pytest.FixtureRequest, fake: FakeGrepvine) -> Any:
     """A client with no API key, as a script that signs in would have."""
     transport = httpx.MockTransport(fake.handle)
-    kwargs: dict[str, Any] = {"endpoint": ENDPOINT, "env": {}, "config_path": "/nonexistent"}
+    kwargs: dict[str, Any] = {"endpoint": ENDPOINT}
     if request.param == "sync":
         with Client(transport=transport, **kwargs) as sync_client:
             sync_client._sleep = no_sleep
@@ -46,7 +46,7 @@ async def test_register_starts_a_session_used_by_later_requests(
     anonymous: Flavor, fake: FakeGrepvine
 ) -> None:
     fx = anonymous
-    with pytest.raises(ConfigurationError, match="not logged in"):
+    with pytest.raises(ConfigurationError, match="no API key"):
         await fx.run(fx.client.account.me())
     assert await fx.run(fx.client.account.username_available("bob-smith"))
 
