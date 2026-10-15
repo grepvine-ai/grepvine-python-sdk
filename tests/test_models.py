@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import httpx
 
-from grepvine_sdk import (
+from grepvine import (
     Document,
     DocumentError,
     IndexData,
@@ -13,8 +13,8 @@ from grepvine_sdk import (
     SearchResult,
     Span,
 )
-from grepvine_sdk._core import parse
-from grepvine_sdk.models import ContentRange
+from grepvine._core import parse
+from grepvine.models import ContentRange
 
 
 def _result(text: str, matches: list[tuple[int, int]], text_start: int = 100) -> SearchResult:

@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Generic, NoReturn, TypeVar
 
-from grepvine_sdk._core.paging import PageSource, fetch_page
-from grepvine_sdk.models import Page
+from grepvine._core.paging import PageSource, fetch_page
+from grepvine.models import Page
 
 if TYPE_CHECKING:
-    from grepvine_sdk._sync.client import Client
+    from grepvine._sync.client import Client
 
 T = TypeVar("T")
 
@@ -17,7 +17,7 @@ T = TypeVar("T")
 class Paginator(Generic[T]):
     """Every result of a listing or search, fetched page by page as it is iterated.
 
-    Iterating yields items; :meth:`pages` yields :class:`~grepvine_sdk.models.Page`
+    Iterating yields items; :meth:`pages` yields :class:`~grepvine.models.Page`
     objects whose ``next_page_id`` lets a later call continue where this one
     stopped. Nothing is requested until iteration starts, and each iteration
     starts over from the beginning.

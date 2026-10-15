@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from grepvine_sdk import APIKeyCreated, DeviceAuthorization, InvalidRequestError, NotFoundError
+from grepvine import APIKeyCreated, DeviceAuthorization, InvalidRequestError, NotFoundError
 from tests.conftest import Flavor
 from tests.fake_server import FakeGrepvine
 

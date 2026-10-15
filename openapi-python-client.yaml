@@ -1,5 +1,5 @@
 package_name_override: _generated
-project_name_override: grepvine-sdk
+project_name_override: grepvine
 package_version_override: 0.1.0
 content_type_overrides:
   application/x-ndjson: application/octet-stream

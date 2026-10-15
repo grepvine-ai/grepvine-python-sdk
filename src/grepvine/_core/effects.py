@@ -8,7 +8,7 @@ interpret the effects in a small loop, so every operation is written once.
 A :class:`Call` names one module of the private ``_generated.api`` package.
 The synchronous client runs its ``sync_detailed`` function and the
 asynchronous client its ``asyncio_detailed`` function. Errors the service
-answers with are raised into the operation as :class:`~grepvine_sdk.APIError`.
+answers with are raised into the operation as :class:`~grepvine.APIError`.
 """
 
 from __future__ import annotations

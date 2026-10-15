@@ -7,10 +7,10 @@ from dataclasses import dataclass, field, replace
 from types import ModuleType
 from typing import Any, Final, Generic, TypeVar
 
-from grepvine_sdk._core.effects import Call, Op
-from grepvine_sdk._core.responses import parsed
-from grepvine_sdk.errors import GrepvineError
-from grepvine_sdk.models import Page
+from grepvine._core.effects import Call, Op
+from grepvine._core.responses import parsed
+from grepvine.errors import GrepvineError
+from grepvine.models import Page
 
 T = TypeVar("T")
 U = TypeVar("U")

@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import IO, Any, Final, Required, TypeAlias, TypedDict
 
-from grepvine_sdk._core.metadata import MetadataInput, document_metadata
+from grepvine._core.metadata import MetadataInput, document_metadata
 
 MAX_BATCH_RECORDS: Final = 2048
 MAX_BATCH_CONTENT_BYTES: Final = 16 * 1024 * 1024

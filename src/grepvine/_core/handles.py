@@ -6,11 +6,11 @@ from collections.abc import Mapping
 from datetime import datetime
 from types import MappingProxyType
 
-from grepvine_sdk.models import IndexData
+from grepvine.models import IndexData
 
 
 class IndexFields:
-    """Exposes the fields of an :class:`~grepvine_sdk.models.IndexData` snapshot."""
+    """Exposes the fields of an :class:`~grepvine.models.IndexData` snapshot."""
 
     _data: IndexData
 

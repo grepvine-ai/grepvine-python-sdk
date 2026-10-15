@@ -12,7 +12,7 @@ from pathlib import Path
 PACKAGE = Path(__file__).resolve().parents[1]
 TEMPLATES = PACKAGE / "docs/theme/templates"
 OUTPUT = PACKAGE / "site"
-ROOT_MODULE = "grepvine_sdk"
+ROOT_MODULE = "grepvine"
 REPOSITORY_URL = "https://github.com/grepvine-ai/grepvine-python-sdk"
 # The guide's sections, in the order every Grepvine SDK uses.
 GUIDE_SECTIONS = [
@@ -156,7 +156,7 @@ def main() -> None:
     title, body = guide()
     pdoc.render.configure(
         docformat="google",
-        footer_text=f"grepvine-sdk {version('grepvine-sdk')}",
+        footer_text=f"grepvine {version('grepvine')}",
         search=True,
         show_source=True,
         template_directory=TEMPLATES,

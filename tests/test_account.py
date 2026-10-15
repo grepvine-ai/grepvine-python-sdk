@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 import pytest
 
-from grepvine_sdk import (
+from grepvine import (
     AsyncClient,
     AuthenticationError,
     Client,
@@ -117,7 +117,7 @@ async def test_a_session_replaces_the_api_key_until_logout(fx: Flavor, fake: Fak
 
 
 async def test_development_session_cookie_is_accepted(fx: Flavor) -> None:
-    from grepvine_sdk._core.ops import _session
+    from grepvine._core.ops import _session
 
     response = httpx.Response(
         200,

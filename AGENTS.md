@@ -1,11 +1,12 @@
 # Agent notes
 
-- Generated code under `src/grepvine_sdk/_generated` is never edited by hand;
+- Generated code under `src/grepvine/_generated` is never edited by hand;
   change the generator configuration or adapter and regenerate. It is private:
-  only `src/grepvine_sdk/_core/ops.py` imports its operations, and nothing
+  only `src/grepvine/_core/ops.py` imports its operations, and nothing
   public exposes it.
-- The public interface follows the `grepvine` SDK in `grepvine-ai/grepvine`
-  (`clients/python`) and the unified SDK design in that repository's
+- The public interface follows the hand-written `grepvine` package in
+  `grepvine-ai/grepvine` (`clients/python`), which this package replaces, and
+  the unified SDK design in that repository's
   `docs/specs/2026-10-15-unified-sdk-design.md`. Keep resource and method names
   identical to `grepvine-ai/grepvine-typescript-sdk`, apart from snake_case vs
   camelCase.

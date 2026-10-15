@@ -8,9 +8,9 @@ from typing import Any
 
 import pytest
 
-import grepvine_sdk._core.batching as batching
-import grepvine_sdk._core.ops as ops_module
-from grepvine_sdk import (
+import grepvine._core.batching as batching
+import grepvine._core.ops as ops_module
+from grepvine import (
     Document,
     DocumentSummary,
     MutationResult,

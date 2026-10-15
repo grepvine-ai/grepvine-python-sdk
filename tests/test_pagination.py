@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import pytest
 
-from grepvine_sdk import AsyncClient, Client, GrepvineError, Page
-from grepvine_sdk._core.paging import (
+from grepvine import AsyncClient, Client, GrepvineError, Page
+from grepvine._core.paging import (
     MAX_PAGE_SIZE,
     PageSource,
     resolve_page_size,
     validate_page_token,
 )
-from grepvine_sdk._generated.api.objects import list_documents
-from grepvine_sdk._generated.models import DocumentPage
+from grepvine._generated.api.objects import list_documents
+from grepvine._generated.models import DocumentPage
 from tests.fake_server import API_KEY, FakeGrepvine
 
 

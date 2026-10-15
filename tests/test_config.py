@@ -6,8 +6,8 @@ from pathlib import Path
 import httpx
 import pytest
 
-from grepvine_sdk import Client, ConfigurationError
-from grepvine_sdk._core.config import (
+from grepvine import Client, ConfigurationError
+from grepvine._core.config import (
     DEFAULT_ENDPOINT,
     FileConfig,
     default_config_path,

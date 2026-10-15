@@ -1,7 +1,7 @@
 """Every API operation has exactly one home on the client.
 
 ``spec/source.json`` lists the operations of the API. Each one must be called
-by exactly one function in ``grepvine_sdk._core.ops`` (the only module that
+by exactly one function in ``grepvine._core.ops`` (the only module that
 calls API operations), and that function must be used by exactly one public
 method of the synchronous client's resources and one of the asynchronous
 client's. A new operation therefore fails this test until it has a method.
@@ -19,9 +19,9 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "src" / "grepvine_sdk"
+PACKAGE = ROOT / "src" / "grepvine"
 OPERATIONS: list[str] = json.loads((ROOT / "spec" / "source.json").read_text())["operations"]
-API_PREFIX = "grepvine_sdk._generated.api."
+API_PREFIX = "grepvine._generated.api."
 
 
 def _module_name(operation_id: str) -> str:

@@ -13,7 +13,7 @@ from collections.abc import Iterator
 
 import pytest
 
-import grepvine_sdk as grepvine
+import grepvine as grepvine
 
 pytestmark = pytest.mark.integration
 

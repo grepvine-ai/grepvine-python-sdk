@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from grepvine_sdk import AsyncIndex, GrepvineError, Index
+from grepvine import AsyncIndex, GrepvineError, Index
 from tests.conftest import Flavor
 from tests.fake_server import FakeGrepvine
 

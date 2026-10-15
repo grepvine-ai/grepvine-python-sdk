@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 import pytest
 
-from grepvine_sdk import AsyncClient, Client
+from grepvine import AsyncClient, Client
 from tests.fake_server import API_KEY, FakeGrepvine
 
 ENDPOINT = "http://grepvine.test"

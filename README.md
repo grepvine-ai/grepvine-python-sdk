@@ -9,12 +9,12 @@ accounts and device login.
 ## Installation
 
 ```sh
-pip install grepvine-sdk
+pip install grepvine
 # or
-uv add grepvine-sdk
+uv add grepvine
 ```
 
-Python 3.11 or later. The package is imported as `grepvine_sdk`, ships type
+Python 3.11 or later. The package is imported as `grepvine`, ships type
 hints, and has both a synchronous and an asynchronous client.
 
 ## Authentication
@@ -32,15 +32,15 @@ Nothing is read until the first request. To point the default client
 elsewhere, call `configure`:
 
 ```python
-import grepvine_sdk
+import grepvine
 
-grepvine_sdk.configure(api_key="gvk_...", endpoint="https://grepvine.example.com")
+grepvine.configure(api_key="gvk_...", endpoint="https://grepvine.example.com")
 ```
 
 To work with several configurations at once, create clients:
 
 ```python
-client = grepvine_sdk.Client(api_key="gvk_...", endpoint="https://grepvine.example.com")
+client = grepvine.Client(api_key="gvk_...", endpoint="https://grepvine.example.com")
 ```
 
 A `Client` takes `timeout` (seconds, or an `httpx.Timeout`), `retry` (a
@@ -53,19 +53,19 @@ request that needs one. To obtain a key without a browser session, see
 ## Organizations
 
 ```python
-import grepvine_sdk
+import grepvine
 
-for org in grepvine_sdk.organizations.list():
+for org in grepvine.organizations.list():
     print(org.name, org.role)
 
-org = grepvine_sdk.organizations.get("my-org")
+org = grepvine.organizations.get("my-org")
 ```
 
 A client can also create and delete organizations, transfer their ownership,
 and manage their members:
 
 ```python
-client = grepvine_sdk.Client()
+client = grepvine.Client()
 
 client.organizations.create("my-org")  # the caller becomes its owner
 
@@ -307,7 +307,7 @@ interval the service asks for (with jitter, up to a minute at a time and ten
 minutes in total per request), and a `5xx` answer or a connection failure is
 retried twice more with a short backoff. Every write carries an idempotency
 key that stays the same across retries, so a retried write is applied once.
-Pass `retry=grepvine_sdk.RetryPolicy(...)` to change these bounds.
+Pass `retry=grepvine.RetryPolicy(...)` to change these bounds.
 
 ## Asynchronous use
 
@@ -317,11 +317,11 @@ Pass `retry=grepvine_sdk.RetryPolicy(...)` to change these bounds.
 ```python
 import asyncio
 
-import grepvine_sdk
+import grepvine
 
 
 async def main() -> None:
-    async with grepvine_sdk.AsyncClient() as client:
+    async with grepvine.AsyncClient() as client:
         index = await client.indexes.get("my-org/my-index")
         async for result in index.search("hello"):
             print(result.key, result.line_number)
@@ -357,7 +357,7 @@ for scripts that start from a username and password, such as end-to-end tests
 that create an account and its first API key.
 
 ```python
-client = grepvine_sdk.Client(endpoint="https://grepvine.example.com")
+client = grepvine.Client(endpoint="https://grepvine.example.com")
 
 if client.account.username_available("alice"):
     client.account.register("alice", "alice@example.com", "a long passphrase")
@@ -385,7 +385,7 @@ to show, and waits for the person's decision, polling at the interval the
 service asks for.
 
 ```python
-def show(authorization: grepvine_sdk.DeviceAuthorization) -> None:
+def show(authorization: grepvine.DeviceAuthorization) -> None:
     print(f"Open {authorization.verification_uri_complete}")
     print(f"and check that it shows {authorization.user_code}")
 

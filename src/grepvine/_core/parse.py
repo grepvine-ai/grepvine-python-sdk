@@ -7,8 +7,8 @@ import re
 from collections.abc import Mapping
 from typing import Any, Protocol
 
-from grepvine_sdk._core.metadata import untag
-from grepvine_sdk.models import ContentRange, Document
+from grepvine._core.metadata import untag
+from grepvine.models import ContentRange, Document
 
 _CONTENT_RANGE = re.compile(r"^bytes\s+(\d+)-(\d+)/(\d+|\*)$")
 

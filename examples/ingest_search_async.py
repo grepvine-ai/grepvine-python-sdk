@@ -4,12 +4,12 @@ import asyncio
 import os
 import uuid
 
-import grepvine_sdk
+import grepvine
 
 
 async def main() -> None:
     organization = os.environ["GREPVINE_ORGANIZATION"]
-    async with grepvine_sdk.AsyncClient() as client:
+    async with grepvine.AsyncClient() as client:
         ref = f"{organization}/example-python-async-{uuid.uuid4().hex[:8]}"
         index = await client.indexes.create(ref, wait=True)
         print(f"Created index {index.ref}")

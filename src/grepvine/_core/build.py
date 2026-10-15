@@ -6,8 +6,8 @@ import unicodedata
 from collections.abc import Mapping, Sequence
 from typing import Final
 
-from grepvine_sdk._generated.models import QueryRequest, QueryRequestMode
-from grepvine_sdk._generated.types import UNSET
+from grepvine._generated.models import QueryRequest, QueryRequestMode
+from grepvine._generated.types import UNSET
 
 MIN_IDEMPOTENCY_KEY_LENGTH: Final = 16
 MAX_IDEMPOTENCY_KEY_LENGTH: Final = 128

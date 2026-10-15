@@ -1,4 +1,4 @@
-"""Asynchronous resources, mirroring :mod:`grepvine_sdk._sync.resources`."""
+"""Synchronous resources: organizations, indexes, documents, API keys, account, device login."""
 
 from __future__ import annotations
 
@@ -7,19 +7,19 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 from uuid import UUID
 
-from grepvine_sdk._async.paginator import AsyncPaginator
-from grepvine_sdk._core import ops
-from grepvine_sdk._core.batching import (
+from grepvine._core import ops
+from grepvine._core.batching import (
     Content,
     DeleteInput,
     DocumentInput,
     normalize_delete_inputs,
     normalize_put_inputs,
 )
-from grepvine_sdk._core.handles import IndexFields
-from grepvine_sdk._core.metadata import MetadataInput
-from grepvine_sdk._core.paths import parse_index_ref
-from grepvine_sdk.models import (
+from grepvine._core.handles import IndexFields
+from grepvine._core.metadata import MetadataInput
+from grepvine._core.paths import parse_index_ref
+from grepvine._sync.paginator import Paginator
+from grepvine.models import (
     APIKey,
     APIKeyCreated,
     DeviceAuthorization,
@@ -34,166 +34,166 @@ from grepvine_sdk.models import (
 )
 
 if TYPE_CHECKING:
-    from grepvine_sdk._async.client import AsyncClient
+    from grepvine._sync.client import Client
 
 DEFAULT_WAIT_TIMEOUT = 300.0
 
 
-class AsyncOrganizations:
+class Organizations:
     """The organizations the caller belongs to."""
 
-    def __init__(self, client: AsyncClient) -> None:
+    def __init__(self, client: Client) -> None:
         self._client = client
 
     def list(
         self, *, limit: int | None = None, page: str | None = None, page_size: int | None = None
-    ) -> AsyncPaginator[Organization]:
+    ) -> Paginator[Organization]:
         """Every organization, or at most ``limit`` of them, starting at ``page`` when given."""
         source = ops.organizations_listing(limit=limit, page=page, page_size=page_size)
-        return AsyncPaginator(self._client, source)
+        return Paginator(self._client, source)
 
-    async def get(self, name: str) -> Organization:
+    def get(self, name: str) -> Organization:
         """One organization by name."""
-        return await self._client._run(ops.get_organization_op(name))
+        return self._client._run(ops.get_organization_op(name))
 
-    async def create(self, name: str) -> Organization:
+    def create(self, name: str) -> Organization:
         """Create an organization; the caller becomes its owner.
 
-        AsyncOrganizations and user accounts share one namespace, so the name must
+        Organizations and user accounts share one namespace, so the name must
         not be taken by either. A name that is taken raises
-        :class:`~grepvine_sdk.ConflictError`.
+        :class:`~grepvine.ConflictError`.
         """
-        return await self._client._run(ops.create_organization_op(name))
+        return self._client._run(ops.create_organization_op(name))
 
-    async def delete(self, name: str) -> None:
+    def delete(self, name: str) -> None:
         """Start deleting an organization and its indexes. Needs the owner role."""
-        await self._client._run(ops.delete_organization_op(name))
+        self._client._run(ops.delete_organization_op(name))
 
-    async def transfer_ownership(self, name: str, user: str) -> None:
+    def transfer_ownership(self, name: str, user: str) -> None:
         """Make ``user``, already a member, the owner of the organization.
 
         Needs the owner role; the previous owner stays on as an admin.
         """
-        await self._client._run(ops.transfer_ownership_op(name, user))
+        self._client._run(ops.transfer_ownership_op(name, user))
 
-    def members(self, organization: str) -> AsyncMembers:
+    def members(self, organization: str) -> Members:
         """The members of an organization."""
-        return AsyncMembers(self._client, organization)
+        return Members(self._client, organization)
 
 
-class AsyncMembers:
+class Members:
     """The members of one organization and their roles."""
 
-    def __init__(self, client: AsyncClient, organization: str) -> None:
+    def __init__(self, client: Client, organization: str) -> None:
         self._client = client
         self._organization = organization
 
     def list(
         self, *, limit: int | None = None, page: str | None = None, page_size: int | None = None
-    ) -> AsyncPaginator[Member]:
+    ) -> Paginator[Member]:
         """Every member, or at most ``limit`` of them, starting at ``page`` when given."""
         source = ops.members_listing(
             self._organization, limit=limit, page=page, page_size=page_size
         )
-        return AsyncPaginator(self._client, source)
+        return Paginator(self._client, source)
 
-    async def add(self, user: str, role: str) -> Member:
+    def add(self, user: str, role: str) -> Member:
         """Add the user named ``user`` with ``role``: ``"admin"``, ``"developer"`` or ``"reader"``.
 
         Needs the admin or owner role.
         """
-        return await self._client._run(ops.add_member_op(self._organization, user, role))
+        return self._client._run(ops.add_member_op(self._organization, user, role))
 
-    async def update(self, user: str, role: str) -> Member:
+    def update(self, user: str, role: str) -> Member:
         """Change a member's role to ``"admin"``, ``"developer"`` or ``"reader"``.
 
-        Use :meth:`AsyncOrganizations.transfer_ownership` to change the owner.
+        Use :meth:`Organizations.transfer_ownership` to change the owner.
         """
-        return await self._client._run(ops.update_member_op(self._organization, user, role))
+        return self._client._run(ops.update_member_op(self._organization, user, role))
 
-    async def remove(self, user: str) -> None:
+    def remove(self, user: str) -> None:
         """Remove a member from the organization."""
-        await self._client._run(ops.remove_member_op(self._organization, user))
+        self._client._run(ops.remove_member_op(self._organization, user))
 
     def __repr__(self) -> str:
-        return f"<AsyncMembers {self._organization}>"
+        return f"<Members {self._organization}>"
 
 
-class AsyncAPIKeys:
+class APIKeys:
     """The API keys of the signed-in user."""
 
-    def __init__(self, client: AsyncClient) -> None:
+    def __init__(self, client: Client) -> None:
         self._client = client
 
     def list(
         self, *, limit: int | None = None, page: str | None = None, page_size: int | None = None
-    ) -> AsyncPaginator[APIKey]:
+    ) -> Paginator[APIKey]:
         """Every API key, revoked ones included, or at most ``limit`` of them."""
         source = ops.api_keys_listing(limit=limit, page=page, page_size=page_size)
-        return AsyncPaginator(self._client, source)
+        return Paginator(self._client, source)
 
-    async def create(self, name: str) -> APIKeyCreated:
+    def create(self, name: str) -> APIKeyCreated:
         """Issue a new API key named ``name`` (1 to 128 characters).
 
         The secret is in the result's ``key`` and is not shown again.
         """
-        return await self._client._run(ops.create_api_key_op(name))
+        return self._client._run(ops.create_api_key_op(name))
 
-    async def revoke(self, key_id: str | UUID) -> None:
+    def revoke(self, key_id: str | UUID) -> None:
         """Revoke the API key with this ``id``; requests that use it fail from then on."""
-        await self._client._run(ops.revoke_api_key_op(key_id))
+        self._client._run(ops.revoke_api_key_op(key_id))
 
 
-class AsyncAccount:
+class Account:
     """Registration, sign-in and the signed-in user's account.
 
     :meth:`register` and :meth:`login` start a session that the client then
     uses in place of its API key, until :meth:`logout` ends it.
     """
 
-    def __init__(self, client: AsyncClient) -> None:
+    def __init__(self, client: Client) -> None:
         self._client = client
 
-    async def register(self, name: str, email: str, password: str) -> User:
+    def register(self, name: str, email: str, password: str) -> User:
         """Create a user account and sign in to it.
 
         ``name`` is the username, which user accounts and organizations share;
         ``password`` is at least 12 characters. A taken username or email
-        address raises :class:`~grepvine_sdk.ConflictError` with code
+        address raises :class:`~grepvine.ConflictError` with code
         ``"username_taken"`` or ``"email_taken"``.
         """
-        return await self._client._run(ops.register_op(name, email, password))
+        return self._client._run(ops.register_op(name, email, password))
 
-    async def username_available(self, name: str) -> bool:
+    def username_available(self, name: str) -> bool:
         """Whether ``name`` is free for a new account or organization."""
-        return await self._client._run(ops.username_available_op(name))
+        return self._client._run(ops.username_available_op(name))
 
-    async def login(self, identifier: str, password: str) -> User:
+    def login(self, identifier: str, password: str) -> User:
         """Sign in with a username or email address and a password.
 
         The client keeps the session and sends it, with its CSRF token, on
         every later request instead of the API key. Wrong credentials raise
-        :class:`~grepvine_sdk.AuthenticationError`.
+        :class:`~grepvine.AuthenticationError`.
         """
-        return await self._client._run(ops.login_op(identifier, password))
+        return self._client._run(ops.login_op(identifier, password))
 
-    async def logout(self) -> None:
+    def logout(self) -> None:
         """End the session and stop sending it.
 
-        With an API key this changes nothing; use :meth:`AsyncAPIKeys.revoke` to revoke a key.
+        With an API key this changes nothing; use :meth:`APIKeys.revoke` to revoke a key.
         """
-        await self._client._run(ops.logout_op())
+        self._client._run(ops.logout_op())
 
-    async def me(self) -> User:
+    def me(self) -> User:
         """The user the client acts for."""
-        return await self._client._run(ops.me_op())
+        return self._client._run(ops.me_op())
 
-    async def change_password(self, current_password: str, new_password: str) -> None:
+    def change_password(self, current_password: str, new_password: str) -> None:
         """Change the signed-in user's password; the new one is at least 12 characters."""
-        await self._client._run(ops.change_password_op(current_password, new_password))
+        self._client._run(ops.change_password_op(current_password, new_password))
 
 
-class AsyncDeviceLogin:
+class DeviceLogin:
     """Issuing an API key to a device, such as a command-line tool, once a user approves it.
 
     The device calls :meth:`start` and shows the user the verification URL and
@@ -202,32 +202,32 @@ class AsyncDeviceLogin:
     :meth:`authorize` does the device's part in one call.
     """
 
-    def __init__(self, client: AsyncClient) -> None:
+    def __init__(self, client: Client) -> None:
         self._client = client
 
-    async def start(self, api_key_name: str) -> DeviceAuthorization:
+    def start(self, api_key_name: str) -> DeviceAuthorization:
         """Start a device login for a new API key named ``api_key_name``. Needs no credentials."""
-        return await self._client._run(ops.start_device_login_op(api_key_name))
+        return self._client._run(ops.start_device_login_op(api_key_name))
 
-    async def poll(self, device_code: str) -> APIKeyCreated | None:
+    def poll(self, device_code: str) -> APIKeyCreated | None:
         """The issued API key, or None while the user has not decided yet.
 
         Polling more often than the authorization's ``interval`` raises
-        :class:`~grepvine_sdk.InvalidRequestError` with code ``"slow_down"``; a
+        :class:`~grepvine.InvalidRequestError` with code ``"slow_down"``; a
         denied login raises it with ``"access_denied"``, and an expired one
         with ``"expired_token"``.
         """
-        return await self._client._run(ops.poll_device_login_op(device_code))
+        return self._client._run(ops.poll_device_login_op(device_code))
 
-    async def approve(self, user_code: str) -> None:
+    def approve(self, user_code: str) -> None:
         """Approve the device login showing ``user_code``, issuing its key to the signed-in user."""
-        await self._client._run(ops.approve_device_login_op(user_code))
+        self._client._run(ops.approve_device_login_op(user_code))
 
-    async def deny(self, user_code: str) -> None:
+    def deny(self, user_code: str) -> None:
         """Deny the device login showing ``user_code``."""
-        await self._client._run(ops.deny_device_login_op(user_code))
+        self._client._run(ops.deny_device_login_op(user_code))
 
-    async def authorize(
+    def authorize(
         self,
         api_key_name: str,
         *,
@@ -236,22 +236,22 @@ class AsyncDeviceLogin:
     ) -> APIKeyCreated:
         """Start a device login, report it to ``on_code``, and wait for the key.
 
-        ``on_code`` receives the :class:`~grepvine_sdk.models.DeviceAuthorization`
+        ``on_code`` receives the :class:`~grepvine.models.DeviceAuthorization`
         to show the user. Polling follows the service's interval. A denied or
-        expired login raises :class:`~grepvine_sdk.InvalidRequestError`; one
+        expired login raises :class:`~grepvine.InvalidRequestError`; one
         that is not approved within ``timeout`` seconds, or before it expires,
         raises :class:`TimeoutError`. Pass the result's ``key`` to
-        :meth:`Client.configure <grepvine_sdk.Client.configure>` to use it.
+        :meth:`Client.configure <grepvine.Client.configure>` to use it.
         """
-        return await self._client._run(
+        return self._client._run(
             ops.authorize_device_op(api_key_name, on_code=on_code, timeout=timeout)
         )
 
 
-class AsyncIndexes:
-    """The indexes of an organization. AsyncIndexes are referenced as ``"organization/index"``."""
+class Indexes:
+    """The indexes of an organization. Indexes are referenced as ``"organization/index"``."""
 
-    def __init__(self, client: AsyncClient) -> None:
+    def __init__(self, client: Client) -> None:
         self._client = client
 
     def list(
@@ -262,7 +262,7 @@ class AsyncIndexes:
         limit: int | None = None,
         page: str | None = None,
         page_size: int | None = None,
-    ) -> AsyncPaginator[AsyncIndex]:
+    ) -> Paginator[Index]:
         """Every index of the organization, or at most ``limit`` of them.
 
         With ``prefix``, only the indexes whose names start with it, in any case. A ``page``
@@ -271,16 +271,14 @@ class AsyncIndexes:
         source = ops.indexes_listing(
             organization, prefix=prefix, limit=limit, page=page, page_size=page_size
         )
-        return AsyncPaginator(self._client, source.map(lambda data: AsyncIndex(data, self._client)))
+        return Paginator(self._client, source.map(lambda data: Index(data, self._client)))
 
-    async def get(self, ref: str) -> AsyncIndex:
+    def get(self, ref: str) -> Index:
         """The index ``"organization/index"``."""
         organization, index = parse_index_ref(ref)
-        return AsyncIndex(
-            await self._client._run(ops.get_index_op(organization, index)), self._client
-        )
+        return Index(self._client._run(ops.get_index_op(organization, index)), self._client)
 
-    async def create(
+    def create(
         self,
         ref: str,
         *,
@@ -289,20 +287,20 @@ class AsyncIndexes:
         exist_ok: bool = False,
         wait: bool = False,
         timeout: float | None = DEFAULT_WAIT_TIMEOUT,
-    ) -> AsyncIndex:
+    ) -> Index:
         """Create the index ``"organization/index"``.
 
         ``description`` is Markdown saying what the index holds. ``tags`` are
         key/value labels, for example the commit the index was synced from.
         With ``exist_ok`` an index that already exists is returned as it is,
         its description and tags untouched, instead of raising
-        :class:`~grepvine_sdk.errors.ConflictError`. With ``wait`` the call
-        returns once the index is ready, as :meth:`AsyncIndex.wait_until_ready`
+        :class:`~grepvine.errors.ConflictError`. With ``wait`` the call
+        returns once the index is ready, as :meth:`Index.wait_until_ready`
         describes, waiting at most ``timeout`` seconds.
         """
         organization, index = parse_index_ref(ref)
-        handle = AsyncIndex(
-            await self._client._run(
+        handle = Index(
+            self._client._run(
                 ops.create_index_op(
                     organization,
                     index,
@@ -313,15 +311,15 @@ class AsyncIndexes:
             ),
             self._client,
         )
-        return await handle.wait_until_ready(timeout=timeout) if wait else handle
+        return handle.wait_until_ready(timeout=timeout) if wait else handle
 
-    async def update(
+    def update(
         self,
         ref: str,
         *,
         description: str | None = None,
         tags: Mapping[str, str | None] | None = None,
-    ) -> AsyncIndex:
+    ) -> Index:
         """Change the description or the tags of the index ``"organization/index"``.
 
         ``description`` replaces the current one; an empty string clears it.
@@ -331,35 +329,35 @@ class AsyncIndexes:
         is needed. Needs the admin or owner role.
         """
         organization, index = parse_index_ref(ref)
-        return AsyncIndex(
-            await self._client._run(
+        return Index(
+            self._client._run(
                 ops.update_index_op(organization, index, description=description, tags=tags)
             ),
             self._client,
         )
 
-    async def delete(self, ref: str) -> None:
+    def delete(self, ref: str) -> None:
         """Start deleting the index. Deletion completes in the background."""
         organization, index = parse_index_ref(ref)
-        await self._client._run(ops.delete_index_op(organization, index))
+        self._client._run(ops.delete_index_op(organization, index))
 
-    async def exists(self, ref: str) -> bool:
+    def exists(self, ref: str) -> bool:
         """Whether the index exists and is visible to this API key."""
         organization, index = parse_index_ref(ref)
-        return await self._client._run(ops.index_exists_op(organization, index))
+        return self._client._run(ops.index_exists_op(organization, index))
 
 
-class AsyncIndex(IndexFields):
+class Index(IndexFields):
     """An index and the operations on it."""
 
-    def __init__(self, data: IndexData, client: AsyncClient) -> None:
+    def __init__(self, data: IndexData, client: Client) -> None:
         self._data = data
         self._client = client
 
     @property
-    def documents(self) -> AsyncDocuments:
+    def documents(self) -> Documents:
         """The documents stored in this index."""
-        return AsyncDocuments(self._client, self.organization, self.name)
+        return Documents(self._client, self.organization, self.name)
 
     def search(
         self,
@@ -376,7 +374,7 @@ class AsyncIndex(IndexFields):
         limit: int | None = None,
         page: str | None = None,
         page_size: int | None = None,
-    ) -> AsyncPaginator[SearchResult]:
+    ) -> Paginator[SearchResult]:
         """Search the index for ``pattern``.
 
         ``pattern`` is a regular expression unless ``regex`` is False. Matching
@@ -402,70 +400,70 @@ class AsyncIndex(IndexFields):
             page=page,
             page_size=page_size,
         )
-        return AsyncPaginator(self._client, source)
+        return Paginator(self._client, source)
 
-    async def delete(self) -> None:
+    def delete(self) -> None:
         """Start deleting this index."""
-        await self._client.indexes.delete(self.ref)
+        self._client.indexes.delete(self.ref)
 
-    async def exists(self) -> bool:
+    def exists(self) -> bool:
         """Whether this index still exists."""
-        return await self._client.indexes.exists(self.ref)
+        return self._client.indexes.exists(self.ref)
 
-    async def refresh(self) -> AsyncIndex:
+    def refresh(self) -> Index:
         """A new handle with the index's current counters and state."""
-        return await self._client.indexes.get(self.ref)
+        return self._client.indexes.get(self.ref)
 
-    async def wait_until_ready(
+    def wait_until_ready(
         self, *, timeout: float | None = DEFAULT_WAIT_TIMEOUT, interval: float = 1.0
-    ) -> AsyncIndex:
+    ) -> Index:
         """Wait until the index is ready and return a handle with its current state.
 
         The index is read every ``interval`` seconds. An index that is not
         ready within ``timeout`` seconds raises :class:`TimeoutError`
         (``None`` waits as long as it takes), and one that is being deleted
-        raises :class:`~grepvine_sdk.GrepvineError`.
+        raises :class:`~grepvine.GrepvineError`.
         """
-        data = await self._client._run(
+        data = self._client._run(
             ops.wait_until_ready_op(
                 self.organization, self.name, timeout=timeout, interval=interval
             )
         )
-        return AsyncIndex(data, self._client)
+        return Index(data, self._client)
 
-    async def update(
+    def update(
         self,
         *,
         description: str | None = None,
         tags: Mapping[str, str | None] | None = None,
-    ) -> AsyncIndex:
+    ) -> Index:
         """Change this index's description or tags and return a handle carrying them.
 
-        ``tags`` is merged as :meth:`AsyncIndexes.update` describes: a key given as
+        ``tags`` is merged as :meth:`Indexes.update` describes: a key given as
         ``None`` is removed and keys not mentioned stay. Handles are snapshots,
         so this one keeps the old description and tags.
         """
-        return await self._client.indexes.update(self.ref, description=description, tags=tags)
+        return self._client.indexes.update(self.ref, description=description, tags=tags)
 
-    async def set_tags(self, tags: Mapping[str, str]) -> AsyncIndex:
+    def set_tags(self, tags: Mapping[str, str]) -> Index:
         """Set these tags, keeping every other tag; the same as ``update(tags=tags)``."""
-        return await self.update(tags=tags)
+        return self.update(tags=tags)
 
-    async def remove_tags(self, *keys: str) -> AsyncIndex:
+    def remove_tags(self, *keys: str) -> Index:
         """Remove these tags; the same as ``update(tags={key: None for key in keys})``."""
-        return await self.update(tags=dict.fromkeys(keys))
+        return self.update(tags=dict.fromkeys(keys))
 
 
-class AsyncDocuments:
+class Documents:
     """The documents of one index."""
 
-    def __init__(self, client: AsyncClient, organization: str, index: str) -> None:
+    def __init__(self, client: Client, organization: str, index: str) -> None:
         self._client = client
         self._organization = organization
         self._index = index
 
     @overload
-    async def put(
+    def put(
         self,
         key: str,
         content: Content,
@@ -477,7 +475,7 @@ class AsyncDocuments:
     ) -> MutationResult: ...
 
     @overload
-    async def put(
+    def put(
         self,
         documents: Iterable[DocumentInput | Mapping[str, Any]],
         /,
@@ -485,7 +483,7 @@ class AsyncDocuments:
         idempotency_key: str | None = None,
     ) -> builtins.list[MutationResult]: ...
 
-    async def put(
+    def put(
         self,
         key: str | Iterable[DocumentInput | Mapping[str, Any]],
         content: Content | None = None,
@@ -506,14 +504,14 @@ class AsyncDocuments:
         document is stored on its own: one whose ``if_match`` or
         ``if_none_match`` condition fails is left unchanged and its result
         carries an ``error`` instead of raising, while the others are stored.
-        See :class:`~grepvine_sdk.errors.PartialBatchError` for what happens
+        See :class:`~grepvine.errors.PartialBatchError` for what happens
         when a request fails after earlier ones succeeded.
         """
         new_id = self._client._state.new_id
         if isinstance(key, str):
             if content is None:
                 raise TypeError("put() needs content when storing a single document")
-            return await self._client._run(
+            return self._client._run(
                 ops.put_document_op(
                     self._organization,
                     self._index,
@@ -531,7 +529,7 @@ class AsyncDocuments:
         records = normalize_put_inputs(key)
         if not records:
             return []
-        return await self._client._run(
+        return self._client._run(
             ops.put_documents_op(
                 self._organization,
                 self._index,
@@ -542,7 +540,7 @@ class AsyncDocuments:
         )
 
     @overload
-    async def get(
+    def get(
         self,
         key: str,
         *,
@@ -552,7 +550,7 @@ class AsyncDocuments:
     ) -> bytes: ...
 
     @overload
-    async def get(
+    def get(
         self,
         key: str,
         *,
@@ -561,7 +559,7 @@ class AsyncDocuments:
         range: tuple[int | None, int | None] | None = None,
     ) -> str: ...
 
-    async def get(
+    def get(
         self,
         key: str,
         *,
@@ -576,14 +574,12 @@ class AsyncDocuments:
         """
         if mode not in ("rb", "r"):
             raise ValueError("mode must be 'rb' or 'r'")
-        document = await self.fetch(key, range=range)
+        document = self.fetch(key, range=range)
         return document.content if mode == "rb" else document.content.decode(encoding)
 
-    async def fetch(
-        self, key: str, *, range: tuple[int | None, int | None] | None = None
-    ) -> Document:
+    def fetch(self, key: str, *, range: tuple[int | None, int | None] | None = None) -> Document:
         """A document with its content, revision, and metadata."""
-        return await self._client._run(
+        return self._client._run(
             ops.get_document_op(self._organization, self._index, key, byte_range=range)
         )
 
@@ -595,7 +591,7 @@ class AsyncDocuments:
         limit: int | None = None,
         page: str | None = None,
         page_size: int | None = None,
-    ) -> AsyncPaginator[DocumentSummary]:
+    ) -> Paginator[DocumentSummary]:
         """The documents of the index, optionally under ``prefix``.
 
         With ``delimiter`` (usually ``"/"``), documents that share the text up
@@ -610,15 +606,15 @@ class AsyncDocuments:
             page=page,
             page_size=page_size,
         )
-        return AsyncPaginator(self._client, source)
+        return Paginator(self._client, source)
 
     @overload
-    async def delete(  # type: ignore[overload-overlap]
+    def delete(  # type: ignore[overload-overlap]
         self, key: str, *, if_match: str | None = None, idempotency_key: str | None = None
     ) -> MutationResult: ...
 
     @overload
-    async def delete(
+    def delete(
         self,
         keys: Iterable[str | DeleteInput | Mapping[str, Any]],
         /,
@@ -626,7 +622,7 @@ class AsyncDocuments:
         idempotency_key: str | None = None,
     ) -> builtins.list[MutationResult]: ...
 
-    async def delete(
+    def delete(
         self,
         key: str | Iterable[str | DeleteInput | Mapping[str, Any]],
         *,
@@ -635,7 +631,7 @@ class AsyncDocuments:
     ) -> MutationResult | builtins.list[MutationResult]:
         """Delete one document by key, or a list of keys (or ``{"key", "if_match"}`` mappings).
 
-        Deleting one missing document raises :class:`~grepvine_sdk.errors.NotFoundError`.
+        Deleting one missing document raises :class:`~grepvine.errors.NotFoundError`.
         The list form returns one result per key in input order and deletes
         each document on its own: a missing document, or one whose
         ``if_match`` fails, is reported by its result's ``error`` (code
@@ -644,7 +640,7 @@ class AsyncDocuments:
         """
         new_id = self._client._state.new_id
         if isinstance(key, str):
-            return await self._client._run(
+            return self._client._run(
                 ops.delete_document_op(
                     self._organization,
                     self._index,
@@ -659,7 +655,7 @@ class AsyncDocuments:
         records = normalize_delete_inputs(key)
         if not records:
             return []
-        return await self._client._run(
+        return self._client._run(
             ops.delete_documents_op(
                 self._organization,
                 self._index,
@@ -670,4 +666,4 @@ class AsyncDocuments:
         )
 
     def __repr__(self) -> str:
-        return f"<AsyncDocuments {self._organization}/{self._index}>"
+        return f"<Documents {self._organization}/{self._index}>"

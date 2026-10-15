@@ -18,7 +18,7 @@ from urllib.parse import urlsplit
 
 import yaml
 
-from grepvine_sdk.errors import ConfigurationError
+from grepvine.errors import ConfigurationError
 
 DEFAULT_ENDPOINT: Final = "https://api.grepvine.ai"
 API_VERSION_SUFFIX: Final = "/v1"

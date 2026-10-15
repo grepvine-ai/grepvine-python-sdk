@@ -14,7 +14,7 @@ The client is built on code generated from the API contract:
   never the snapshot here.
 - `scripts/generate.py` runs `openapi-python-client==0.29.1` (HTTPX and attrs
   models) on the snapshot and writes the private package
-  `src/grepvine_sdk/_generated`: the transport, request and response models,
+  `src/grepvine/_generated`: the transport, request and response models,
   and one module per operation with `sync_detailed` and `asyncio_detailed`
   functions. Never edit it by hand; change the contract, the generator
   configuration (`openapi-python-client.yaml`) or the adapter in
@@ -26,18 +26,19 @@ The client is built on code generated from the API contract:
   generator warnings or a missing operation.
 
 The hand-written code adds only what a generator cannot know, following the
-`grepvine` SDK's interface:
+interface of the hand-written `grepvine` package in `grepvine-ai/grepvine`
+(`clients/python`), which this package replaces:
 
 | Path | Contents |
 | --- | --- |
-| `src/grepvine_sdk/_core/ops.py` | Every operation, written once as a generator of effects. The only module that calls `_generated.api`. |
-| `src/grepvine_sdk/_core/effects.py` | The effects an operation yields: call an API operation, sleep, read the clock, notify, set the session. |
-| `src/grepvine_sdk/_core/config.py` | Endpoint and API key lookup, as `gv` does it. |
-| `src/grepvine_sdk/_core/retry.py` | `RetryPolicy` and the retry decisions. |
-| `src/grepvine_sdk/_core/paging.py`, `batching.py`, `metadata.py`, `build.py`, `parse.py` | Pagination, batch planning, metadata tagging, request validation, and reading documents. |
-| `src/grepvine_sdk/_http.py` | Client state, the retrying HTTPX transports, and the hook that turns error responses into exceptions. |
-| `src/grepvine_sdk/_sync`, `src/grepvine_sdk/_async` | `Client` and `AsyncClient`, their resources and paginators. Each interprets the effects of `ops.py`. |
-| `src/grepvine_sdk/errors.py`, `models.py` | The public exceptions and result models. |
+| `src/grepvine/_core/ops.py` | Every operation, written once as a generator of effects. The only module that calls `_generated.api`. |
+| `src/grepvine/_core/effects.py` | The effects an operation yields: call an API operation, sleep, read the clock, notify, set the session. |
+| `src/grepvine/_core/config.py` | Endpoint and API key lookup, as `gv` does it. |
+| `src/grepvine/_core/retry.py` | `RetryPolicy` and the retry decisions. |
+| `src/grepvine/_core/paging.py`, `batching.py`, `metadata.py`, `build.py`, `parse.py` | Pagination, batch planning, metadata tagging, request validation, and reading documents. |
+| `src/grepvine/_http.py` | Client state, the retrying HTTPX transports, and the hook that turns error responses into exceptions. |
+| `src/grepvine/_sync`, `src/grepvine/_async` | `Client` and `AsyncClient`, their resources and paginators. Each interprets the effects of `ops.py`. |
+| `src/grepvine/errors.py`, `models.py` | The public exceptions and result models. |
 
 Every API request goes through a generated operation; the only HTTP the SDK
 writes itself is the NDJSON batch body above. Retries live in the HTTPX
