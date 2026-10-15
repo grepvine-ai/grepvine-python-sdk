@@ -14,7 +14,7 @@ from ruamel.yaml import YAML
 PACKAGE = Path(__file__).resolve().parents[1]
 SNAPSHOT = PACKAGE / "spec/openapi.json"
 SPEC = SNAPSHOT
-OUTPUT = PACKAGE / "src/grepvine_sdk/generated"
+OUTPUT = PACKAGE / "src/grepvine_sdk/_generated"
 
 
 def main() -> None:
