@@ -25,6 +25,8 @@ from urllib.parse import unquote
 
 import httpx
 
+from tests.fake_accounts import FakeAccounts
+
 API_KEY = "gvk_test-key-0123456789abcdefghijklmnop"
 # Names keep their case and are looked up without regard to it, so both registries are keyed by the
 # lowercased name.
@@ -150,6 +152,8 @@ class FakeGrepvine:
         self.search_truncate_after: int | None = None
         self.now = datetime(2026, 9, 6, 12, 0, tzinfo=UTC)
         self._revisions = 0
+        self.accounts = FakeAccounts(self)
+        self.on_request: Callable[[httpx.Request], None] | None = None
 
     # -- seeding -------------------------------------------------------------
 
@@ -221,6 +225,8 @@ class FakeGrepvine:
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
+        if self.on_request is not None:
+            self.on_request(request)
         request_id = f"req-{len(self.requests)}"
         for fault in list(self.faults):
             if fault.times > 0 and fault.matches(request):
@@ -251,15 +257,16 @@ class FakeGrepvine:
         return response
 
     def _route(self, request: httpx.Request) -> httpx.Response:
-        if request.headers.get("Authorization") != f"Bearer {self.api_key}":
-            raise RejectError(
-                401, "unauthenticated", "authentication is required", reason="authentication"
-            )
         path = request.url.raw_path.split(b"?", 1)[0].decode()
+        method = request.method
+        public = path.startswith("/v1/") and self.accounts.is_public(method, path[len("/v1") :])
+        principal = None if public else self.accounts.authenticate(request)
         if not path.startswith("/v1/"):
             raise RejectError(404, "not_found", "the resource does not exist", reason="resource")
         path = path[len("/v1") :]
-        method = request.method
+        handled = self.accounts.route(request, method, path, principal)
+        if handled is not None:
+            return handled
 
         if path == "/organizations" and method == "GET":
             return self._list_organizations(request)
