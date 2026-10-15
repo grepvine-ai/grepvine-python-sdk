@@ -185,10 +185,10 @@ _BY_STATUS: dict[int, type[APIError]] = {
 
 def parse_retry_after(headers: Mapping[str, str]) -> int | None:
     """Return the ``Retry-After`` header as whole seconds, or None when absent or unusable."""
-    raw = headers.get("retry-after", "").strip()
-    if not raw.isdigit():
+    value = headers.get("retry-after", "").strip()
+    if not value.isdigit():
         return None
-    return int(raw)
+    return int(value)
 
 
 def _error_body(response: httpx.Response) -> tuple[str, str, str]:

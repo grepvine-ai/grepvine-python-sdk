@@ -1,4 +1,4 @@
-"""The ``http`` escape hatch: an HTTPX client with the client's endpoint, credentials and retries."""
+"""``client.http``: an HTTPX client with the client's endpoint, credentials and retries."""
 
 from __future__ import annotations
 

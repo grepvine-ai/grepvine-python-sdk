@@ -64,7 +64,7 @@ jobs:
       - name: Check generated files are current
         run: |
           uv run --frozen python scripts/generate.py
-          git diff --exit-code -- src/grepvine_sdk/generated
+          git diff --exit-code -- src/grepvine_sdk/_generated
       - name: Lint and type-check
         run: |
           uv run --frozen ruff check .

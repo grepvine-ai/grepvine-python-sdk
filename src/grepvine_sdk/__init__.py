@@ -1,20 +1,4 @@
-"""Python SDK for the Grepvine search API.
-
-``import grepvine_sdk`` prepares a default client that resolves its endpoint
-and API key the way the ``gv`` command-line client does, on first use::
-
-    import grepvine_sdk
-
-    for org in grepvine_sdk.organizations.list():
-        print(org.name)
-
-    index = grepvine_sdk.indexes.get("my-org/my-index")
-    for result in index.search("TODO", regex=False):
-        print(result.key, result.line_number)
-
-Call :func:`configure` to point the default client elsewhere, or create
-:class:`Client` (or :class:`AsyncClient`) instances for several configurations.
-"""
+"""Python SDK for the Grepvine search API."""
 
 from __future__ import annotations
 

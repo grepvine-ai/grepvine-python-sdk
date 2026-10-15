@@ -21,7 +21,7 @@ MAX_BATCH_RECORDS: Final = 2048
 MAX_BATCH_CONTENT_BYTES: Final = 16 * 1024 * 1024
 MAX_LINE_BYTES: Final = 60 * 1024 * 1024
 
-Content: TypeAlias = "bytes | bytearray | memoryview | str | os.PathLike[str] | IO[bytes]"
+Content: TypeAlias = bytes | bytearray | memoryview | str | os.PathLike[str] | IO[bytes]
 """Document content: bytes, text, a filesystem path, or a readable binary file object."""
 
 

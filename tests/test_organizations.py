@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import pytest
-
 import json
 import uuid
 
 import httpx
+import pytest
 
 from grepvine_sdk import (
     APIKey,
