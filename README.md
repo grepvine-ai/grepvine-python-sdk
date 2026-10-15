@@ -13,6 +13,26 @@ Typed synchronous and asynchronous operations for the Grepvine API, for Python 3
 The distribution name is `grepvine-sdk`; its import name is `grepvine_sdk`.
 It can coexist with the separate handwritten `grepvine` package.
 
+## Installation
+
+```sh
+pip install grepvine-sdk
+# or
+uv add grepvine-sdk
+```
+
+The package requires Python 3.11 or later.
+
+## Authentication
+
+API keys authenticate the convenience clients and every operation that accepts
+bearer credentials. Pass the key as `api_key` to `GrepvineClient` or
+`AsyncGrepvineClient`, or as `token` to the generated `AuthenticatedClient`.
+Clients do not read local configuration or environment variables automatically.
+Browser-account operations use session authentication instead: use the
+generated `Client`, configure its cookies, and supply the CSRF token through the
+operation's `x_csrf_token` argument.
+
 ## Convenience API
 
 Use `GrepvineClient` for synchronous calls and `AsyncGrepvineClient` for
@@ -210,6 +230,20 @@ Exports, docs, tests, and scripts remain separate. Builds create a wheel
 and source distribution with typing information and a license.
 The distribution name is provisional until registry availability is checked before release.
 
+The API documentation site is built with pdoc into the git-ignored `site/`
+directory. Its landing page is this README without the development and
+automation sections, followed by the reference for the convenience layer and
+the generated operations and models. Any pdoc warning fails the build. Open
+`site/index.html` in a browser to read the result:
+
+```sh
+uv run --frozen python scripts/build_docs.py
+```
+
+The theme lives in `docs/theme` and follows the Grepvine design system in
+[`grepvine-ai/grepvine-design-system`](https://github.com/grepvine-ai/grepvine-design-system).
+See `docs/theme/README.md` before changing it.
+
 Optional live tests create and delete a uniquely named index. Set
 `GREPVINE_SDK_TEST_ENDPOINT` (including `/v1`), `GREPVINE_SDK_TEST_API_KEY`,
 and `GREPVINE_SDK_TEST_ORGANIZATION`, then run `uv run --frozen pytest`.
@@ -253,3 +287,13 @@ Publishing a GitHub release uploads the tag's version (`v0.2.0` becomes
 explicitly or with `--pre`. Final versions go to PyPI only through a release.
 Each index needs a trusted publisher for this repository, workflow
 `publish.yml`, and a matching `pypi` or `testpypi` environment.
+
+The `Documentation` workflow builds the API documentation on every pull request
+and push to `main`, so a broken docstring reference fails CI. Publishing a
+GitHub release, or running the workflow manually, also deploys the site to
+GitHub Pages at the repository's default project URL. The site documents the
+latest release only. Before the first deployment, set **Settings → Pages →
+Source** to **GitHub Actions**; the workflow creates the `github-pages`
+environment on its first run. The published site is public even when the
+repository is private, and Pages on a private repository requires a paid
+GitHub plan.
