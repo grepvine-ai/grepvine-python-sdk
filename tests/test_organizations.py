@@ -148,7 +148,6 @@ async def test_api_keys(fx: Flavor, fake: FakeGrepvine) -> None:
     other = type(fx.client)(
         api_key=created.key,
         endpoint=fx.client.config.endpoint,
-        env={},
         transport=httpx.MockTransport(fake.handle),
     )
     assert (await fx.run(other.account.me())).name == "alice"

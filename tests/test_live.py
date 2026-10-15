@@ -31,7 +31,7 @@ if not (ENDPOINT and API_KEY and ORGANIZATION):
 
 @pytest.fixture(scope="module")
 def client() -> Iterator[grepvine.Client]:
-    with grepvine.Client(api_key=API_KEY, endpoint=ENDPOINT, env={}) as live:
+    with grepvine.Client(api_key=API_KEY, endpoint=ENDPOINT) as live:
         yield live
 
 

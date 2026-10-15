@@ -36,7 +36,7 @@ async def no_async_sleep(seconds: float) -> None:
 @pytest.fixture
 def client(fake: FakeGrepvine) -> Iterable[Client]:
     with Client(
-        api_key=API_KEY, endpoint=ENDPOINT, transport=httpx.MockTransport(fake.handle), env={}
+        api_key=API_KEY, endpoint=ENDPOINT, transport=httpx.MockTransport(fake.handle)
     ) as sync_client:
         sync_client._sleep = no_sleep
         yield sync_client
@@ -68,7 +68,7 @@ class Flavor:
 @pytest.fixture(params=["sync", "async"])
 async def fx(request: pytest.FixtureRequest, fake: FakeGrepvine) -> AsyncIterator[Flavor]:
     transport = httpx.MockTransport(fake.handle)
-    kwargs: dict[str, Any] = {"api_key": API_KEY, "endpoint": ENDPOINT, "env": {}}
+    kwargs: dict[str, Any] = {"api_key": API_KEY, "endpoint": ENDPOINT}
     if request.param == "sync":
         with Client(transport=transport, **kwargs) as sync_client:
             sync_client._sleep = no_sleep

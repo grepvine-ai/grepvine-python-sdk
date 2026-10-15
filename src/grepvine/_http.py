@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import os
 import random
 import threading
 import uuid
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
-from pathlib import Path
 from typing import Any, Final
 
 import httpx
@@ -54,7 +52,6 @@ class ClientConfig:
     timeout: httpx.Timeout
     retry: RetryPolicy
     user_agent: str
-    config_path: Path
 
 
 class Throttle:
@@ -91,16 +88,12 @@ class ClientState:
         endpoint: str | None,
         timeout: float | httpx.Timeout | None,
         retry: RetryPolicy | None,
-        config_path: str | os.PathLike[str] | None,
-        env: Mapping[str, str] | None,
     ) -> None:
         self._lock = threading.RLock()
         self._api_key = api_key
         self._endpoint = endpoint
         self._timeout = coerce_timeout(timeout)
         self._retry = retry or RetryPolicy()
-        self._config_path = None if config_path is None else Path(config_path)
-        self._env = env
         self._config: ClientConfig | None = None
         self._session: Session | None = None
         self.generation = 0
@@ -145,19 +138,13 @@ class ClientState:
         """The resolved settings, resolving them on first use."""
         with self._lock:
             if self._config is None:
-                credentials = resolve_credentials(
-                    endpoint=self._endpoint,
-                    api_key=self._api_key,
-                    env=os.environ if self._env is None else self._env,
-                    config_path=self._config_path,
-                )
+                credentials = resolve_credentials(endpoint=self._endpoint, api_key=self._api_key)
                 self._config = ClientConfig(
                     endpoint=credentials.endpoint,
                     api_key=credentials.api_key,
                     timeout=self._timeout,
                     retry=self._retry,
                     user_agent=USER_AGENT,
-                    config_path=credentials.config_path,
                 )
             return self._config
 
@@ -168,7 +155,6 @@ class ClientState:
         endpoint: str | _Unset | None = UNSET,
         timeout: float | httpx.Timeout | _Unset | None = UNSET,
         retry: RetryPolicy | _Unset | None = UNSET,
-        config_path: str | os.PathLike[str] | _Unset | None = UNSET,
     ) -> None:
         with self._lock:
             if not isinstance(api_key, _Unset):
@@ -179,8 +165,6 @@ class ClientState:
                 self._timeout = coerce_timeout(timeout)
             if not isinstance(retry, _Unset):
                 self._retry = retry or RetryPolicy()
-            if not isinstance(config_path, _Unset):
-                self._config_path = None if config_path is None else Path(config_path)
             self._config = None
             self.generation += 1
             self.closed = False

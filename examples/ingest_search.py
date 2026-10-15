@@ -17,9 +17,9 @@ def main() -> None:
     if not organization:
         parser.error("set GREPVINE_ORGANIZATION")
 
-    # The endpoint and API key come from GREPVINE_API_ENDPOINT and GREPVINE_API_KEY, or from
-    # ~/.grepvine/config.yaml as written by `gv login`.
-    with grepvine.Client() as client:
+    with grepvine.Client(
+        api_key=os.environ["GREPVINE_API_KEY"], endpoint=os.environ.get("GREPVINE_API_ENDPOINT")
+    ) as client:
         ref = f"{organization}/example-python-{uuid.uuid4().hex[:8]}"
         index = client.indexes.create(ref, description="Python SDK example", wait=True)
         print(f"Created index {index.ref}")

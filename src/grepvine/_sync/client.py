@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import os
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from typing import Any, TypeVar, cast
 
 import httpx
@@ -36,16 +35,13 @@ T = TypeVar("T")
 class Client:
     """A synchronous Grepvine client.
 
-    Without arguments the endpoint and API key come from the same places the
-    ``gv`` command-line client uses: the ``GREPVINE_API_ENDPOINT`` (or
-    ``GREPVINE_ENDPOINT``) and ``GREPVINE_API_KEY`` environment variables, then
-    ``~/.grepvine/config.yaml`` as written by ``gv login``. Explicit arguments
-    win. Nothing is resolved until the first request.
+    ``api_key`` authenticates requests and ``endpoint`` defaults to
+    ``https://api.grepvine.ai``. The client reads no environment variables or
+    configuration files.
 
     ``timeout`` is in seconds or an ``httpx.Timeout``; ``retry`` changes how
-    failed requests are retried. ``env`` replaces the environment the settings
-    are read from, and ``transport`` the HTTPX transport requests travel
-    through, for example ``httpx.MockTransport`` in tests.
+    failed requests are retried; ``transport`` replaces the HTTPX transport
+    requests travel through, for example ``httpx.MockTransport`` in tests.
 
     The client is safe to share between threads.
     """
@@ -57,8 +53,6 @@ class Client:
         endpoint: str | None = None,
         timeout: float | httpx.Timeout | None = None,
         retry: RetryPolicy | None = None,
-        config_path: str | os.PathLike[str] | None = None,
-        env: Mapping[str, str] | None = None,
         transport: httpx.BaseTransport | None = None,
     ) -> None:
         self._state = ClientState(
@@ -66,8 +60,6 @@ class Client:
             endpoint=endpoint,
             timeout=timeout,
             retry=retry,
-            config_path=config_path,
-            env=env,
         )
         self._transport_option = transport
         self._transport: RetryTransport | None = None
@@ -87,7 +79,7 @@ class Client:
 
     @property
     def config(self) -> ClientConfig:
-        """The resolved settings; resolving them reads the environment and configuration file."""
+        """The settings requests use: endpoint, API key, timeout and retry policy."""
         return self._state.config()
 
     @property
@@ -113,15 +105,13 @@ class Client:
         endpoint: str | _Unset | None = UNSET,
         timeout: float | httpx.Timeout | _Unset | None = UNSET,
         retry: RetryPolicy | _Unset | None = UNSET,
-        config_path: str | os.PathLike[str] | _Unset | None = UNSET,
     ) -> None:
-        """Change settings in place. Passing ``None`` returns a setting to the default chain."""
+        """Change settings in place. Passing ``None`` returns a setting to its default."""
         self._state.configure(
             api_key=api_key,
             endpoint=endpoint,
             timeout=timeout,
             retry=retry,
-            config_path=config_path,
         )
 
     def close(self) -> None:
