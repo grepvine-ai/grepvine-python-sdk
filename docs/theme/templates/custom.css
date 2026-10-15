@@ -1,0 +1,335 @@
+/*
+The docs layer, last in the cascade after tokens.css and components.css.
+It maps pdoc's layout.css and content.css classes onto the Grepvine tokens and the Markdown,
+CodeBlock, Button, Logo and ThemeToggle components: square slabs, 2px rules, hard offset
+shadows, Tektur for headings and Martian Mono for everything else.
+*/
+
+/* Base ------------------------------------------------------------------------ */
+
+body {
+    background: var(--ink);
+    color: var(--text-2);
+    font-family: var(--font-body);
+    font-stretch: 87.5%;
+    font-weight: 400;
+    font-size: var(--text-body);
+    line-height: 1.7;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--lime); color: var(--black); }
+:focus-visible { outline: 2px solid var(--lime-text); outline-offset: 3px; }
+
+.pdoc { line-height: 1.7; }
+.pdoc h1, .pdoc h2, .pdoc h3, .pdoc h4 {
+    font-family: var(--font-display);
+    font-stretch: 100%;
+    font-weight: 700;
+    color: var(--paper);
+    text-wrap: balance;
+}
+.pdoc h5, .pdoc h6 {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: var(--text-small);
+    color: var(--paper);
+    margin: 1.5rem 0 0.5rem;
+}
+.pdoc strong, .pdoc b { color: var(--paper); font-weight: 500; }
+
+.pdoc a {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+.pdoc a:hover { color: var(--link-hover); }
+.pdoc .attr a, .pdoc .modulename a, .pdoc .headerlink { text-decoration: none; }
+
+/* Markdown: template headings carry an aria-hidden `.md` span from the Markdown component;
+   headings rendered from markdown get the same marker as generated content with empty
+   alternative text, so assistive technology skips it in the same way. */
+.gv-guide :is(h2, h3)::before,
+.pdoc .module-info .docstring :is(h1, h2, h3)::before {
+    color: var(--lime);
+    font-family: var(--font-display);
+}
+.pdoc .module-info .docstring h1::before { content: "# "; content: "# " / ""; }
+.gv-guide h2::before,
+.pdoc .module-info .docstring h2::before { content: "## "; content: "## " / ""; }
+.gv-guide h3::before,
+.pdoc .module-info .docstring h3::before { content: "### "; content: "### " / ""; }
+[data-theme="light"] .gv-guide :is(h2, h3)::before,
+[data-theme="light"] .pdoc .module-info .docstring :is(h1, h2, h3)::before {
+    -webkit-text-stroke: max(2px, 0.06em) var(--black);
+    paint-order: stroke fill;
+}
+
+.pdoc .docstring ul, .gv-guide ul { list-style: none; padding-left: 2ch; }
+.pdoc .docstring ul > li, .gv-guide ul > li { position: relative; }
+.pdoc .docstring ul > li::before, .gv-guide ul > li::before {
+    content: "*";
+    content: "*" / "";
+    position: absolute;
+    left: -2ch;
+    color: var(--lime-text);
+}
+
+/* Page title and section heads ------------------------------------------------- */
+
+.pdoc .modulename {
+    font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.75rem);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    overflow-wrap: anywhere;
+}
+.pdoc .modulename a { color: var(--muted); }
+.pdoc .modulename a:hover { color: var(--lime-text); }
+
+.gv-guide .modulename { font-size: clamp(2rem, 1.2rem + 2.8vw, 3.5rem); letter-spacing: -0.025em; }
+.gv-guide .gv-meta { margin: -0.75rem 0 1.5rem; color: var(--muted); font-size: var(--text-meta); }
+.gv-guide > .docstring:first-of-type {
+    color: var(--paper);
+    font-size: var(--text-lede);
+    line-height: 1.6;
+    max-width: 46ch;
+}
+
+.gv-guide h2, .pdoc .gv-reference, .pdoc .module-info .docstring h2 {
+    font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.25rem);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    margin: 3.5rem 0 1rem;
+    padding: 0;
+}
+.pdoc .gv-reference {
+    margin-top: 4.5rem;
+    padding-top: 3rem;
+    border-top: var(--border) solid var(--rule-strong);
+}
+.gv-guide h3, .pdoc .module-info .docstring h3 {
+    font-size: var(--text-card-title);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin: 2rem 0 0.75rem;
+}
+.gv-guide p, .pdoc .docstring p { max-width: 72ch; }
+
+/* Code ---------------------------------------------------------------------------- */
+
+.pdoc code {
+    font-family: var(--font-body);
+    font-size: 0.92em;
+    color: var(--paper);
+    background: var(--ink-3);
+    border-radius: 0;
+    padding: 0.1em 0.35em;
+}
+.pdoc a > code { color: inherit; }
+
+/* CodeBlock: dark in both themes, so it re-declares the dark values on itself. */
+div.pdoc-code {
+    --ink: #0b0b0e;
+    --paper: #f1f1f4;
+    --muted: #868694;
+    background: var(--ink);
+    color: var(--paper);
+    border: var(--border) solid #393945;
+    margin: 0 0 1.5rem;
+}
+[data-theme="light"] .pdoc div.pdoc-code { border-color: var(--black); }
+.pdoc .docstring div.pdoc-code { margin-left: 0; margin-right: 0; }
+.pdoc .pdoc-code pre {
+    margin: 0;
+    padding: 28px;
+    border: 0;
+    background: none;
+    font-size: var(--text-small);
+    line-height: 1.75;
+}
+.pdoc .pdoc-code code { background: none; padding: 0; color: inherit; }
+.pdoc div.pdoc-code ::selection { background: var(--lime); color: var(--ink); }
+.pdoc .pdoc-code > pre > span:target { background-color: #18181e; box-shadow: -1rem 0 0 0 #18181e; }
+
+/* Members --------------------------------------------------------------------- */
+
+.pdoc .attr {
+    margin: 0.75rem 0;
+    padding: 0.75rem 1rem;
+    background: var(--ink-2);
+    border: 1px solid var(--rule-strong);
+    border-left: var(--border) solid var(--rule-strong);
+    color: var(--text-2);
+    font-size: var(--text-small);
+    line-height: 1.65;
+}
+.pdoc .attr.class { border-left-color: var(--lime-text); }
+.pdoc .attr:hover { filter: none; border-color: var(--paper); }
+.pdoc .name { color: var(--name); font-weight: 500; }
+.pdoc .def { color: var(--def); font-weight: 500; }
+.pdoc .annotation, .pdoc .default_value { color: var(--annotation); }
+.pdoc .decorator { color: var(--muted); }
+.pdoc .classattr { margin-left: clamp(0.5rem, 3vw, 2rem); }
+.pdoc > section:not(.module-info) { margin-bottom: 2rem; }
+.pdoc section:not(.module-info) .docstring { margin-left: clamp(0rem, 5vw - 2rem, 1rem); }
+
+.pdoc div:target > .attr,
+.pdoc section:target > .attr { background: var(--ink-3); border-color: var(--lime-text); }
+.pdoc dd:target > a { background: var(--lime); color: var(--black); }
+.pdoc :is(h1, h2, h3, h4, h5, h6):target {
+    background: none;
+    box-shadow: none;
+    text-decoration: underline var(--lime-text) var(--border);
+    text-underline-offset: 6px;
+}
+
+.pdoc .headerlink::before { content: "#"; color: var(--lime-text); font-family: var(--font-display); }
+
+.pdoc .inherited { margin-left: clamp(0.5rem, 3vw, 2rem); font-size: var(--text-small); }
+.pdoc .inherited h5 { color: var(--muted); font-weight: 400; }
+.pdoc .inherited dt { color: var(--paper); font-weight: 500; }
+
+.pdoc .view-source-button { color: var(--muted); }
+.pdoc .view-source-button:hover { color: var(--lime-text); }
+
+/* Docstring sections (Args, Returns, Raises) render as h6 labels. */
+.pdoc .docstring h6 {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: var(--text-meta);
+    margin: 1rem 0 0.25rem;
+}
+
+/* Tables and admonitions ---------------------------------------------------------- */
+
+.pdoc table { border-collapse: collapse; font-size: var(--text-small); }
+.pdoc table th, .pdoc table td { border: 1px solid var(--rule-strong); padding: 8px 14px; }
+.pdoc table th { background: var(--ink-3); color: var(--paper); font-weight: 500; }
+
+.pdoc .alert {
+    border-radius: 0;
+    border: 0;
+    border-left: var(--border) solid var(--lime-text);
+    background-color: var(--ink-2);
+    background-image: none;
+    color: var(--text-2);
+    padding: 1rem 1.25rem;
+}
+.pdoc .alert:is(.warning, .caution, .danger) { border-left-color: var(--orange-text); }
+
+/* Buttons: the Button component's ghost, small variant ---------------------------- */
+
+.pdoc .pdoc-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--muted);
+    border-radius: 0;
+    color: var(--paper);
+    background: transparent;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: var(--text-meta);
+    box-shadow: 3px 3px 0 var(--muted);
+    transition: transform 150ms var(--ease), box-shadow 150ms var(--ease),
+        border-color 200ms var(--ease);
+}
+.pdoc .pdoc-button:hover {
+    border-color: var(--paper);
+    color: var(--paper);
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--muted);
+}
+.pdoc .pdoc-button:active { transform: translate(3px, 3px); box-shadow: none; }
+.pdoc .git-button:hover { background: transparent; }
+
+/* Navigation ---------------------------------------------------------------------- */
+
+nav.pdoc {
+    background: var(--ink-2);
+    border-right: var(--border) solid var(--rule-strong);
+    box-shadow: none;
+    font-size: var(--text-small);
+    scrollbar-color: var(--rule-strong) transparent;
+}
+nav.pdoc::-webkit-scrollbar-thumb { background-color: var(--rule-strong); }
+
+nav.pdoc h2 {
+    margin: 2rem 0 0.5rem;
+    font-family: var(--font-body);
+    font-stretch: 87.5%;
+    font-weight: 400;
+    font-size: var(--text-meta);
+    color: var(--muted);
+    letter-spacing: 0;
+}
+nav.pdoc a, nav.pdoc a:hover { color: var(--text-2); text-decoration: none; }
+nav.pdoc li:hover { background: var(--ink-3); }
+nav.pdoc li:hover > a { color: var(--paper); }
+nav.pdoc .class::before, nav.pdoc .function::after { color: var(--muted); }
+nav.pdoc .module-list-button { color: var(--paper); border-color: var(--muted); margin: 0 0 1.5rem; }
+
+nav.pdoc input[type=search] {
+    margin-top: 1.5rem;
+    padding: 10px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--rule-strong);
+    border-radius: 0;
+    font-family: var(--font-body);
+    font-size: var(--text-small);
+}
+nav.pdoc input[type=search]::placeholder { color: var(--muted); }
+nav.pdoc input[type=search]:focus { outline: 2px solid var(--lime-text); outline-offset: 0; }
+
+nav.pdoc footer { color: var(--muted); font-size: var(--text-meta); }
+nav.pdoc footer::before { border-top: 1px solid var(--rule); }
+nav.pdoc footer p { margin: 0 0 0.25rem; }
+nav.pdoc footer a, nav.pdoc .attribution { color: var(--muted); text-decoration: none; }
+nav.pdoc footer a:hover, nav.pdoc .attribution:hover { color: var(--lime-text); }
+nav.pdoc .attribution { opacity: 1; filter: none; margin: 0.25rem 0 0; font-size: var(--text-meta); }
+
+/* Logo and ThemeToggle come from components.css; this only lays them out in the sidebar. */
+.gv-brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-right: var(--pad);
+}
+nav.pdoc .logo, nav.pdoc .logo:hover { display: inline-flex; color: var(--paper); }
+/* pdoc centres its own image logo with the same class name. */
+nav.pdoc .logo { max-width: none; max-height: none; margin: 0; transform: none; }
+.gv-product { margin: 0 0 0 34px; color: var(--muted); font-size: var(--text-meta); }
+.theme-toggle > span { grid-area: 1 / 1; }
+.theme-toggle > span > svg { display: block; }
+
+@media (max-width: 769px) {
+    #navtoggle {
+        color: var(--paper);
+        border: 1px solid var(--rule-strong);
+        border-radius: 0;
+        background: var(--ink-2);
+    }
+    #navtoggle path { stroke-linecap: square; }
+    nav.pdoc { border-right: 0; border-bottom: var(--border) solid var(--rule-strong); }
+    .gv-brand { padding-right: 70px; }
+    main.pdoc { padding-top: 5rem; }
+}
+
+/* Search results ------------------------------------------------------------------ */
+
+.pdoc .search-result.focused > .attr { background: var(--ink-3); border-color: var(--lime-text); }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

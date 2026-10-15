@@ -1,0 +1,61 @@
+{#
+Grepvine page frame: the design system's stylesheets, favicon and theme switch.
+Styles layer tokens.css, then components.css (which loads
+Tektur and Martian Mono from Google Fonts), then pdoc's own stylesheets with theme.css mapping
+pdoc's variables onto the tokens and custom.css mapping pdoc's classes onto the components.
+The theme is applied by a blocking script in <head> so the page never flashes the wrong ground.
+#}
+{% extends "default/frame.html.jinja2" %}
+{% block favicon %}
+    <link rel="icon" type="image/svg+xml"
+          href="data:image/svg+xml,{% filter urlencode %}{% include "favicon.svg" %}{% endfilter %}"/>
+{% endblock %}
+{% block head %}
+    <meta name="theme-color" content="#0b0b0e">
+    <script>
+        (function () {
+            var theme;
+            try { theme = localStorage.getItem("theme"); } catch (e) {}
+            if (theme !== "light" && theme !== "dark") {
+                theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+            }
+            document.documentElement.dataset.theme = theme;
+            document.querySelector('meta[name="theme-color"]')
+                .setAttribute("content", theme === "light" ? "#f4f4f7" : "#0b0b0e");
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+{% endblock %}
+{% block style %}
+    <style>{% include "resources/bootstrap-reboot.min.css" %}</style>
+    <style>/*! tokens.css */{% include "tokens.css" %}</style>
+    <style>{% include "components.css" %}</style>
+    <style>/*! syntax-highlighting.css */{% include "syntax-highlighting.css" %}</style>
+    <style>/*! theme.css */{% include "theme.css" %}</style>
+    <style>/*! layout.css */{% include "layout.css" %}</style>
+    <style>/*! content.css */{% include "content.css" %}</style>
+    <style>/*! custom.css */{% include "custom.css" %}</style>
+{% endblock %}
+{% block body %}
+    {{ super() }}
+    <script>
+        (function () {
+            var button = document.querySelector(".theme-toggle");
+            if (!button) return;
+            function label() {
+                var light = document.documentElement.dataset.theme === "light";
+                button.setAttribute("aria-label", light ? "Switch to dark mode" : "Switch to light mode");
+            }
+            label();
+            button.addEventListener("click", function () {
+                var next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+                document.documentElement.dataset.theme = next;
+                document.querySelector('meta[name="theme-color"]')
+                    .setAttribute("content", next === "light" ? "#f4f4f7" : "#0b0b0e");
+                try { localStorage.setItem("theme", next); } catch (e) {}
+                label();
+            });
+        })();
+    </script>
+{% endblock %}
