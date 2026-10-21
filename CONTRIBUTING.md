@@ -100,9 +100,7 @@ and `GREPVINE_SDK_TEST_ORGANIZATION`, then run `uv run --frozen pytest`.
 
 `scripts/check_package.py` installs the built wheel into a fresh environment
 and runs synchronous and asynchronous requests against a mock transport, so a
-packaging mistake fails CI. It also fails unless `LICENSE` is the verbatim
-Apache License 2.0 text and the wheel and sdist declare `Apache-2.0` and
-ship `LICENSE` and `NOTICE`. The distribution name is provisional until
+packaging mistake fails CI. The distribution name is provisional until
 registry availability is checked before release.
 
 ## Documentation
