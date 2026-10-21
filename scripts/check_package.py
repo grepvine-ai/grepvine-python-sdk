@@ -1,16 +1,50 @@
 """Check an installed wheel independently of the source-tree editable package."""
 
+import hashlib
 import subprocess
+import tarfile
 import tomllib
+import zipfile
+from email.parser import Parser
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 PACKAGE = Path(__file__).resolve().parents[1]
+# SHA-256 of https://www.apache.org/licenses/LICENSE-2.0.txt
+APACHE_LICENSE_SHA256 = "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+
+
+def check_license(project: dict, wheel: Path) -> None:
+    """Fail unless the sources, wheel and sdist all carry Apache 2.0 with LICENSE and NOTICE."""
+    license_text = (PACKAGE / "LICENSE").read_bytes()
+    notice_text = (PACKAGE / "NOTICE").read_bytes()
+    assert hashlib.sha256(license_text).hexdigest() == APACHE_LICENSE_SHA256, (
+        "LICENSE is not the Apache License 2.0 text"
+    )
+    assert project["license"] == "Apache-2.0", project["license"]
+    name = f"grepvine-{project['version']}"
+    with zipfile.ZipFile(wheel) as archive:
+        metadata = Parser().parsestr(archive.read(f"{name}.dist-info/METADATA").decode())
+        assert metadata["License-Expression"] == "Apache-2.0", metadata["License-Expression"]
+        assert sorted(metadata.get_all("License-File") or []) == ["LICENSE", "NOTICE"]
+        assert archive.read(f"{name}.dist-info/licenses/LICENSE") == license_text
+        assert archive.read(f"{name}.dist-info/licenses/NOTICE") == notice_text
+    with tarfile.open(wheel.with_name(f"{name}.tar.gz")) as sdist:
+        files = {}
+        for member in ("PKG-INFO", "LICENSE", "NOTICE"):
+            file = sdist.extractfile(f"{name}/{member}")
+            assert file is not None, f"sdist is missing {member}"
+            files[member] = file.read()
+    metadata = Parser().parsestr(files["PKG-INFO"].decode())
+    assert metadata["License-Expression"] == "Apache-2.0", metadata["License-Expression"]
+    assert files["LICENSE"] == license_text
+    assert files["NOTICE"] == notice_text
 
 
 def main() -> None:
     project = tomllib.loads((PACKAGE / "pyproject.toml").read_text())["project"]
     wheel = PACKAGE / "dist" / f"grepvine-{project['version']}-py3-none-any.whl"
+    check_license(project, wheel)
     with TemporaryDirectory(prefix="grepvine-wheel-") as directory:
         environment = Path(directory) / "venv"
         requirements = Path(directory) / "requirements.txt"
