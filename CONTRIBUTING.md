@@ -3,6 +3,18 @@
 `README.md` is the user guide and the landing page of the documentation site.
 This file covers how the SDK is built, tested, documented and released.
 
+## Reporting issues and proposing changes
+
+Report bugs and ask for features in GitHub issues. Pull requests are welcome
+for the hand-written code, tests, examples and documentation; for anything
+larger, open an issue first. The API itself, and so `spec/openapi.json`, is
+owned by the Grepvine team: to request an API change, open an issue rather
+than editing the snapshot. Report security vulnerabilities privately as
+described in [`SECURITY.md`](SECURITY.md), never in a public issue.
+
+Contributions are accepted under the Apache License 2.0, the license of this
+repository.
+
 ## How the SDK is built
 
 Most of the package is generated from the API contract by
@@ -14,8 +26,8 @@ generator cannot know.
 - `spec/openapi.json` is the full public contract, exported from
   the Grepvine service without filtering operations or components.
   `spec/source.json` records the source repository, commit, the exported
-  operation list, and the snapshot checksum. Change the contract in Grepvine,
-  never the snapshot here.
+  operation list, and the snapshot checksum. The Grepvine team changes the
+  contract; never edit the snapshot here.
 - `sdk-operations.json` names the method of every operation: its value is the
   resource path and method name, in camelCase (`"putObjects": ["documents",
   "putBatch"]`). The TypeScript SDK (`grepvine-ai/grepvine-typescript-sdk`)
@@ -103,6 +115,13 @@ and runs synchronous and asynchronous requests against a mock transport, so a
 packaging mistake fails CI. The distribution name is provisional until
 registry availability is checked before release.
 
+### Examples
+
+`examples/` holds complete programs; the README's Examples section shows how
+to run them. They use the public service at `https://api.grepvine.ai` unless
+`GREPVINE_API_ENDPOINT` names another, and read `GREPVINE_API_KEY` and
+`GREPVINE_ORGANIZATION`.
+
 ## Documentation
 
 The documentation site is built with pdoc into the git-ignored `site/`
@@ -113,20 +132,22 @@ guide's, when a page mentions the private `_generated` package, or when a page
 uses a word the docs avoid. The build documents the resource classes and
 models under `grepvine` and `grepvine.models`, folds the methods of each
 resource's private base class into it, and adds to the `grepvine.models` page
-a list of the models each resource uses, found from the method signatures. Any pdoc warning also fails the build. Open
-`site/index.html` to read the result.
+a list of the models each resource uses, found from the method signatures.
+Any pdoc warning also fails the build. Open `site/index.html` to read the
+result.
 
 User-facing text (the README, docstrings and error messages) describes what
 the SDK does, never how it is built: it does not say "generated", "raw",
-"convenience", "wrapper" or "layer", and it follows Grepvine's rule that
-internals never leak, so it never mentions how the service stores or indexes
-data.
+"convenience", "wrapper" or "layer", and it never mentions service internals
+such as storage, caches or background maintenance. Errors say what the caller
+can do.
 
-The theme lives in `docs/theme` and follows the Grepvine design system in
-the Grepvine design-system repository (private).
-See `docs/theme/README.md` before changing it.
+The theme lives in `docs/theme`. See `docs/theme/README.md` before changing
+it.
 
 ## Repository automation
+
+The workflows below are run by the Grepvine team.
 
 The `Regenerate and validate SDK` workflow can be triggered manually. It
 regenerates from the snapshot, runs tests and builds an installed-package
