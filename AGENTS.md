@@ -9,7 +9,7 @@
 - `sdk-operations.json` names every method and is identical in
   `grepvine-ai/grepvine-typescript-sdk`; change both together. Python names
   are the snake_case form of each segment. The design is in
-  `grepvine-ai/grepvine`, `docs/specs/2026-10-15-unified-sdk-design.md`
+  Grepvine's private repository, `docs/specs/2026-10-15-unified-sdk-design.md`
   ("Decision (revised 2026-10-15): generated first").
 - Hand-written code is limited to `_client.py`, `errors.py`, `_retry.py`,
   `_helpers.py` and `models.py`. Do not add methods that re-wrap a single
@@ -21,6 +21,6 @@
   how the service stores or indexes data. Contributor material belongs in
   `CONTRIBUTING.md`.
 - The documentation site's theme follows the Grepvine design system in
-  [`grepvine-ai/grepvine-design-system`](https://github.com/grepvine-ai/grepvine-design-system).
+  the Grepvine design-system repository (private).
   Before changing anything under `docs/theme`, read `docs/theme/README.md` and
   the design system's `README.md`.

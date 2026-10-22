@@ -12,7 +12,7 @@ generator cannot know.
 ### Generated
 
 - `spec/openapi.json` is the full public contract, exported from
-  `grepvine-ai/grepvine` without filtering operations or components.
+  the Grepvine service without filtering operations or components.
   `spec/source.json` records the source repository, commit, the exported
   operation list, and the snapshot checksum. Change the contract in Grepvine,
   never the snapshot here.
@@ -123,7 +123,7 @@ internals never leak, so it never mentions how the service stores or indexes
 data.
 
 The theme lives in `docs/theme` and follows the Grepvine design system in
-[`grepvine-ai/grepvine-design-system`](https://github.com/grepvine-ai/grepvine-design-system).
+the Grepvine design-system repository (private).
 See `docs/theme/README.md` before changing it.
 
 ## Repository automation
@@ -151,6 +151,4 @@ GitHub release (not a pre-release), or running the workflow manually, also
 deploys the site to GitHub Pages at the repository's default project URL. The
 site documents the latest release only. Before the first deployment, set
 **Settings → Pages → Source** to **GitHub Actions**; the workflow creates the
-`github-pages` environment on its first run. The published site is public even
-when the repository is private, and Pages on a private repository requires a
-paid GitHub plan.
+`github-pages` environment on its first run.
