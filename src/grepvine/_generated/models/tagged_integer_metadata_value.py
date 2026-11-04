@@ -6,29 +6,27 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 
 
-from typing import cast
-from typing import Literal
-import datetime
+from typing import Literal, cast
 
 
-T = TypeVar("T", bound="TimestampMetadataValue")
+T = TypeVar("T", bound="TaggedIntegerMetadataValue")
 
 
 @_attrs_define
-class TimestampMetadataValue:
+class TaggedIntegerMetadataValue:
     """
     Attributes:
-        type_ (Literal['timestamp']):
-        value (datetime.datetime):
+        type_ (Literal['integer']):
+        value (int):
     """
 
-    type_: Literal["timestamp"]
-    value: datetime.datetime
+    type_: Literal["integer"]
+    value: int
 
     def to_dict(self) -> dict[str, Any]:
         type_ = self.type_
 
-        value = self.value.isoformat()
+        value = self.value
 
         field_dict: dict[str, Any] = {}
 
@@ -44,15 +42,15 @@ class TimestampMetadataValue:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        type_ = cast(Literal["timestamp"], d.pop("type"))
-        if type_ != "timestamp":
-            raise ValueError(f"type must match const 'timestamp', got '{type_}'")
+        type_ = cast(Literal["integer"], d.pop("type"))
+        if type_ != "integer":
+            raise ValueError(f"type must match const 'integer', got '{type_}'")
 
-        value = datetime.datetime.fromisoformat(d.pop("value"))
+        value = d.pop("value")
 
-        timestamp_metadata_value = cls(
+        tagged_integer_metadata_value = cls(
             type_=type_,
             value=value,
         )
 
-        return timestamp_metadata_value
+        return tagged_integer_metadata_value

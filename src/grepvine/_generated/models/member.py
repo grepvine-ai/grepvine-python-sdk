@@ -5,6 +5,7 @@ from typing import Any, TypeVar, TYPE_CHECKING
 
 from attrs import define as _attrs_define
 
+from ..types import UNSET, Unset
 
 from ..models.role import Role
 import datetime
@@ -23,11 +24,14 @@ class Member:
         user (User):
         role (Role):
         created_at (datetime.datetime):
+        expires_at (datetime.datetime | Unset): When the membership ends, for time-limited access granted by Grepvine
+            support. Omitted for an ordinary membership.
     """
 
     user: User
     role: Role
     created_at: datetime.datetime
+    expires_at: datetime.datetime | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         user = self.user.to_dict()
@@ -35,6 +39,10 @@ class Member:
         role = self.role.value
 
         created_at = self.created_at.isoformat()
+
+        expires_at: str | Unset = UNSET
+        if not isinstance(self.expires_at, Unset):
+            expires_at = self.expires_at.isoformat()
 
         field_dict: dict[str, Any] = {}
 
@@ -45,6 +53,8 @@ class Member:
                 "created_at": created_at,
             }
         )
+        if expires_at is not UNSET:
+            field_dict["expires_at"] = expires_at
 
         return field_dict
 
@@ -59,10 +69,18 @@ class Member:
 
         created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
+        _expires_at = d.pop("expires_at", UNSET)
+        expires_at: datetime.datetime | Unset
+        if isinstance(_expires_at, Unset):
+            expires_at = UNSET
+        else:
+            expires_at = datetime.datetime.fromisoformat(_expires_at)
+
         member = cls(
             user=user,
             role=role,
             created_at=created_at,
+            expires_at=expires_at,
         )
 
         return member

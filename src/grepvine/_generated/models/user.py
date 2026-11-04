@@ -5,7 +5,9 @@ from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 
+from ..types import UNSET, Unset
 
+from ..models.staff_role import StaffRole
 from uuid import UUID
 import datetime
 
@@ -23,12 +25,15 @@ class User:
             organization can take such a spelling.
         email (str):
         created_at (datetime.datetime):
+        staff_role (StaffRole | Unset): The account's role on the Grepvine team, when it has one. Omitted for every
+            other account.
     """
 
     id: UUID
     name: str
     email: str
     created_at: datetime.datetime
+    staff_role: StaffRole | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
@@ -38,6 +43,10 @@ class User:
         email = self.email
 
         created_at = self.created_at.isoformat()
+
+        staff_role: str | Unset = UNSET
+        if not isinstance(self.staff_role, Unset):
+            staff_role = self.staff_role.value
 
         field_dict: dict[str, Any] = {}
 
@@ -49,6 +58,8 @@ class User:
                 "created_at": created_at,
             }
         )
+        if staff_role is not UNSET:
+            field_dict["staff_role"] = staff_role
 
         return field_dict
 
@@ -63,11 +74,19 @@ class User:
 
         created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
+        _staff_role = d.pop("staff_role", UNSET)
+        staff_role: StaffRole | Unset
+        if isinstance(_staff_role, Unset):
+            staff_role = UNSET
+        else:
+            staff_role = StaffRole(_staff_role)
+
         user = cls(
             id=id,
             name=name,
             email=email,
             created_at=created_at,
+            staff_role=staff_role,
         )
 
         return user

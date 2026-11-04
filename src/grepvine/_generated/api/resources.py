@@ -6,6 +6,7 @@ from ..client import Client
 from ..models.add_member_request import AddMemberRequest
 from ..models.api_key_created import APIKeyCreated
 from ..models.api_key_page import APIKeyPage
+from ..models.auth_options import AuthOptions
 from ..models.change_password_request import ChangePasswordRequest
 from ..models.create_api_key_request import CreateAPIKeyRequest
 from ..models.create_index_request import CreateIndexRequest
@@ -18,6 +19,8 @@ from ..models.device_token_request import DeviceTokenRequest
 from ..models.document_page import DocumentPage
 from ..models.index import Index
 from ..models.index_page import IndexPage
+from ..models.invitation_check_request import InvitationCheckRequest
+from ..models.invitation_preview import InvitationPreview
 from ..models.login_request import LoginRequest
 from ..models.member import Member
 from ..models.member_page import MemberPage
@@ -41,6 +44,8 @@ from .api_keys import create_api_key
 from .api_keys import list_api_keys
 from .api_keys import revoke_api_key
 from .authentication import change_password
+from .authentication import check_invitation
+from .authentication import get_auth_options
 from .authentication import get_current_user
 from .authentication import get_username_availability
 from .authentication import login
@@ -915,7 +920,11 @@ class Account:
         """Register a local user
 
          A 409 has code `username_taken` when an account or an organization already holds the username, and
-        code `email_taken` when an account already uses the email address.
+        code `email_taken` when an account already uses the email address. A 403 has code
+        `invitation_required` when registration is by invitation and the request carries none, and code
+        `invitation_invalid` when the invitation it carries was already used, was withdrawn or has expired.
+        A valid invitation is accepted with the registration, and the account joins the organization it
+        names, if any.
 
         Args:
             body (RegisterRequest):
@@ -933,6 +942,54 @@ class Account:
             client=self._client,
         )
         return cast(User, response.parsed)
+
+    def auth_options(
+        self,
+    ) -> AuthOptions:
+        """Get the sign-in options
+
+         How accounts are created on this service. The console reads it to decide whether to offer
+        registration without an invitation.
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+
+        Returns:
+            AuthOptions
+        """
+
+        response = get_auth_options.sync_detailed(
+            client=self._client,
+        )
+        return cast(AuthOptions, response.parsed)
+
+    def check_invitation(
+        self,
+        *,
+        body: InvitationCheckRequest,
+    ) -> InvitationPreview:
+        """Check an invitation
+
+         Reports what a pending invitation offers, so the registration form can show it. The token travels in
+        the body, never in the URL. An invitation that was used, withdrawn or has expired is not found.
+
+        Args:
+            body (InvitationCheckRequest):
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+
+        Returns:
+            InvitationPreview
+        """
+
+        response = check_invitation.sync_detailed(
+            body=body,
+            client=self._client,
+        )
+        return cast(InvitationPreview, response.parsed)
 
     def username_availability(
         self,
@@ -2006,7 +2063,11 @@ class AsyncAccount:
         """Register a local user
 
          A 409 has code `username_taken` when an account or an organization already holds the username, and
-        code `email_taken` when an account already uses the email address.
+        code `email_taken` when an account already uses the email address. A 403 has code
+        `invitation_required` when registration is by invitation and the request carries none, and code
+        `invitation_invalid` when the invitation it carries was already used, was withdrawn or has expired.
+        A valid invitation is accepted with the registration, and the account joins the organization it
+        names, if any.
 
         Args:
             body (RegisterRequest):
@@ -2024,6 +2085,54 @@ class AsyncAccount:
             client=self._client,
         )
         return cast(User, response.parsed)
+
+    async def auth_options(
+        self,
+    ) -> AuthOptions:
+        """Get the sign-in options
+
+         How accounts are created on this service. The console reads it to decide whether to offer
+        registration without an invitation.
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+
+        Returns:
+            AuthOptions
+        """
+
+        response = await get_auth_options.asyncio_detailed(
+            client=self._client,
+        )
+        return cast(AuthOptions, response.parsed)
+
+    async def check_invitation(
+        self,
+        *,
+        body: InvitationCheckRequest,
+    ) -> InvitationPreview:
+        """Check an invitation
+
+         Reports what a pending invitation offers, so the registration form can show it. The token travels in
+        the body, never in the URL. An invitation that was used, withdrawn or has expired is not found.
+
+        Args:
+            body (InvitationCheckRequest):
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+
+        Returns:
+            InvitationPreview
+        """
+
+        response = await check_invitation.asyncio_detailed(
+            body=body,
+            client=self._client,
+        )
+        return cast(InvitationPreview, response.parsed)
 
     async def username_availability(
         self,

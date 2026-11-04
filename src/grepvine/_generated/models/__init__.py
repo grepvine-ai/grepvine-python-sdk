@@ -5,7 +5,7 @@ from .add_member_request_role import AddMemberRequestRole
 from .api_key import APIKey
 from .api_key_created import APIKeyCreated
 from .api_key_page import APIKeyPage
-from .boolean_metadata_value import BooleanMetadataValue
+from .auth_options import AuthOptions
 from .change_password_request import ChangePasswordRequest
 from .context_line import ContextLine
 from .create_api_key_request import CreateAPIKeyRequest
@@ -26,7 +26,9 @@ from .index_state import IndexState
 from .index_summary import IndexSummary
 from .index_tag_changes import IndexTagChanges
 from .index_tags import IndexTags
-from .integer_metadata_value import IntegerMetadataValue
+from .invitation_check_request import InvitationCheckRequest
+from .invitation_preview import InvitationPreview
+from .invitation_role import InvitationRole
 from .login_request import LoginRequest
 from .match import Match
 from .member import Member
@@ -34,7 +36,6 @@ from .member_page import MemberPage
 from .metadata import Metadata
 from .mutation_batch_result import MutationBatchResult
 from .mutation_result import MutationResult
-from .number_metadata_value import NumberMetadataValue
 from .organization import Organization
 from .organization_page import OrganizationPage
 from .pagination import Pagination
@@ -47,8 +48,13 @@ from .query_request_mode import QueryRequestMode
 from .query_result import QueryResult
 from .register_request import RegisterRequest
 from .role import Role
-from .string_metadata_value import StringMetadataValue
-from .timestamp_metadata_value import TimestampMetadataValue
+from .signup_mode import SignupMode
+from .staff_role import StaffRole
+from .tagged_boolean_metadata_value import TaggedBooleanMetadataValue
+from .tagged_integer_metadata_value import TaggedIntegerMetadataValue
+from .tagged_number_metadata_value import TaggedNumberMetadataValue
+from .tagged_string_metadata_value import TaggedStringMetadataValue
+from .tagged_timestamp_metadata_value import TaggedTimestampMetadataValue
 from .transfer_ownership_request import TransferOwnershipRequest
 from .update_index_request import UpdateIndexRequest
 from .update_member_request import UpdateMemberRequest
@@ -62,7 +68,7 @@ __all__ = (
     "APIKey",
     "APIKeyCreated",
     "APIKeyPage",
-    "BooleanMetadataValue",
+    "AuthOptions",
     "ChangePasswordRequest",
     "ContextLine",
     "CreateAPIKeyRequest",
@@ -83,7 +89,9 @@ __all__ = (
     "IndexSummary",
     "IndexTagChanges",
     "IndexTags",
-    "IntegerMetadataValue",
+    "InvitationCheckRequest",
+    "InvitationPreview",
+    "InvitationRole",
     "LoginRequest",
     "Match",
     "Member",
@@ -91,7 +99,6 @@ __all__ = (
     "Metadata",
     "MutationBatchResult",
     "MutationResult",
-    "NumberMetadataValue",
     "Organization",
     "OrganizationPage",
     "Pagination",
@@ -104,8 +111,13 @@ __all__ = (
     "QueryResult",
     "RegisterRequest",
     "Role",
-    "StringMetadataValue",
-    "TimestampMetadataValue",
+    "SignupMode",
+    "StaffRole",
+    "TaggedBooleanMetadataValue",
+    "TaggedIntegerMetadataValue",
+    "TaggedNumberMetadataValue",
+    "TaggedStringMetadataValue",
+    "TaggedTimestampMetadataValue",
     "TransferOwnershipRequest",
     "UpdateIndexRequest",
     "UpdateMemberRequest",
