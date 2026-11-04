@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import io
 import json
+import math
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Mapping
 from datetime import UTC, datetime
 from typing import Any, Final, Protocol, Required, TypeAlias, TypedDict, TypeVar, overload
@@ -106,6 +107,8 @@ def _tag(value: MetadataValue) -> dict[str, Any]:
     if isinstance(value, datetime):
         stamp = (value if value.tzinfo else value.replace(tzinfo=UTC)).astimezone(UTC)
         return {"type": "timestamp", "value": stamp.isoformat().replace("+00:00", "Z")}
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError(f"metadata numbers must be finite, not {value!r}")
     for kind, tag in ((bool, "boolean"), (int, "integer"), (float, "number"), (str, "string")):
         if isinstance(value, kind):
             return {"type": tag, "value": value}

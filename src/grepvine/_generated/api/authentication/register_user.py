@@ -38,6 +38,11 @@ def _parse_response(
 
         return response_201
 
+    if response.status_code == 403:
+        response_403 = Error.from_dict(response.json())
+
+        return response_403
+
     if response.status_code == 409:
         response_409 = Error.from_dict(response.json())
 
@@ -67,7 +72,11 @@ def sync_detailed(
     """Register a local user
 
      A 409 has code `username_taken` when an account or an organization already holds the username, and
-    code `email_taken` when an account already uses the email address.
+    code `email_taken` when an account already uses the email address. A 403 has code
+    `invitation_required` when registration is by invitation and the request carries none, and code
+    `invitation_invalid` when the invitation it carries was already used, was withdrawn or has expired.
+    A valid invitation is accepted with the registration, and the account joins the organization it
+    names, if any.
 
     Args:
         body (RegisterRequest):
@@ -99,7 +108,11 @@ def sync(
     """Register a local user
 
      A 409 has code `username_taken` when an account or an organization already holds the username, and
-    code `email_taken` when an account already uses the email address.
+    code `email_taken` when an account already uses the email address. A 403 has code
+    `invitation_required` when registration is by invitation and the request carries none, and code
+    `invitation_invalid` when the invitation it carries was already used, was withdrawn or has expired.
+    A valid invitation is accepted with the registration, and the account joins the organization it
+    names, if any.
 
     Args:
         body (RegisterRequest):
@@ -126,7 +139,11 @@ async def asyncio_detailed(
     """Register a local user
 
      A 409 has code `username_taken` when an account or an organization already holds the username, and
-    code `email_taken` when an account already uses the email address.
+    code `email_taken` when an account already uses the email address. A 403 has code
+    `invitation_required` when registration is by invitation and the request carries none, and code
+    `invitation_invalid` when the invitation it carries was already used, was withdrawn or has expired.
+    A valid invitation is accepted with the registration, and the account joins the organization it
+    names, if any.
 
     Args:
         body (RegisterRequest):
@@ -156,7 +173,11 @@ async def asyncio(
     """Register a local user
 
      A 409 has code `username_taken` when an account or an organization already holds the username, and
-    code `email_taken` when an account already uses the email address.
+    code `email_taken` when an account already uses the email address. A 403 has code
+    `invitation_required` when registration is by invitation and the request carries none, and code
+    `invitation_invalid` when the invitation it carries was already used, was withdrawn or has expired.
+    A valid invitation is accepted with the registration, and the account joins the organization it
+    names, if any.
 
     Args:
         body (RegisterRequest):

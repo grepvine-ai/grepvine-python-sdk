@@ -9,19 +9,19 @@ from attrs import define as _attrs_define
 from typing import Literal, cast
 
 
-T = TypeVar("T", bound="StringMetadataValue")
+T = TypeVar("T", bound="TaggedNumberMetadataValue")
 
 
 @_attrs_define
-class StringMetadataValue:
+class TaggedNumberMetadataValue:
     """
     Attributes:
-        type_ (Literal['string']):
-        value (str):
+        type_ (Literal['number']):
+        value (float):
     """
 
-    type_: Literal["string"]
-    value: str
+    type_: Literal["number"]
+    value: float
 
     def to_dict(self) -> dict[str, Any]:
         type_ = self.type_
@@ -42,15 +42,15 @@ class StringMetadataValue:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        type_ = cast(Literal["string"], d.pop("type"))
-        if type_ != "string":
-            raise ValueError(f"type must match const 'string', got '{type_}'")
+        type_ = cast(Literal["number"], d.pop("type"))
+        if type_ != "number":
+            raise ValueError(f"type must match const 'number', got '{type_}'")
 
         value = d.pop("value")
 
-        string_metadata_value = cls(
+        tagged_number_metadata_value = cls(
             type_=type_,
             value=value,
         )
 
-        return string_metadata_value
+        return tagged_number_metadata_value

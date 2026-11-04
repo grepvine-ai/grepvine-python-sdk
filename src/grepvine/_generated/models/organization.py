@@ -23,12 +23,15 @@ class Organization:
             case it was created with, and any spelling that differs only in case refers to it; no other account or
             organization can take such a spelling.
         role (Role):
+        suspended (bool): A suspended organization keeps its data, but refuses every operation on its members, indexes,
+            documents and searches until it is resumed. Contact support.
         created_at (datetime.datetime):
     """
 
     id: UUID
     name: str
     role: Role
+    suspended: bool
     created_at: datetime.datetime
 
     def to_dict(self) -> dict[str, Any]:
@@ -37,6 +40,8 @@ class Organization:
         name = self.name
 
         role = self.role.value
+
+        suspended = self.suspended
 
         created_at = self.created_at.isoformat()
 
@@ -47,6 +52,7 @@ class Organization:
                 "id": id,
                 "name": name,
                 "role": role,
+                "suspended": suspended,
                 "created_at": created_at,
             }
         )
@@ -62,12 +68,15 @@ class Organization:
 
         role = Role(d.pop("role"))
 
+        suspended = d.pop("suspended")
+
         created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
         organization = cls(
             id=id,
             name=name,
             role=role,
+            suspended=suspended,
             created_at=created_at,
         )
 

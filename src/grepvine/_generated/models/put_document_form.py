@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, TYPE_CHECKING
 
 from attrs import define as _attrs_define
+import json
 from .. import types
 
 from ..types import UNSET, Unset
 
 from ..types import File
 from io import BytesIO
+
+if TYPE_CHECKING:
+    from ..models.metadata import Metadata
 
 
 T = TypeVar("T", bound="PutDocumentForm")
@@ -22,19 +26,21 @@ class PutDocumentForm:
         key (str):
         content (File): The document bytes, at most 1 GiB. Valid UTF-8 of at most 100 MiB is searchable; other content
             is stored without being searchable.
-        metadata (str | Unset): A Metadata JSON object.
+        metadata (Metadata | Unset):
     """
 
     key: str
     content: File
-    metadata: str | Unset = UNSET
+    metadata: Metadata | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         key = self.key
 
         content = self.content.to_tuple()
 
-        metadata = self.metadata
+        metadata: dict[str, Any] | Unset = UNSET
+        if not isinstance(self.metadata, Unset):
+            metadata = self.metadata.to_dict()
 
         field_dict: dict[str, Any] = {}
 
@@ -57,18 +63,30 @@ class PutDocumentForm:
         files.append(("content", self.content.to_tuple()))
 
         if not isinstance(self.metadata, Unset):
-            files.append(("metadata", (None, str(self.metadata).encode(), "text/plain")))
+            files.append(
+                (
+                    "metadata",
+                    (None, json.dumps(self.metadata.to_dict()).encode(), "application/json"),
+                )
+            )
 
         return files
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.metadata import Metadata  # noqa: PLC0415
+
         d = dict(src_dict)
         key = d.pop("key")
 
         content = File(payload=BytesIO(d.pop("content")))
 
-        metadata = d.pop("metadata", UNSET)
+        _metadata = d.pop("metadata", UNSET)
+        metadata: Metadata | Unset
+        if isinstance(_metadata, Unset):
+            metadata = UNSET
+        else:
+            metadata = Metadata.from_dict(_metadata)
 
         put_document_form = cls(
             key=key,

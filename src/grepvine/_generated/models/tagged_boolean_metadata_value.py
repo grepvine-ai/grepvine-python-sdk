@@ -9,19 +9,19 @@ from attrs import define as _attrs_define
 from typing import Literal, cast
 
 
-T = TypeVar("T", bound="NumberMetadataValue")
+T = TypeVar("T", bound="TaggedBooleanMetadataValue")
 
 
 @_attrs_define
-class NumberMetadataValue:
+class TaggedBooleanMetadataValue:
     """
     Attributes:
-        type_ (Literal['number']):
-        value (float):
+        type_ (Literal['boolean']):
+        value (bool):
     """
 
-    type_: Literal["number"]
-    value: float
+    type_: Literal["boolean"]
+    value: bool
 
     def to_dict(self) -> dict[str, Any]:
         type_ = self.type_
@@ -42,15 +42,15 @@ class NumberMetadataValue:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        type_ = cast(Literal["number"], d.pop("type"))
-        if type_ != "number":
-            raise ValueError(f"type must match const 'number', got '{type_}'")
+        type_ = cast(Literal["boolean"], d.pop("type"))
+        if type_ != "boolean":
+            raise ValueError(f"type must match const 'boolean', got '{type_}'")
 
         value = d.pop("value")
 
-        number_metadata_value = cls(
+        tagged_boolean_metadata_value = cls(
             type_=type_,
             value=value,
         )
 
-        return number_metadata_value
+        return tagged_boolean_metadata_value

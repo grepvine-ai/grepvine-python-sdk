@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import io
 import json
+import math
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -10,8 +12,15 @@ import httpx
 import pytest
 
 import grepvine
-from grepvine.models import MutationResult
-from tests.conftest import Flavor, Service, error
+from grepvine.models import (
+    File,
+    Metadata,
+    MutationResult,
+    PutDocumentForm,
+    TaggedNumberMetadataValue,
+    TaggedStringMetadataValue,
+)
+from tests.conftest import Flavor, Service, error, page_json
 
 pytestmark = pytest.mark.anyio
 
@@ -145,3 +154,51 @@ def test_rejects_unknown_metadata_types(service: Service) -> None:
         with pytest.raises(TypeError):
             client.documents.put_many("acme", "docs", [document])
     assert service.requests == []
+
+
+def test_rejects_non_finite_numbers(service: Service) -> None:
+    document: grepvine.DocumentInput = {"key": "a", "content": "x", "metadata": {"x": math.nan}}
+    with grepvine.Client(transport=httpx.MockTransport(service.handle)) as client:
+        with pytest.raises(ValueError):
+            client.documents.put_many("acme", "docs", [document])
+    assert service.requests == []
+
+
+async def test_put_sends_metadata_as_json_and_lists_it_tagged(fx: Flavor, service: Service) -> None:
+    metadata = {"lang": "en", "n": 3, "score": {"type": "number", "value": 0.5}}
+    service.reply(
+        httpx.Response(200, json={"key": "a.bin", "revision": "r1"}),
+        httpx.Response(
+            200,
+            json=page_json(
+                [
+                    {
+                        "key": "a.bin",
+                        "revision": "r1",
+                        "content_bytes": 3,
+                        "searchable": False,
+                        "updated_at": "2026-01-02T03:04:05Z",
+                        "metadata": {
+                            "lang": {"type": "string", "value": "en"},
+                            "score": {"type": "number", "value": 0.5},
+                        },
+                    }
+                ]
+            )
+            | {"common_prefixes": []},
+        ),
+    )
+    form = PutDocumentForm(
+        key="a.bin",
+        content=File(payload=io.BytesIO(b"\x00\x01\x02")),
+        metadata=Metadata.from_dict(metadata),
+    )
+    await fx.run(fx.client.documents.put("acme", "docs", body=form))
+    body = service.requests[0].content
+    assert b"Content-Type: application/json" in body
+    assert json.dumps(metadata).encode() in body
+    page = await fx.run(fx.client.documents.list("acme", "docs"))
+    listed = page.results[0].metadata
+    assert isinstance(listed["lang"], TaggedStringMetadataValue)
+    assert isinstance(listed["score"], TaggedNumberMetadataValue)
+    assert listed["score"].value == 0.5

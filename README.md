@@ -57,7 +57,7 @@ from grepvine.models import (
 )
 
 for org in grepvine.paginate(client.organizations.list):
-    print(org.name, org.role)
+    print(org.name, org.role, org.suspended)
 
 org = client.organizations.get("my-org")
 client.organizations.create(body=CreateOrganizationRequest(name="my-org"))  # you become its owner
@@ -78,6 +78,11 @@ Organizations and user accounts share one namespace, so an organization name
 must not be taken by a user either. Adding, changing and removing members
 needs the admin or owner role; transferring ownership and deleting the
 organization need the owner role.
+
+A suspended organization keeps its data, but refuses every operation on its
+members, indexes, documents and searches with `PermissionDeniedError` and code
+`"organization_suspended"` until it is resumed. `organizations.get` and
+`organizations.list` still answer, with `suspended` set. Contact support.
 
 ## Indexes
 
@@ -191,7 +196,13 @@ at least 16 characters and repeat the call with the same key and the same
 documents: no document is written twice.
 
 For a binary document, or one larger than 16 MiB, use `documents.put` with a
-`PutDocumentForm`. Documents can be up to 1 GiB; content that is valid UTF-8
+`PutDocumentForm`; its `metadata` is a `Metadata`, such as
+`Metadata.from_dict({"lang": "en", "score": {"type": "number", "value": 0.5}})`.
+There strings, booleans and integers may be plain, while other numbers and
+timestamps take the tagged `{"type", "value"}` form. Listings return every
+value tagged, as a `TaggedStringMetadataValue`, `TaggedIntegerMetadataValue`,
+`TaggedNumberMetadataValue`, `TaggedBooleanMetadataValue` or
+`TaggedTimestampMetadataValue`. Documents can be up to 1 GiB; content that is valid UTF-8
 and at most 100 MiB is searchable, and anything else is stored and served but
 never matched by a search. `documents.put_batch` and `documents.delete_batch`
 send one request each, and `documents.delete` removes one document; with
@@ -229,7 +240,7 @@ when the service sent one, `retry_after`:
 |---|---|
 | `InvalidRequestError` | The request was rejected; fix the input. `InvalidPageError` for a bad page token. |
 | `AuthenticationError` | The API key is missing or not valid. |
-| `PermissionDeniedError` | The key may not perform the action. |
+| `PermissionDeniedError` | The key may not perform the action. Code `"organization_suspended"` when the organization is suspended. |
 | `NotFoundError` | The resource does not exist or is not visible. |
 | `ConflictError` | The request conflicts with the current state, such as creating an index that exists. |
 | `PreconditionFailedError` | An `if_match` or `if_none_match` condition failed on a single-document write. |
@@ -325,6 +336,14 @@ client.account.logout()
 CSRF token. A taken username or email address raises `ConflictError` with
 code `"username_taken"` or `"email_taken"`, and wrong credentials raise
 `AuthenticationError`. Passwords are at least 12 characters.
+
+`account.auth_options()` reports whether anyone may register (`signup` is
+`"open"`) or only with an invitation (`"invite"`). Then pass the invitation
+link's token as `RegisterRequest(..., invitation=token)`; without one,
+`register` raises `PermissionDeniedError` with code `"invitation_required"`,
+and with one that was used, withdrawn or has expired, code
+`"invitation_invalid"`. `account.check_invitation(body=InvitationCheckRequest(token=token))`
+shows what a pending invitation offers before registering.
 
 ## Device login
 

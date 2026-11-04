@@ -5,6 +5,8 @@ from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 
+from ..types import UNSET, Unset
+
 
 T = TypeVar("T", bound="RegisterRequest")
 
@@ -18,11 +20,14 @@ class RegisterRequest:
             organization can take such a spelling.
         email (str):
         password (str):
+        invitation (str | Unset): The token of the invitation link the account was invited with. Required when
+            registration is by invitation.
     """
 
     name: str
     email: str
     password: str
+    invitation: str | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         name = self.name
@@ -30,6 +35,8 @@ class RegisterRequest:
         email = self.email
 
         password = self.password
+
+        invitation = self.invitation
 
         field_dict: dict[str, Any] = {}
 
@@ -40,6 +47,8 @@ class RegisterRequest:
                 "password": password,
             }
         )
+        if invitation is not UNSET:
+            field_dict["invitation"] = invitation
 
         return field_dict
 
@@ -52,10 +61,13 @@ class RegisterRequest:
 
         password = d.pop("password")
 
+        invitation = d.pop("invitation", UNSET)
+
         register_request = cls(
             name=name,
             email=email,
             password=password,
+            invitation=invitation,
         )
 
         return register_request
