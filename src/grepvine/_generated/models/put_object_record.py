@@ -23,7 +23,7 @@ class PutObjectRecord:
     Attributes:
         key (str):
         content (str): The document text. A batch carries text only, so every document it stores is searchable.
-        metadata (Metadata | Unset):
+        metadata (Metadata | Unset): Document metadata as a request sends it. Values are plain or tagged.
         if_match (str | Unset):
         if_none_match (Literal['*'] | Unset):
     """

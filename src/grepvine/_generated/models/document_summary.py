@@ -9,7 +9,7 @@ from attrs import define as _attrs_define
 import datetime
 
 if TYPE_CHECKING:
-    from ..models.metadata import Metadata
+    from ..models.tagged_metadata import TaggedMetadata
 
 
 T = TypeVar("T", bound="DocumentSummary")
@@ -22,7 +22,7 @@ class DocumentSummary:
         key (str):
         revision (str):
         content_bytes (int):
-        metadata (Metadata):
+        metadata (TaggedMetadata): Document metadata as a response returns it. Every value is tagged with its type.
         updated_at (datetime.datetime): When the document's current revision was stored.
         searchable (bool): Whether a search can match this document. False for content that is not valid UTF-8 or is
             over 100 MiB; such a document is stored and served but never returned by a query.
@@ -31,7 +31,7 @@ class DocumentSummary:
     key: str
     revision: str
     content_bytes: int
-    metadata: Metadata
+    metadata: TaggedMetadata
     updated_at: datetime.datetime
     searchable: bool
 
@@ -65,7 +65,7 @@ class DocumentSummary:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.metadata import Metadata  # noqa: PLC0415
+        from ..models.tagged_metadata import TaggedMetadata  # noqa: PLC0415
 
         d = dict(src_dict)
         key = d.pop("key")
@@ -74,7 +74,7 @@ class DocumentSummary:
 
         content_bytes = d.pop("content_bytes")
 
-        metadata = Metadata.from_dict(d.pop("metadata"))
+        metadata = TaggedMetadata.from_dict(d.pop("metadata"))
 
         updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
 

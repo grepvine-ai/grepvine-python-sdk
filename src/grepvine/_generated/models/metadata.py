@@ -22,6 +22,8 @@ T = TypeVar("T", bound="Metadata")
 
 @_attrs_define
 class Metadata:
+    """Document metadata as a request sends it. Values are plain or tagged."""
+
     additional_properties: dict[
         str,
         bool

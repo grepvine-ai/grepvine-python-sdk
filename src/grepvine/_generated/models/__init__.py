@@ -52,6 +52,7 @@ from .signup_mode import SignupMode
 from .staff_role import StaffRole
 from .tagged_boolean_metadata_value import TaggedBooleanMetadataValue
 from .tagged_integer_metadata_value import TaggedIntegerMetadataValue
+from .tagged_metadata import TaggedMetadata
 from .tagged_number_metadata_value import TaggedNumberMetadataValue
 from .tagged_string_metadata_value import TaggedStringMetadataValue
 from .tagged_timestamp_metadata_value import TaggedTimestampMetadataValue
@@ -115,6 +116,7 @@ __all__ = (
     "StaffRole",
     "TaggedBooleanMetadataValue",
     "TaggedIntegerMetadataValue",
+    "TaggedMetadata",
     "TaggedNumberMetadataValue",
     "TaggedStringMetadataValue",
     "TaggedTimestampMetadataValue",

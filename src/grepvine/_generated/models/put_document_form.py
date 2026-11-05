@@ -26,7 +26,7 @@ class PutDocumentForm:
         key (str):
         content (File): The document bytes, at most 1 GiB. Valid UTF-8 of at most 100 MiB is searchable; other content
             is stored without being searchable.
-        metadata (Metadata | Unset):
+        metadata (Metadata | Unset): Document metadata as a request sends it. Values are plain or tagged.
     """
 
     key: str
