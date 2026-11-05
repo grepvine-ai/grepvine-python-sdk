@@ -94,11 +94,18 @@ jobs:
         with:
           name: dist
           path: dist/
-      - name: Publish to TestPyPI
+      # Temporarily disabled until access to the TestPyPI account is restored
+      # (https://github.com/pypi/support/issues/13008).
+      # - name: Publish to TestPyPI
+      #   if: needs.build.outputs.repository == 'testpypi'
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     repository-url: https://test.pypi.org/legacy/
+      - name: TestPyPI publishing is disabled
         if: needs.build.outputs.repository == 'testpypi'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
+        run: |
+          echo "::error::TestPyPI publishing is temporarily disabled; see https://github.com/pypi/support/issues/13008"
+          exit 1
       - name: Publish to PyPI
         if: needs.build.outputs.repository == 'pypi'
         uses: pypa/gh-action-pypi-publish@release/v1
