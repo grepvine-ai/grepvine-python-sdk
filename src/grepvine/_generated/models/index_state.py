@@ -6,6 +6,7 @@ class IndexState(StrEnum):
     DELETE_FAILED = "delete_failed"
     DELETING = "deleting"
     READY = "ready"
+    RECREATE_REQUIRED = "recreate_required"
 
     def __str__(self) -> str:
         return str(self.value)
