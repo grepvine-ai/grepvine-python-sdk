@@ -196,13 +196,45 @@ at least 16 characters and repeat the call with the same key and the same
 documents: no document is written twice.
 
 For a binary document, or one larger than 16 MiB, use `documents.put` with a
-`PutDocumentForm`; its `metadata` is a `Metadata`, such as
-`Metadata.from_dict({"lang": "en", "score": {"type": "number", "value": 0.5}})`.
-There strings, booleans and integers may be plain, while other numbers and
-timestamps take the tagged `{"type", "value"}` form. Listings return every
-value tagged, as a `TaggedStringMetadataValue`, `TaggedIntegerMetadataValue`,
+`PutDocumentForm`:
+
+```python
+from grepvine.models import File, Metadata, PutDocumentForm
+
+with open("report.pdf", "rb") as content:
+    client.documents.put(
+        "my-org",
+        "my-index",
+        body=PutDocumentForm(
+            key="report.pdf",
+            content=File(payload=content),
+            metadata=Metadata.from_dict(
+                {
+                    "lang": "en",
+                    "pages": 12,
+                    "draft": False,
+                    "score": {"type": "number", "value": 0.5},
+                    "reviewed": {"type": "timestamp", "value": "2026-01-02T03:04:05Z"},
+                }
+            ),
+        ),
+    )
+```
+
+Strings, booleans and integers may be plain. A number that is not an integer,
+and a timestamp, must take the tagged `{"type", "value"}` form; a plain `0.5` is
+not valid. Listings return every value tagged, as a
+`TaggedStringMetadataValue`, `TaggedIntegerMetadataValue`,
 `TaggedNumberMetadataValue`, `TaggedBooleanMetadataValue` or
-`TaggedTimestampMetadataValue`. Documents can be up to 1 GiB; content that is valid UTF-8
+`TaggedTimestampMetadataValue`, whose `value` holds the `str`, `int`, `float`,
+`bool` or `datetime`:
+
+```python
+page = client.documents.list("my-org", "my-index", prefix="report")
+print(page.results[0].metadata["pages"].value)  # 12
+```
+
+Documents can be up to 1 GiB; content that is valid UTF-8
 and at most 100 MiB is searchable, and anything else is stored and served but
 never matched by a search. `documents.put_batch` and `documents.delete_batch`
 send one request each, and `documents.delete` removes one document; with
