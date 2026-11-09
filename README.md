@@ -56,28 +56,30 @@ isolated = grepvine.Client(api_key="gvk_...", trust_env=False)   # arguments onl
 
 `Client.from_env()` takes its settings only from the three environment
 variables, and `Client.from_config(path)` only from that file; a setting either
-leaves out takes its default. `AsyncClient` has the same forms, and all of them
-take `proxy`, `timeout`, `retry` and `transport`.
+leaves out takes its default. `trust_env=False` makes a client whose settings
+come only from its arguments. `AsyncClient` has the same forms, and all of them
+take `timeout`, `retry` and `transport`.
 
 ### Proxies and certificates
 
-Like httpx and requests, a client sends its requests through the proxy that
+Like curl, pip and httpx, a client sends its requests through the proxy that
 `HTTPS_PROXY` (or `HTTP_PROXY`, or `ALL_PROXY`) names, connects directly to the
 hosts that `NO_PROXY` lists, and trusts the certificate authorities in
-`SSL_CERT_FILE` or `SSL_CERT_DIR`. `proxy=` names a proxy in code instead:
+`SSL_CERT_FILE` or `SSL_CERT_DIR`. These variables apply to every client,
+including one made with `trust_env=False`, which concerns only the Grepvine
+settings. A `socks5://` proxy needs `pip install "httpx[socks]"`. Through a
+proxy, an `https` endpoint is reached through a tunnel, so the proxy sees the
+host name but not the API key or the content.
+
+To choose a proxy in code, or to connect directly whatever the variables say,
+pass an httpx transport. The client still retries requests through it:
 
 ```python
-client = grepvine.Client(proxy="http://proxy.internal:3128")
+import httpx
+
+proxied = grepvine.Client(transport=httpx.HTTPTransport(proxy="http://proxy.internal:3128"))
+direct = grepvine.Client(transport=httpx.HTTPTransport())
 ```
-
-A `socks5://` proxy needs `pip install "httpx[socks]"`. Through a proxy, an
-`https` endpoint is reached through a tunnel, so the proxy sees the host name
-but not the API key or the content.
-
-`trust_env=False` ignores the whole environment, as in httpx: the `GREPVINE_*`
-variables, the configuration file, and the proxy and certificate variables. The
-client then uses only its arguments and connects directly, or through its
-`proxy`.
 
 Clients configured differently can be used side by side. The configuration
 file is refused if other users can read it, as `gv` refuses it. An endpoint

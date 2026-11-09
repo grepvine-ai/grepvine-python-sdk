@@ -120,9 +120,11 @@ The client hands httpx its own retrying transports, so httpx does not apply
 the proxy variables by itself: `_network` in `_client.py` builds a retrying
 transport per proxy pattern from httpx's own reading of `HTTP_PROXY`,
 `HTTPS_PROXY`, `ALL_PROXY` and `NO_PROXY` (`httpx._utils.get_environment_proxies`,
-pinned with httpx below 0.29), and passes `trust_env` to every transport for
-`SSL_CERT_FILE` and `SSL_CERT_DIR`. The tests clear the proxy variables too;
-`tests/test_proxy.py` runs a local server as the proxy.
+pinned with httpx below 0.29). The transports keep httpx's default reading of
+`SSL_CERT_FILE` and `SSL_CERT_DIR`. `trust_env` concerns only the Grepvine
+settings, never the network; a proxy chosen in code is an
+`httpx.HTTPTransport(proxy=...)` passed as `transport`. The tests clear the
+proxy variables too; `tests/test_proxy.py` runs a local server as the proxy.
 
 `tests/test_coverage.py` checks that `sdk-operations.json` names exactly the
 operations of the contract and of `spec/source.json`, and that each one is a

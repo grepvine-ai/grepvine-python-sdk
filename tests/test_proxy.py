@@ -1,5 +1,5 @@
-"""Requests go through the proxy that HTTP(S)_PROXY or proxy= names, unless NO_PROXY or
-trust_env=False says otherwise."""
+"""Requests go through the proxy that HTTP(S)_PROXY names, except to NO_PROXY hosts, whatever
+trust_env says; a transport given in code is used instead, and still retried."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from collections.abc import Iterator
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
+import httpx
 import pytest
 
 import grepvine
@@ -37,13 +38,18 @@ class Recorder(ThreadingHTTPServer):
 
     def __init__(self) -> None:
         self.paths: list[str] = []
+        self.failures = 0
         recorder = self
 
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:
                 recorder.paths.append(self.path)
-                body = json.dumps(INDEX).encode()
-                self.send_response(200)
+                status, answer = 200, INDEX
+                if recorder.failures:
+                    recorder.failures -= 1
+                    status, answer = 503, {"code": "unavailable", "reason": "r", "error": "busy"}
+                body = json.dumps(answer).encode()
+                self.send_response(status)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
@@ -113,21 +119,33 @@ def test_no_proxy_connects_directly(
     assert (proxy.paths, origin.paths) == ([], [PATH])
 
 
-def test_trust_env_false_ignores_the_proxy_variable(
+def test_trust_env_false_still_uses_the_proxy_variable(
+    proxy: Recorder, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HTTP_PROXY", proxy.url)
+    get_index(grepvine.Client(api_key="k", endpoint="http://grepvine.test", trust_env=False))
+    assert proxy.paths == [f"http://grepvine.test{PATH}"]
+
+
+def test_a_transport_with_a_proxy_is_used_and_retried(proxy: Recorder) -> None:
+    proxy.failures = 1
+    transport = httpx.HTTPTransport(proxy=proxy.url)
+    client = grepvine.Client(
+        api_key="k",
+        endpoint="http://grepvine.test",
+        transport=transport,
+        retry=grepvine.RetryPolicy(backoff=(0.0,)),
+    )
+    get_index(client)
+    assert proxy.paths == [f"http://grepvine.test{PATH}"] * 2
+
+
+def test_a_transport_is_used_instead_of_the_proxy_variable(
     proxy: Recorder, origin: Recorder, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("HTTP_PROXY", proxy.url)
-    get_index(grepvine.Client(api_key="k", endpoint=origin.url, trust_env=False))
+    get_index(grepvine.Client(api_key="k", endpoint=origin.url, transport=httpx.HTTPTransport()))
     assert (proxy.paths, origin.paths) == ([], [PATH])
-
-
-def test_proxy_argument_is_used_without_variables(proxy: Recorder) -> None:
-    get_index(
-        grepvine.Client(
-            api_key="k", endpoint="http://grepvine.test", proxy=proxy.url, trust_env=False
-        )
-    )
-    assert proxy.paths == [f"http://grepvine.test{PATH}"]
 
 
 @pytest.mark.parametrize("make", ["from_env", "from_config"])
@@ -142,10 +160,3 @@ def test_from_env_and_from_config_use_the_proxy_variable(
     client = grepvine.Client.from_env() if make == "from_env" else grepvine.Client.from_config(path)
     get_index(client)
     assert proxy.paths == [f"http://grepvine.test{PATH}"]
-
-
-def test_proxy_and_transport_are_exclusive() -> None:
-    import httpx
-
-    with pytest.raises(grepvine.ConfigurationError, match="proxy or a transport"):
-        grepvine.Client(proxy="http://proxy.test:3128", transport=httpx.MockTransport(lambda r: r))
