@@ -16,14 +16,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
-      - name: Set the released package version
-        if: github.event_name == 'release'
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: uv version --frozen "${RELEASE_TAG#v}"
       - run: uv sync --frozen
       - name: Build documentation
         run: uv run --frozen python scripts/build_docs.py
