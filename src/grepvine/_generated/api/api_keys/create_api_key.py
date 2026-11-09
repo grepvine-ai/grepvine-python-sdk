@@ -61,8 +61,11 @@ def sync_detailed(
 ) -> Response[APIKeyCreated | Error]:
     """Create an API key
 
+     Creates an API key for the authenticated account. The response is the only time the secret key is
+    shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+
     Args:
-        body (CreateAPIKeyRequest):
+        body (CreateAPIKeyRequest): A new API key.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -90,8 +93,11 @@ def sync(
 ) -> APIKeyCreated | Error | None:
     """Create an API key
 
+     Creates an API key for the authenticated account. The response is the only time the secret key is
+    shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+
     Args:
-        body (CreateAPIKeyRequest):
+        body (CreateAPIKeyRequest): A new API key.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -114,8 +120,11 @@ async def asyncio_detailed(
 ) -> Response[APIKeyCreated | Error]:
     """Create an API key
 
+     Creates an API key for the authenticated account. The response is the only time the secret key is
+    shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+
     Args:
-        body (CreateAPIKeyRequest):
+        body (CreateAPIKeyRequest): A new API key.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -141,8 +150,11 @@ async def asyncio(
 ) -> APIKeyCreated | Error | None:
     """Create an API key
 
+     Creates an API key for the authenticated account. The response is the only time the secret key is
+    shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+
     Args:
-        body (CreateAPIKeyRequest):
+        body (CreateAPIKeyRequest): A new API key.
 
     Raises:
         grepvine.APIError: The service answered with an error.

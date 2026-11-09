@@ -85,6 +85,10 @@ def sync_detailed(
 ) -> Response[Error | MutationResult]:
     """Delete one document
 
+     Deletes one document. Send If-Match with a revision to delete it only if it still has that revision.
+    Retrying with the same Idempotency-Key returns the original result. Once acknowledged, the document
+    no longer matches any search.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -130,6 +134,10 @@ def sync(
 ) -> Error | MutationResult | None:
     """Delete one document
 
+     Deletes one document. Send If-Match with a revision to delete it only if it still has that revision.
+    Retrying with the same Idempotency-Key returns the original result. Once acknowledged, the document
+    no longer matches any search.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -169,6 +177,10 @@ async def asyncio_detailed(
     if_match: str | Unset = UNSET,
 ) -> Response[Error | MutationResult]:
     """Delete one document
+
+     Deletes one document. Send If-Match with a revision to delete it only if it still has that revision.
+    Retrying with the same Idempotency-Key returns the original result. Once acknowledged, the document
+    no longer matches any search.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -212,6 +224,10 @@ async def asyncio(
     if_match: str | Unset = UNSET,
 ) -> Error | MutationResult | None:
     """Delete one document
+
+     Deletes one document. Send If-Match with a revision to delete it only if it still has that revision.
+    Retrying with the same Idempotency-Key returns the original result. Once acknowledged, the document
+    no longer matches any search.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

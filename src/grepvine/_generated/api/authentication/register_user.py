@@ -79,7 +79,7 @@ def sync_detailed(
     names, if any.
 
     Args:
-        body (RegisterRequest):
+        body (RegisterRequest): A new local account.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -115,7 +115,7 @@ def sync(
     names, if any.
 
     Args:
-        body (RegisterRequest):
+        body (RegisterRequest): A new local account.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -146,7 +146,7 @@ async def asyncio_detailed(
     names, if any.
 
     Args:
-        body (RegisterRequest):
+        body (RegisterRequest): A new local account.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -180,7 +180,7 @@ async def asyncio(
     names, if any.
 
     Args:
-        body (RegisterRequest):
+        body (RegisterRequest): A new local account.
 
     Raises:
         grepvine.APIError: The service answered with an error.

@@ -57,6 +57,9 @@ def sync_detailed(
 ) -> Response[Any | Error]:
     """Remove an organization member
 
+     Removes a member from the organization. Requires the owner or admin role. The owner can't be
+    removed; transfer ownership first.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -93,6 +96,9 @@ def sync(
 ) -> Any | Error | None:
     """Remove an organization member
 
+     Removes a member from the organization. Requires the owner or admin role. The owner can't be
+    removed; transfer ownership first.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -123,6 +129,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
 ) -> Response[Any | Error]:
     """Remove an organization member
+
+     Removes a member from the organization. Requires the owner or admin role. The owner can't be
+    removed; transfer ownership first.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -157,6 +166,9 @@ async def asyncio(
     client: AuthenticatedClient | Client,
 ) -> Any | Error | None:
     """Remove an organization member
+
+     Removes a member from the organization. Requires the owner or admin role. The owner can't be
+    removed; transfer ownership first.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

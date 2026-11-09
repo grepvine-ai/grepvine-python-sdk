@@ -16,14 +16,15 @@ T = TypeVar("T", bound="APIKey")
 
 @_attrs_define
 class APIKey:
-    """
+    """An API key, without its secret.
+
     Attributes:
-        id (UUID):
-        name (str):
-        prefix (str):
-        created_at (datetime.datetime):
-        last_used_at (datetime.datetime | Unset):
-        revoked_at (datetime.datetime | Unset):
+        id (UUID): The key's unique ID.
+        name (str): The name the key was given.
+        prefix (str): The first characters of the key, shown to tell keys apart.
+        created_at (datetime.datetime): When the key was created.
+        last_used_at (datetime.datetime | Unset): When the key last authenticated a request. Omitted if it never has.
+        revoked_at (datetime.datetime | Unset): When the key was revoked. Omitted while the key is active.
     """
 
     id: UUID

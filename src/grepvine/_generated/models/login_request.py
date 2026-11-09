@@ -11,10 +11,11 @@ T = TypeVar("T", bound="LoginRequest")
 
 @_attrs_define
 class LoginRequest:
-    """
+    """Credentials for a new session.
+
     Attributes:
         identifier (str): A username or an email address, matched case-insensitively.
-        password (str):
+        password (str): The account's password.
     """
 
     identifier: str

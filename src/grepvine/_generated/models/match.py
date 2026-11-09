@@ -11,10 +11,12 @@ T = TypeVar("T", bound="Match")
 
 @_attrs_define
 class Match:
-    """
+    """One match, as a byte range of the document.
+
     Attributes:
-        offset (int):
-        length (int):
+        offset (int): Byte offset of the match within the document. It starts at byte `offset - text_start_offset` of
+            the result's text.
+        length (int): The match's length in bytes.
     """
 
     offset: int

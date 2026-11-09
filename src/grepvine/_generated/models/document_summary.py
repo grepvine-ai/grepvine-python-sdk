@@ -17,11 +17,13 @@ T = TypeVar("T", bound="DocumentSummary")
 
 @_attrs_define
 class DocumentSummary:
-    """
+    """A document as a listing returns it, without its content.
+
     Attributes:
-        key (str):
-        revision (str):
-        content_bytes (int):
+        key (str): The document's key.
+        revision (str): The document's current revision, an opaque value that changes on every write. Pass it as If-
+            Match to write only if nothing changed since.
+        content_bytes (int): The size of the document's content, in bytes.
         metadata (TaggedMetadata): Document metadata as a response returns it. Every value is tagged with its type.
         updated_at (datetime.datetime): When the document's current revision was stored.
         searchable (bool): Whether a search can match this document. False for content that is not valid UTF-8 or is

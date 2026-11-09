@@ -75,6 +75,8 @@ def sync_detailed(
 ) -> Response[Error | IndexPage]:
     """List indexes
 
+     Lists the organization's indexes, ordered by name. Any member can list them.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -115,6 +117,8 @@ def sync(
 ) -> Error | IndexPage | None:
     """List indexes
 
+     Lists the organization's indexes, ordered by name. Any member can list them.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -149,6 +153,8 @@ async def asyncio_detailed(
     prefix: str | Unset = UNSET,
 ) -> Response[Error | IndexPage]:
     """List indexes
+
+     Lists the organization's indexes, ordered by name. Any member can list them.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -187,6 +193,8 @@ async def asyncio(
     prefix: str | Unset = UNSET,
 ) -> Error | IndexPage | None:
     """List indexes
+
+     Lists the organization's indexes, ordered by name. Any member can list them.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

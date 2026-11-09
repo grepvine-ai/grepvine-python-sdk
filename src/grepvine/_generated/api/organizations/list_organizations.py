@@ -66,6 +66,9 @@ def sync_detailed(
 ) -> Response[Error | OrganizationPage]:
     """List organizations
 
+     Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+    name.
+
     Args:
         amount (int | Unset):  Default: 50.
         page (str | Unset):
@@ -98,6 +101,9 @@ def sync(
 ) -> Error | OrganizationPage | None:
     """List organizations
 
+     Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+    name.
+
     Args:
         amount (int | Unset):  Default: 50.
         page (str | Unset):
@@ -124,6 +130,9 @@ async def asyncio_detailed(
     page: str | Unset = UNSET,
 ) -> Response[Error | OrganizationPage]:
     """List organizations
+
+     Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+    name.
 
     Args:
         amount (int | Unset):  Default: 50.
@@ -154,6 +163,9 @@ async def asyncio(
     page: str | Unset = UNSET,
 ) -> Error | OrganizationPage | None:
     """List organizations
+
+     Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+    name.
 
     Args:
         amount (int | Unset):  Default: 50.

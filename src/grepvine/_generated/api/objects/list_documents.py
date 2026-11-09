@@ -82,6 +82,10 @@ def sync_detailed(
 ) -> Response[DocumentPage | Error]:
     """List documents
 
+     Lists documents in key byte order, with each one's revision, size, metadata and whether a search can
+    match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a directory
+    tree: keys that share the part up to the next delimiter are returned once, in `common_prefixes`.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -130,6 +134,10 @@ def sync(
 ) -> DocumentPage | Error | None:
     """List documents
 
+     Lists documents in key byte order, with each one's revision, size, metadata and whether a search can
+    match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a directory
+    tree: keys that share the part up to the next delimiter are returned once, in `common_prefixes`.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -172,6 +180,10 @@ async def asyncio_detailed(
     delimiter: str | Unset = UNSET,
 ) -> Response[DocumentPage | Error]:
     """List documents
+
+     Lists documents in key byte order, with each one's revision, size, metadata and whether a search can
+    match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a directory
+    tree: keys that share the part up to the next delimiter are returned once, in `common_prefixes`.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -218,6 +230,10 @@ async def asyncio(
     delimiter: str | Unset = UNSET,
 ) -> DocumentPage | Error | None:
     """List documents
+
+     Lists documents in key byte order, with each one's revision, size, metadata and whether a search can
+    match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a directory
+    tree: keys that share the part up to the next delimiter are returned once, in `common_prefixes`.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

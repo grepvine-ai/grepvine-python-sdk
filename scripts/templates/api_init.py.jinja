@@ -97,7 +97,7 @@ _model({{ prop.class_info.name }}, {{ arg(prop) }})
 {% set parts = [] %}
 {%- if prop.description %}{% set _ = parts.append(prop.description | safe_for_docstring) %}{% endif %}
 {%- if prop.template == "enum_property.py.jinja" %}{% set choices = [] %}{% for value in prop.values.values() %}{% set _ = choices.append("``" ~ (value | tojson) ~ "``") %}{% endfor %}{% set _ = parts.append("One of " ~ choices | join(", ") ~ ".") %}{% endif %}
-{%- if prop.default is not none and not prop.required %}{% set _ = parts.append("Default: " ~ ((prop.default.raw_value | tojson) if prop.default.raw_value is string else (prop.default.python_code | as_unembedded_code)) ~ ".") %}{% endif %}
+{%- if prop.default is not none and not prop.required and "default" not in (prop.description | safe_for_docstring | lower) %}{% set _ = parts.append("Default: " ~ ((prop.default.raw_value | tojson) if prop.default.raw_value is string else (prop.default.python_code | as_unembedded_code)) ~ ".") %}{% endif %}
 {{- arg(prop) }}:{{ (" " ~ parts | join(" ")) if parts }}
 {%- endmacro %}
 {#
@@ -142,11 +142,19 @@ self,
 {% if with_page %}page: str | None = None,
 {% endif %}
 {%- endmacro %}
-{% macro docstring(first_line, with_page, returned) -%}
+{% macro docstring(first_line, with_page, returned, iterator=False) -%}
 """{{ first_line }}
 {% if endpoint.description %}
+{% set text = endpoint.description | safe_for_docstring %}
+{# An iterator follows the pages itself, so sentences about the page argument do not apply. #}
+{% if iterator %}
+{% set kept = [] %}
+{% for sentence in text.split(". ") if "`page`" not in sentence %}{% set _ = kept.append(sentence) %}{% endfor %}
+{% set text = kept | join(". ") %}
+{% set text = text if text.endswith(".") else text ~ "." %}
+{% endif %}
 
-{{ endpoint.description | safe_for_docstring | wordwrap(96) }}
+{{ text | wordwrap(96) }}
 {% endif %}
 {% set documented = positional + named + options %}
 {% if documented or with_page %}
@@ -206,7 +214,7 @@ Raises:
     def {{ name }}(
         {{ signature(False) | indent(8) }}
     ) -> {{ "AsyncIterator" if is_async else "Iterator" }}[{{ item_types[0] }}]:
-        {{ docstring(summary ~ ": every result, page after page.", False, ("An async iterator" if is_async else "An iterator") ~ " over " ~ item_types[0] ~ ", which requests each page as it is reached.") | indent(8) }}
+        {{ docstring(summary ~ ": every result, page after page.", False, ("An async iterator" if is_async else "An iterator") ~ " over " ~ item_types[0] ~ ", which requests each page as it is reached.", True) | indent(8) }}
 {{ arguments() }}
         return _{{ "async_" if is_async }}pages({{ call }}, kwargs)
 {% endif %}

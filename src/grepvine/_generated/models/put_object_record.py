@@ -19,13 +19,17 @@ T = TypeVar("T", bound="PutObjectRecord")
 
 @_attrs_define
 class PutObjectRecord:
-    """
+    """One document of a batch to store.
+
     Attributes:
-        key (str):
+        key (str): The document's key: a UTF-8, POSIX-style path of at most 1,024 bytes, with no empty, `.` or `..`
+            components. Storing a key that exists replaces that document.
         content (str): The document text. A batch carries text only, so every document it stores is searchable.
         metadata (Metadata | Unset): Document metadata as a request sends it. Values are plain or tagged.
-        if_match (str | Unset):
-        if_none_match (Literal['*'] | Unset):
+        if_match (str | Unset): A revision. The document is stored only if it still has this revision; otherwise its
+            result has the error `precondition_failed`.
+        if_none_match (Literal['*'] | Unset): Set to `*` to store the document only if no document has this key yet;
+            otherwise its result has the error `precondition_failed`.
     """
 
     key: str

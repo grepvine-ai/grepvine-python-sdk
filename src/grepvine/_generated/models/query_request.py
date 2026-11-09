@@ -15,17 +15,24 @@ T = TypeVar("T", bound="QueryRequest")
 
 @_attrs_define
 class QueryRequest:
-    """
+    """A search: the pattern, how to match it, which documents to search and how much context to return.
+
     Attributes:
-        pattern (str):
-        mode (QueryRequestMode | Unset):  Default: QueryRequestMode.REGEX.
-        case_sensitive (bool | Unset):  Default: True.
-        whole_word (bool | Unset):  Default: False.
+        pattern (str): What to search for: an RE2 regular expression, or literal text when `mode` is `literal`.
+            Required; at most 8,192 characters of valid UTF-8.
+        mode (QueryRequestMode | Unset): How to read the pattern: `regex` (the default) for RE2 syntax, without
+            backreferences or lookaround, or `literal` to match its bytes exactly, with no escaping needed. Default:
+            QueryRequestMode.REGEX.
+        case_sensitive (bool | Unset): Whether case must match. Defaults to true. False matches under Unicode simple
+            case folding; in a regex, `(?i)` does the same for part of the pattern. Default: True.
+        whole_word (bool | Unset): Match only where the characters on either side of the match aren't word characters:
+            letters, digits or `_`. Defaults to false. Valid only in literal mode. Default: False.
         multiline (bool | Unset): Let a match span lines. Without it a pattern matches within one line, `^` and `$` mark
             the line's edges, and a character class never matches a line break; a pattern that contains a line break is
             rejected. With it the pattern is matched against the whole document, `^` and `$` still mark line edges, `\\A`
             and `\\z` mark the document's edges, and a match may contain line breaks. Default: False.
-        filter_ (str | Unset):
+        filter_ (str | Unset): Search only the documents whose metadata matches this expression, such as `path
+            STARTSWITH 'src/' AND size < 1048576`. At most 8,192 characters. Omit it to search every document.
         lines_before (int | Unset): How many lines before each result to return with it, from the same document.
             Default: 0.
         lines_after (int | Unset): How many lines after each result to return with it, from the same document. Default:

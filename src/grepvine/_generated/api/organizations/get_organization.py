@@ -61,6 +61,9 @@ def sync_detailed(
 ) -> Response[Error | Organization]:
     """Get an organization
 
+     Returns an organization the authenticated account belongs to, with its role there. It answers for a
+    suspended organization too, and reports `suspended`.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -92,6 +95,9 @@ def sync(
 ) -> Error | Organization | None:
     """Get an organization
 
+     Returns an organization the authenticated account belongs to, with its role there. It answers for a
+    suspended organization too, and reports `suspended`.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -117,6 +123,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
 ) -> Response[Error | Organization]:
     """Get an organization
+
+     Returns an organization the authenticated account belongs to, with its role there. It answers for a
+    suspended organization too, and reports `suspended`.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -146,6 +155,9 @@ async def asyncio(
     client: AuthenticatedClient | Client,
 ) -> Error | Organization | None:
     """Get an organization
+
+     Returns an organization the authenticated account belongs to, with its role there. It answers for a
+    suspended organization too, and reports `suspended`.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

@@ -15,9 +15,10 @@ T = TypeVar("T", bound="MutationBatchResult")
 
 @_attrs_define
 class MutationBatchResult:
-    """
+    """The outcome of each document of a batch.
+
     Attributes:
-        results (list[MutationResult]):
+        results (list[MutationResult]): One result per document, in request order.
     """
 
     results: list[MutationResult]

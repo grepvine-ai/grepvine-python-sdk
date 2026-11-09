@@ -66,11 +66,14 @@ def sync_detailed(
 ) -> Response[Error | Member]:
     """Add an organization member
 
+     Adds an existing account to the organization with the admin, developer or reader role. Requires the
+    owner or admin role. An organization has one owner, changed only by transferring ownership.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (AddMemberRequest):
+        body (AddMemberRequest): The account to add and its role.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -100,11 +103,14 @@ def sync(
 ) -> Error | Member | None:
     """Add an organization member
 
+     Adds an existing account to the organization with the admin, developer or reader role. Requires the
+    owner or admin role. An organization has one owner, changed only by transferring ownership.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (AddMemberRequest):
+        body (AddMemberRequest): The account to add and its role.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -129,11 +135,14 @@ async def asyncio_detailed(
 ) -> Response[Error | Member]:
     """Add an organization member
 
+     Adds an existing account to the organization with the admin, developer or reader role. Requires the
+    owner or admin role. An organization has one owner, changed only by transferring ownership.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (AddMemberRequest):
+        body (AddMemberRequest): The account to add and its role.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -161,11 +170,14 @@ async def asyncio(
 ) -> Error | Member | None:
     """Add an organization member
 
+     Adds an existing account to the organization with the admin, developer or reader role. Requires the
+    owner or admin role. An organization has one owner, changed only by transferring ownership.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (AddMemberRequest):
+        body (AddMemberRequest): The account to add and its role.
 
     Raises:
         grepvine.APIError: The service answered with an error.

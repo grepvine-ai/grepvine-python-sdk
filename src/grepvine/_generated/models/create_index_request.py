@@ -17,7 +17,8 @@ T = TypeVar("T", bound="CreateIndexRequest")
 
 @_attrs_define
 class CreateIndexRequest:
-    """
+    """A new index.
+
     Attributes:
         name (str): An index name, unique in its organization. A name keeps the case it was created with, and any
             spelling that differs only in case refers to it; no other index in the organization can take such a spelling.

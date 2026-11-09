@@ -11,9 +11,10 @@ T = TypeVar("T", bound="DeviceDecisionRequest")
 
 @_attrs_define
 class DeviceDecisionRequest:
-    """
+    """The device authorization to approve or deny.
+
     Attributes:
-        user_code (str):
+        user_code (str): The code the device shows. Hyphens, surrounding spaces and case are ignored.
     """
 
     user_code: str

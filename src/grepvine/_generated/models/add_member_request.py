@@ -14,12 +14,13 @@ T = TypeVar("T", bound="AddMemberRequest")
 
 @_attrs_define
 class AddMemberRequest:
-    """
+    """The account to add and its role.
+
     Attributes:
         user (str): An account or organization name. Accounts and organizations share one namespace. A name keeps the
             case it was created with, and any spelling that differs only in case refers to it; no other account or
             organization can take such a spelling.
-        role (AddMemberRequestRole):
+        role (AddMemberRequestRole): The role to grant. `owner` is granted only by transferring ownership.
     """
 
     user: str

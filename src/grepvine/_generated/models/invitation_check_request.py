@@ -11,9 +11,10 @@ T = TypeVar("T", bound="InvitationCheckRequest")
 
 @_attrs_define
 class InvitationCheckRequest:
-    """
+    """The invitation to look up.
+
     Attributes:
-        token (str):
+        token (str): The token from the invitation link.
     """
 
     token: str

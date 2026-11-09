@@ -60,6 +60,9 @@ def sync_detailed(
 ) -> Response[Any | Error]:
     """Revoke an API key
 
+     Revokes one of the authenticated account's API keys. Requests authenticated with it are refused from
+    then on. A key that doesn't exist or belongs to another account is not found.
+
     Args:
         api_key_id (UUID):
 
@@ -89,6 +92,9 @@ def sync(
 ) -> Any | Error | None:
     """Revoke an API key
 
+     Revokes one of the authenticated account's API keys. Requests authenticated with it are refused from
+    then on. A key that doesn't exist or belongs to another account is not found.
+
     Args:
         api_key_id (UUID):
 
@@ -112,6 +118,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
 ) -> Response[Any | Error]:
     """Revoke an API key
+
+     Revokes one of the authenticated account's API keys. Requests authenticated with it are refused from
+    then on. A key that doesn't exist or belongs to another account is not found.
 
     Args:
         api_key_id (UUID):
@@ -139,6 +148,9 @@ async def asyncio(
     client: AuthenticatedClient | Client,
 ) -> Any | Error | None:
     """Revoke an API key
+
+     Revokes one of the authenticated account's API keys. Requests authenticated with it are refused from
+    then on. A key that doesn't exist or belongs to another account is not found.
 
     Args:
         api_key_id (UUID):

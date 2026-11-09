@@ -11,11 +11,12 @@ T = TypeVar("T", bound="Error")
 
 @_attrs_define
 class Error:
-    """
+    """A failed request. `code` says what went wrong and is stable; branch on it, not on the message.
+
     Attributes:
-        code (str):
-        reason (str):
-        error (str):
+        code (str): A stable, machine-readable code, such as `invalid_pattern`, `not_found` or `write_backlog`.
+        reason (str): The broad category of the error, such as `validation`, `authentication`, `state` or `capacity`.
+        error (str): A message for people that says what went wrong and what to do about it.
     """
 
     code: str

@@ -16,9 +16,10 @@ T = TypeVar("T", bound="QueryPage")
 
 @_attrs_define
 class QueryPage:
-    """
+    """A page of search results.
+
     Attributes:
-        results (list[QueryResult]):
+        results (list[QueryResult]): The results on this page, sorted by key, then line, then offset.
         pagination (Pagination): A page may hold fewer results than the requested amount, possibly none, while has_next
             is true; a query page stops at the server's soft time budget and next_page_id resumes exactly after the last
             candidate it examined. Clients continue while has_next is true.

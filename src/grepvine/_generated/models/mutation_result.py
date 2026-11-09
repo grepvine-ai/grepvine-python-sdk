@@ -21,9 +21,10 @@ class MutationResult:
     error instead.
 
         Attributes:
-            key (str):
-            revision (str | Unset):
-            error (Error | Unset):
+            key (str): The document's key.
+            revision (str | Unset): The document's revision after the write. Omitted when the document was not changed.
+            error (Error | Unset): A failed request. `code` says what went wrong and is stable; branch on it, not on the
+                message.
     """
 
     key: str

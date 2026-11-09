@@ -64,8 +64,12 @@ def sync_detailed(
 ) -> Response[Any | Error]:
     """Approve device authorization
 
+     Approves a pending device authorization for the signed-in account, identified by the code the device
+    shows. The device's next poll receives a new API key with the name it asked for. A code that is
+    unknown, already decided or expired is not found.
+
     Args:
-        body (DeviceDecisionRequest):
+        body (DeviceDecisionRequest): The device authorization to approve or deny.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -93,8 +97,12 @@ def sync(
 ) -> Any | Error | None:
     """Approve device authorization
 
+     Approves a pending device authorization for the signed-in account, identified by the code the device
+    shows. The device's next poll receives a new API key with the name it asked for. A code that is
+    unknown, already decided or expired is not found.
+
     Args:
-        body (DeviceDecisionRequest):
+        body (DeviceDecisionRequest): The device authorization to approve or deny.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -117,8 +125,12 @@ async def asyncio_detailed(
 ) -> Response[Any | Error]:
     """Approve device authorization
 
+     Approves a pending device authorization for the signed-in account, identified by the code the device
+    shows. The device's next poll receives a new API key with the name it asked for. A code that is
+    unknown, already decided or expired is not found.
+
     Args:
-        body (DeviceDecisionRequest):
+        body (DeviceDecisionRequest): The device authorization to approve or deny.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -144,8 +156,12 @@ async def asyncio(
 ) -> Any | Error | None:
     """Approve device authorization
 
+     Approves a pending device authorization for the signed-in account, identified by the code the device
+    shows. The device's next poll receives a new API key with the name it asked for. A code that is
+    unknown, already decided or expired is not found.
+
     Args:
-        body (DeviceDecisionRequest):
+        body (DeviceDecisionRequest): The device authorization to approve or deny.
 
     Raises:
         grepvine.APIError: The service answered with an error.

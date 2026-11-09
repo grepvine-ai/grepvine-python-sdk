@@ -86,6 +86,10 @@ def sync_detailed(
 ) -> Response[Error | File]:
     """Get a document
 
+     Returns a document's content exactly as it was stored, its revision in the ETag header and its
+    metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the response
+    is then 206, or 416 when the range lies outside the document.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -128,6 +132,10 @@ def sync(
 ) -> Error | File | None:
     """Get a document
 
+     Returns a document's content exactly as it was stored, its revision in the ETag header and its
+    metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the response
+    is then 206, or 416 when the range lies outside the document.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -164,6 +172,10 @@ async def asyncio_detailed(
     range_: str | Unset = UNSET,
 ) -> Response[Error | File]:
     """Get a document
+
+     Returns a document's content exactly as it was stored, its revision in the ETag header and its
+    metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the response
+    is then 206, or 416 when the range lies outside the document.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -204,6 +216,10 @@ async def asyncio(
     range_: str | Unset = UNSET,
 ) -> Error | File | None:
     """Get a document
+
+     Returns a document's content exactly as it was stored, its revision in the ETag header and its
+    metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the response
+    is then 206, or 416 when the range lies outside the document.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

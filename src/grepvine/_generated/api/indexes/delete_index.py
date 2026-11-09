@@ -62,6 +62,9 @@ def sync_detailed(
 ) -> Response[Any | Error]:
     """Delete an index
 
+     Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+    `deleting` until the deletion finishes in the background, and it can't be undone.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -98,6 +101,9 @@ def sync(
 ) -> Any | Error | None:
     """Delete an index
 
+     Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+    `deleting` until the deletion finishes in the background, and it can't be undone.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -128,6 +134,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
 ) -> Response[Any | Error]:
     """Delete an index
+
+     Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+    `deleting` until the deletion finishes in the background, and it can't be undone.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -162,6 +171,9 @@ async def asyncio(
     client: AuthenticatedClient | Client,
 ) -> Any | Error | None:
     """Delete an index
+
+     Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+    `deleting` until the deletion finishes in the background, and it can't be undone.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

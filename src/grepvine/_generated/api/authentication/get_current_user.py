@@ -55,6 +55,9 @@ def sync_detailed(
 ) -> Response[Error | User]:
     """Get the current user
 
+     Returns the account the request authenticates as, whether with a session or an API key. A session
+    request also receives its CSRF token in X-Csrf-Token.
+
     Raises:
         grepvine.APIError: The service answered with an error.
         grepvine.TransportError: The request could not be delivered.
@@ -78,6 +81,9 @@ def sync(
 ) -> Error | User | None:
     """Get the current user
 
+     Returns the account the request authenticates as, whether with a session or an API key. A session
+    request also receives its CSRF token in X-Csrf-Token.
+
     Raises:
         grepvine.APIError: The service answered with an error.
         grepvine.TransportError: The request could not be delivered.
@@ -96,6 +102,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
 ) -> Response[Error | User]:
     """Get the current user
+
+     Returns the account the request authenticates as, whether with a session or an API key. A session
+    request also receives its CSRF token in X-Csrf-Token.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -117,6 +126,9 @@ async def asyncio(
     client: AuthenticatedClient | Client,
 ) -> Error | User | None:
     """Get the current user
+
+     Returns the account the request authenticates as, whether with a session or an API key. A session
+    request also receives its CSRF token in X-Csrf-Token.
 
     Raises:
         grepvine.APIError: The service answered with an error.

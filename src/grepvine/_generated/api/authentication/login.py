@@ -66,8 +66,13 @@ def sync_detailed(
 ) -> Response[Error | User]:
     """Create a user session
 
+     Signs in with a username or email address and a password, and starts a browser session: the response
+    sets the session cookie and returns, in X-Csrf-Token, the token every state change made with that
+    cookie must send. A 401 means the credentials were not accepted. Programs authenticate with an API
+    key instead.
+
     Args:
-        body (LoginRequest):
+        body (LoginRequest): Credentials for a new session.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -95,8 +100,13 @@ def sync(
 ) -> Error | User | None:
     """Create a user session
 
+     Signs in with a username or email address and a password, and starts a browser session: the response
+    sets the session cookie and returns, in X-Csrf-Token, the token every state change made with that
+    cookie must send. A 401 means the credentials were not accepted. Programs authenticate with an API
+    key instead.
+
     Args:
-        body (LoginRequest):
+        body (LoginRequest): Credentials for a new session.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -119,8 +129,13 @@ async def asyncio_detailed(
 ) -> Response[Error | User]:
     """Create a user session
 
+     Signs in with a username or email address and a password, and starts a browser session: the response
+    sets the session cookie and returns, in X-Csrf-Token, the token every state change made with that
+    cookie must send. A 401 means the credentials were not accepted. Programs authenticate with an API
+    key instead.
+
     Args:
-        body (LoginRequest):
+        body (LoginRequest): Credentials for a new session.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -146,8 +161,13 @@ async def asyncio(
 ) -> Error | User | None:
     """Create a user session
 
+     Signs in with a username or email address and a password, and starts a browser session: the response
+    sets the session cookie and returns, in X-Csrf-Token, the token every state change made with that
+    cookie must send. A 401 means the credentials were not accepted. Programs authenticate with an API
+    key instead.
+
     Args:
-        body (LoginRequest):
+        body (LoginRequest): Credentials for a new session.
 
     Raises:
         grepvine.APIError: The service answered with an error.

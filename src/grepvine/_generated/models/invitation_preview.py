@@ -16,14 +16,15 @@ T = TypeVar("T", bound="InvitationPreview")
 
 @_attrs_define
 class InvitationPreview:
-    """
+    """What a pending invitation offers.
+
     Attributes:
         email (str): The address the invitation was sent to, to prefill the registration form.
-        expires_at (datetime.datetime):
+        expires_at (datetime.datetime): When the invitation expires.
         organization (str | Unset): An account or organization name. Accounts and organizations share one namespace. A
             name keeps the case it was created with, and any spelling that differs only in case refers to it; no other
             account or organization can take such a spelling.
-        role (InvitationRole | Unset):
+        role (InvitationRole | Unset): The role an invitation grants in its organization.
     """
 
     email: str

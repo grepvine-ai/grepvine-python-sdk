@@ -16,10 +16,11 @@ T = TypeVar("T", bound="TaggedTimestampMetadataValue")
 
 @_attrs_define
 class TaggedTimestampMetadataValue:
-    """
+    """A timestamp metadata value with its type named.
+
     Attributes:
-        type_ (Literal['timestamp']):
-        value (datetime.datetime):
+        type_ (Literal['timestamp']): The value's type: always `timestamp`.
+        value (datetime.datetime): The value, an RFC 3339 date and time.
     """
 
     type_: Literal["timestamp"]

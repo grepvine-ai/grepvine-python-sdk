@@ -14,10 +14,11 @@ T = TypeVar("T", bound="TaggedBooleanMetadataValue")
 
 @_attrs_define
 class TaggedBooleanMetadataValue:
-    """
+    """A boolean metadata value with its type named.
+
     Attributes:
-        type_ (Literal['boolean']):
-        value (bool):
+        type_ (Literal['boolean']): The value's type: always `boolean`.
+        value (bool): The value.
     """
 
     type_: Literal["boolean"]

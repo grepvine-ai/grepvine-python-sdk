@@ -308,6 +308,9 @@ class Members:
     ) -> Iterator[Member]:
         """List organization members: every result, page after page.
 
+        Lists an organization's members and their roles, ordered by name. Requires the owner or admin
+        role.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -336,6 +339,9 @@ class Members:
         page: str | None = None,
     ) -> MemberPage:
         """List organization members: one page.
+
+        Lists an organization's members and their roles, ordered by name. Requires the owner or admin
+        role.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -370,6 +376,9 @@ class Members:
     ) -> Member:
         """Add an organization member
 
+        Adds an existing account to the organization with the admin, developer or reader role. Requires
+        the owner or admin role. An organization has one owner, changed only by transferring ownership.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -377,7 +386,8 @@ class Members:
             user: An account or organization name. Accounts and organizations share one namespace. A
                 name keeps the case it was created with, and any spelling that differs only in case refers
                 to it; no other account or organization can take such a spelling.
-            role: One of ``"admin"``, ``"developer"``, ``"reader"``.
+            role: The role to grant. `owner` is granted only by transferring ownership. One of
+                ``"admin"``, ``"developer"``, ``"reader"``.
 
         Returns:
             Member
@@ -405,6 +415,9 @@ class Members:
     ) -> Member:
         """Change an organization member role
 
+        Changes a member's role to admin, developer or reader. Requires the owner or admin role. The
+        owner's role changes only by transferring ownership.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -412,7 +425,8 @@ class Members:
             user: An account or organization name. Accounts and organizations share one namespace. A
                 name keeps the case it was created with, and any spelling that differs only in case refers
                 to it; no other account or organization can take such a spelling.
-            role: One of ``"admin"``, ``"developer"``, ``"reader"``.
+            role: The new role. `owner` is granted only by transferring ownership. One of ``"admin"``,
+                ``"developer"``, ``"reader"``.
 
         Returns:
             Member
@@ -437,6 +451,9 @@ class Members:
         user: str,
     ) -> None:
         """Remove an organization member
+
+        Removes a member from the organization. Requires the owner or admin role. The owner can't be
+        removed; transfer ownership first.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -476,6 +493,9 @@ class Organizations:
     ) -> Iterator[Organization]:
         """List organizations: every result, page after page.
 
+        Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+        name.
+
         Args:
             amount: Default: 50.
 
@@ -499,6 +519,9 @@ class Organizations:
         page: str | None = None,
     ) -> OrganizationPage:
         """List organizations: one page.
+
+        Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+        name.
 
         Args:
             amount: Default: 50.
@@ -527,6 +550,9 @@ class Organizations:
     ) -> Organization:
         """Create an organization
 
+        Creates an organization owned by the authenticated account. Accounts and organizations share one
+        namespace, so a 409 means an account or organization already holds the name, in any case.
+
         Args:
             name: An account or organization name. Accounts and organizations share one namespace. A
                 name keeps the case it was created with, and any spelling that differs only in case refers
@@ -553,6 +579,9 @@ class Organizations:
     ) -> Organization:
         """Get an organization
 
+        Returns an organization the authenticated account belongs to, with its role there. It answers
+        for a suspended organization too, and reports `suspended`.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -576,6 +605,9 @@ class Organizations:
         organization: str,
     ) -> None:
         """Delete an organization
+
+        Starts deleting an organization with all its indexes and documents. Only the owner can delete
+        it. The deletion finishes in the background and can't be undone.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -601,6 +633,10 @@ class Organizations:
         user: str,
     ) -> None:
         """Transfer organization ownership
+
+        Makes another member the owner. Only the owner can transfer ownership, and the previous owner
+        stays a member with the admin role. The new owner must already be a member, and not one with
+        time-limited access.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -641,6 +677,8 @@ class Indexes:
     ) -> Iterator[IndexSummary]:
         """List indexes: every result, page after page.
 
+        Lists the organization's indexes, ordered by name. Any member can list them.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -673,6 +711,8 @@ class Indexes:
         page: str | None = None,
     ) -> IndexPage:
         """List indexes: one page.
+
+        Lists the organization's indexes, ordered by name. Any member can list them.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -710,6 +750,10 @@ class Indexes:
         tags: IndexTags | Mapping[str, str] | None = None,
     ) -> IndexCreation:
         """Create an index
+
+        Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+        response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+        already has an index with that name, in any case.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -760,6 +804,9 @@ class Indexes:
         index: str,
     ) -> Index:
         """Get an index
+
+        Returns one index with its current state, document count and size, and the progress of its
+        background optimization while one runs. Any member can read it.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -835,6 +882,9 @@ class Indexes:
     ) -> IndexDeletion:
         """Delete an index
 
+        Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+        `deleting` until the deletion finishes in the background, and it can't be undone.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -885,6 +935,11 @@ class Documents:
         page: str | None = None,
     ) -> DocumentPage:
         """List documents: one page.
+
+        Lists documents in key byte order, with each one's revision, size, metadata and whether a search
+        can match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a
+        directory tree: keys that share the part up to the next delimiter are returned once, in
+        `common_prefixes`.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -958,7 +1013,8 @@ class Documents:
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
-            key:
+            key: The document's key: a UTF-8, POSIX-style path of at most 1,024 bytes, with no empty,
+                `.` or `..` components. Storing a key that exists replaces that document.
             content: The document bytes, at most 1 GiB. Valid UTF-8 of at most 100 MiB is searchable;
                 other content is stored without being searchable.
             metadata: Document metadata as a request sends it. Values are plain or tagged.
@@ -1002,6 +1058,10 @@ class Documents:
     ) -> File:
         """Get a document
 
+        Returns a document's content exactly as it was stored, its revision in the ETag header and its
+        metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the
+        response is then 206, or 416 when the range lies outside the document.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -1039,6 +1099,10 @@ class Documents:
         if_match: str | None = None,
     ) -> MutationResult:
         """Delete one document
+
+        Deletes one document. Send If-Match with a revision to delete it only if it still has that
+        revision. Retrying with the same Idempotency-Key returns the original result. Once acknowledged,
+        the document no longer matches any search.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -1140,7 +1204,7 @@ class Documents:
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
-            objects:
+            objects: The documents to delete, 1 to 2,048.
             idempotency_key:
 
         Returns:
@@ -1186,6 +1250,12 @@ class Search:
     ) -> Iterator[QueryResult]:
         """Search an index: every result, page after page.
 
+        Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern`
+        or `invalid_filter`.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -1193,16 +1263,23 @@ class Search:
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
-            pattern:
-            mode: One of ``"regex"``, ``"literal"``. Default: "regex".
-            case_sensitive: Default: True.
-            whole_word: Default: False.
+            pattern: What to search for: an RE2 regular expression, or literal text when `mode` is
+                `literal`. Required; at most 8,192 characters of valid UTF-8.
+            mode: How to read the pattern: `regex` (the default) for RE2 syntax, without backreferences
+                or lookaround, or `literal` to match its bytes exactly, with no escaping needed. One of
+                ``"regex"``, ``"literal"``.
+            case_sensitive: Whether case must match. Defaults to true. False matches under Unicode
+                simple case folding; in a regex, `(?i)` does the same for part of the pattern.
+            whole_word: Match only where the characters on either side of the match aren't word
+                characters: letters, digits or `_`. Defaults to false. Valid only in literal mode.
             multiline: Let a match span lines. Without it a pattern matches within one line, `^` and `$`
                 mark the line's edges, and a character class never matches a line break; a pattern that
                 contains a line break is rejected. With it the pattern is matched against the whole
                 document, `^` and `$` still mark line edges, `\\A` and `\\z` mark the document's edges, and
                 a match may contain line breaks. Default: False.
-            filter:
+            filter: Search only the documents whose metadata matches this expression, such as `path
+                STARTSWITH 'src/' AND size < 1048576`. At most 8,192 characters. Omit it to search every
+                document.
             lines_before: How many lines before each result to return with it, from the same document.
                 Default: 0.
             lines_after: How many lines after each result to return with it, from the same document.
@@ -1259,6 +1336,13 @@ class Search:
     ) -> QueryPage:
         """Search an index: one page.
 
+        Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern`
+        or `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while
+        more results follow.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -1266,16 +1350,23 @@ class Search:
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
-            pattern:
-            mode: One of ``"regex"``, ``"literal"``. Default: "regex".
-            case_sensitive: Default: True.
-            whole_word: Default: False.
+            pattern: What to search for: an RE2 regular expression, or literal text when `mode` is
+                `literal`. Required; at most 8,192 characters of valid UTF-8.
+            mode: How to read the pattern: `regex` (the default) for RE2 syntax, without backreferences
+                or lookaround, or `literal` to match its bytes exactly, with no escaping needed. One of
+                ``"regex"``, ``"literal"``.
+            case_sensitive: Whether case must match. Defaults to true. False matches under Unicode
+                simple case folding; in a regex, `(?i)` does the same for part of the pattern.
+            whole_word: Match only where the characters on either side of the match aren't word
+                characters: letters, digits or `_`. Defaults to false. Valid only in literal mode.
             multiline: Let a match span lines. Without it a pattern matches within one line, `^` and `$`
                 mark the line's edges, and a character class never matches a line break; a pattern that
                 contains a line break is rejected. With it the pattern is matched against the whole
                 document, `^` and `$` still mark line edges, `\\A` and `\\z` mark the document's edges, and
                 a match may contain line breaks. Default: False.
-            filter:
+            filter: Search only the documents whose metadata matches this expression, such as `path
+                STARTSWITH 'src/' AND size < 1048576`. At most 8,192 characters. Omit it to search every
+                document.
             lines_before: How many lines before each result to return with it, from the same document.
                 Default: 0.
             lines_after: How many lines after each result to return with it, from the same document.
@@ -1332,6 +1423,9 @@ class APIKeys:
     ) -> Iterator[APIKey]:
         """List API keys: every result, page after page.
 
+        Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+        itself is never returned again; `prefix` tells keys apart.
+
         Args:
             amount: Default: 50.
 
@@ -1355,6 +1449,9 @@ class APIKeys:
         page: str | None = None,
     ) -> APIKeyPage:
         """List API keys: one page.
+
+        Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+        itself is never returned again; `prefix` tells keys apart.
 
         Args:
             amount: Default: 50.
@@ -1383,8 +1480,11 @@ class APIKeys:
     ) -> APIKeyCreated:
         """Create an API key
 
+        Creates an API key for the authenticated account. The response is the only time the secret key
+        is shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+
         Args:
-            name:
+            name: A name to tell the key apart, 1 to 128 characters.
 
         Returns:
             APIKeyCreated
@@ -1406,6 +1506,9 @@ class APIKeys:
         api_key_id: UUID,
     ) -> None:
         """Revoke an API key
+
+        Revokes one of the authenticated account's API keys. Requests authenticated with it are refused
+        from then on. A key that doesn't exist or belongs to another account is not found.
 
         Args:
             api_key_id:
@@ -1450,8 +1553,8 @@ class Account:
             name: An account or organization name. Accounts and organizations share one namespace. A
                 name keeps the case it was created with, and any spelling that differs only in case refers
                 to it; no other account or organization can take such a spelling.
-            email:
-            password:
+            email: The account's email address, at most 320 characters. No other account can use it.
+            password: The password, 12 to 1,024 characters.
             invitation: The token of the invitation link the account was invited with. Required when
                 registration is by invitation.
 
@@ -1506,7 +1609,7 @@ class Account:
         not found.
 
         Args:
-            token:
+            token: The token from the invitation link.
 
         Returns:
             InvitationPreview
@@ -1528,6 +1631,10 @@ class Account:
         name: str,
     ) -> UsernameAvailability:
         """Check whether a username is available
+
+        Reports whether an account can register this username now. Accounts and organizations share one
+        namespace, so a name either one holds, in any case, is taken. The answer can change before the
+        name is registered.
 
         Args:
             name: An account or organization name. Accounts and organizations share one namespace. A
@@ -1555,9 +1662,14 @@ class Account:
     ) -> User:
         """Create a user session
 
+        Signs in with a username or email address and a password, and starts a browser session: the
+        response sets the session cookie and returns, in X-Csrf-Token, the token every state change made
+        with that cookie must send. A 401 means the credentials were not accepted. Programs authenticate
+        with an API key instead.
+
         Args:
             identifier: A username or an email address, matched case-insensitively.
-            password:
+            password: The account's password.
 
         Returns:
             User
@@ -1580,6 +1692,9 @@ class Account:
     ) -> None:
         """Revoke the current session
 
+        Ends the session that made the request and clears its cookie. Other sessions and API keys are
+        unaffected.
+
         Returns:
             None
 
@@ -1595,6 +1710,9 @@ class Account:
         self,
     ) -> User:
         """Get the current user
+
+        Returns the account the request authenticates as, whether with a session or an API key. A
+        session request also receives its CSRF token in X-Csrf-Token.
 
         Returns:
             User
@@ -1616,9 +1734,13 @@ class Account:
     ) -> None:
         """Change the current password
 
+        Changes the signed-in account's password after checking the current one. Every other session of
+        the account is signed out; the session that made the request stays signed in, and API keys keep
+        working. A 401 means the current password was wrong.
+
         Args:
-            current_password:
-            new_password:
+            current_password: The account's current password.
+            new_password: The new password, 12 to 1,024 characters.
 
         Returns:
             None
@@ -1649,8 +1771,13 @@ class DeviceLogin:
     ) -> DeviceAuthorization:
         """Start device authorization
 
+        Starts signing in a device, such as the command-line client, without entering a password on it.
+        Show the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`)
+        to approve it in a signed-in browser, then poll for the API key with `device_code`. The
+        authorization expires after `expires_in` seconds.
+
         Args:
-            api_key_name:
+            api_key_name: The name to give the API key the device receives, 1 to 128 characters.
 
         Returns:
             DeviceAuthorization
@@ -1674,8 +1801,12 @@ class DeviceLogin:
     ) -> None:
         """Approve device authorization
 
+        Approves a pending device authorization for the signed-in account, identified by the code the
+        device shows. The device's next poll receives a new API key with the name it asked for. A code
+        that is unknown, already decided or expired is not found.
+
         Args:
-            user_code:
+            user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
 
         Returns:
             None
@@ -1698,8 +1829,12 @@ class DeviceLogin:
     ) -> None:
         """Deny device authorization
 
+        Denies a pending device authorization, identified by the code the device shows. The device's
+        next poll fails with code `access_denied`. A code that is unknown, already decided or expired is
+        not found.
+
         Args:
-            user_code:
+            user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
 
         Returns:
             None
@@ -1722,8 +1857,13 @@ class DeviceLogin:
     ) -> APIKeyCreated:
         """Poll for a device API key
 
+        Exchanges an approved device code for an API key, once. Until the user decides, a poll fails
+        with 400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner
+        fails with `slow_down` and adds 5 seconds to the interval. A denied authorization fails with
+        `access_denied`, and an unknown, expired or already used code with `expired_token`.
+
         Args:
-            device_code:
+            device_code: The `device_code` from starting the authorization.
 
         Returns:
             APIKeyCreated
@@ -1786,17 +1926,30 @@ class _IndexClient:
     ) -> Iterator[QueryResult]:
         """Search an index: every result, page after page.
 
+        Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern`
+        or `invalid_filter`.
+
         Args:
-            pattern:
-            mode: One of ``"regex"``, ``"literal"``. Default: "regex".
-            case_sensitive: Default: True.
-            whole_word: Default: False.
+            pattern: What to search for: an RE2 regular expression, or literal text when `mode` is
+                `literal`. Required; at most 8,192 characters of valid UTF-8.
+            mode: How to read the pattern: `regex` (the default) for RE2 syntax, without backreferences
+                or lookaround, or `literal` to match its bytes exactly, with no escaping needed. One of
+                ``"regex"``, ``"literal"``.
+            case_sensitive: Whether case must match. Defaults to true. False matches under Unicode
+                simple case folding; in a regex, `(?i)` does the same for part of the pattern.
+            whole_word: Match only where the characters on either side of the match aren't word
+                characters: letters, digits or `_`. Defaults to false. Valid only in literal mode.
             multiline: Let a match span lines. Without it a pattern matches within one line, `^` and `$`
                 mark the line's edges, and a character class never matches a line break; a pattern that
                 contains a line break is rejected. With it the pattern is matched against the whole
                 document, `^` and `$` still mark line edges, `\\A` and `\\z` mark the document's edges, and
                 a match may contain line breaks. Default: False.
-            filter:
+            filter: Search only the documents whose metadata matches this expression, such as `path
+                STARTSWITH 'src/' AND size < 1048576`. At most 8,192 characters. Omit it to search every
+                document.
             lines_before: How many lines before each result to return with it, from the same document.
                 Default: 0.
             lines_after: How many lines after each result to return with it, from the same document.
@@ -1851,17 +2004,31 @@ class _IndexClient:
     ) -> QueryPage:
         """Search an index: one page.
 
+        Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern`
+        or `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while
+        more results follow.
+
         Args:
-            pattern:
-            mode: One of ``"regex"``, ``"literal"``. Default: "regex".
-            case_sensitive: Default: True.
-            whole_word: Default: False.
+            pattern: What to search for: an RE2 regular expression, or literal text when `mode` is
+                `literal`. Required; at most 8,192 characters of valid UTF-8.
+            mode: How to read the pattern: `regex` (the default) for RE2 syntax, without backreferences
+                or lookaround, or `literal` to match its bytes exactly, with no escaping needed. One of
+                ``"regex"``, ``"literal"``.
+            case_sensitive: Whether case must match. Defaults to true. False matches under Unicode
+                simple case folding; in a regex, `(?i)` does the same for part of the pattern.
+            whole_word: Match only where the characters on either side of the match aren't word
+                characters: letters, digits or `_`. Defaults to false. Valid only in literal mode.
             multiline: Let a match span lines. Without it a pattern matches within one line, `^` and `$`
                 mark the line's edges, and a character class never matches a line break; a pattern that
                 contains a line break is rejected. With it the pattern is matched against the whole
                 document, `^` and `$` still mark line edges, `\\A` and `\\z` mark the document's edges, and
                 a match may contain line breaks. Default: False.
-            filter:
+            filter: Search only the documents whose metadata matches this expression, such as `path
+                STARTSWITH 'src/' AND size < 1048576`. At most 8,192 characters. Omit it to search every
+                document.
             lines_before: How many lines before each result to return with it, from the same document.
                 Default: 0.
             lines_after: How many lines after each result to return with it, from the same document.
@@ -1914,6 +2081,11 @@ class _IndexClient:
     ) -> DocumentPage:
         """List documents: one page.
 
+        Lists documents in key byte order, with each one's revision, size, metadata and whether a search
+        can match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a
+        directory tree: keys that share the part up to the next delimiter are returned once, in
+        `common_prefixes`.
+
         Args:
             amount: Default: 50.
             prefix:
@@ -1949,6 +2121,10 @@ class _IndexClient:
         range: str | None = None,
     ) -> File:
         """Get a document
+
+        Returns a document's content exactly as it was stored, its revision in the ETag header and its
+        metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the
+        response is then 206, or 416 when the range lies outside the document.
 
         Args:
             key:
@@ -2001,7 +2177,8 @@ class _IndexClient:
         reports which applies.
 
         Args:
-            key:
+            key: The document's key: a UTF-8, POSIX-style path of at most 1,024 bytes, with no empty,
+                `.` or `..` components. Storing a key that exists replaces that document.
             content: The document bytes, at most 1 GiB. Valid UTF-8 of at most 100 MiB is searchable;
                 other content is stored without being searchable.
             metadata: Document metadata as a request sends it. Values are plain or tagged.
@@ -2043,6 +2220,10 @@ class _IndexClient:
         if_match: str | None = None,
     ) -> MutationResult:
         """Delete one document
+
+        Deletes one document. Send If-Match with a revision to delete it only if it still has that
+        revision. Retrying with the same Idempotency-Key returns the original result. Once acknowledged,
+        the document no longer matches any search.
 
         Args:
             key:
@@ -2122,7 +2303,7 @@ class _IndexClient:
         says which happened. Retrying with the same Idempotency-Key returns the same results.
 
         Args:
-            objects:
+            objects: The documents to delete, 1 to 2,048.
             idempotency_key:
 
         Returns:
@@ -2151,6 +2332,10 @@ class _IndexClient:
         tags: IndexTags | Mapping[str, str] | None = None,
     ) -> IndexCreation:
         """Create an index
+
+        Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+        response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+        already has an index with that name, in any case.
 
         Args:
             description: What the index holds, in Markdown. Empty when no description was set. Clients
@@ -2193,6 +2378,9 @@ class _IndexClient:
         self,
     ) -> Index:
         """Get an index
+
+        Returns one index with its current state, document count and size, and the progress of its
+        background optimization while one runs. Any member can read it.
 
         Returns:
             Index
@@ -2250,6 +2438,9 @@ class _IndexClient:
     ) -> IndexDeletion:
         """Delete an index
 
+        Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+        `deleting` until the deletion finishes in the background, and it can't be undone.
+
         Returns:
             IndexDeletion: the answer as ``result``, and ``wait()`` to wait until the work is done.
 
@@ -2289,6 +2480,9 @@ class AsyncMembers:
     ) -> AsyncIterator[Member]:
         """List organization members: every result, page after page.
 
+        Lists an organization's members and their roles, ordered by name. Requires the owner or admin
+        role.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -2317,6 +2511,9 @@ class AsyncMembers:
         page: str | None = None,
     ) -> MemberPage:
         """List organization members: one page.
+
+        Lists an organization's members and their roles, ordered by name. Requires the owner or admin
+        role.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -2351,6 +2548,9 @@ class AsyncMembers:
     ) -> Member:
         """Add an organization member
 
+        Adds an existing account to the organization with the admin, developer or reader role. Requires
+        the owner or admin role. An organization has one owner, changed only by transferring ownership.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -2358,7 +2558,8 @@ class AsyncMembers:
             user: An account or organization name. Accounts and organizations share one namespace. A
                 name keeps the case it was created with, and any spelling that differs only in case refers
                 to it; no other account or organization can take such a spelling.
-            role: One of ``"admin"``, ``"developer"``, ``"reader"``.
+            role: The role to grant. `owner` is granted only by transferring ownership. One of
+                ``"admin"``, ``"developer"``, ``"reader"``.
 
         Returns:
             Member
@@ -2386,6 +2587,9 @@ class AsyncMembers:
     ) -> Member:
         """Change an organization member role
 
+        Changes a member's role to admin, developer or reader. Requires the owner or admin role. The
+        owner's role changes only by transferring ownership.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -2393,7 +2597,8 @@ class AsyncMembers:
             user: An account or organization name. Accounts and organizations share one namespace. A
                 name keeps the case it was created with, and any spelling that differs only in case refers
                 to it; no other account or organization can take such a spelling.
-            role: One of ``"admin"``, ``"developer"``, ``"reader"``.
+            role: The new role. `owner` is granted only by transferring ownership. One of ``"admin"``,
+                ``"developer"``, ``"reader"``.
 
         Returns:
             Member
@@ -2418,6 +2623,9 @@ class AsyncMembers:
         user: str,
     ) -> None:
         """Remove an organization member
+
+        Removes a member from the organization. Requires the owner or admin role. The owner can't be
+        removed; transfer ownership first.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -2457,6 +2665,9 @@ class AsyncOrganizations:
     ) -> AsyncIterator[Organization]:
         """List organizations: every result, page after page.
 
+        Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+        name.
+
         Args:
             amount: Default: 50.
 
@@ -2480,6 +2691,9 @@ class AsyncOrganizations:
         page: str | None = None,
     ) -> OrganizationPage:
         """List organizations: one page.
+
+        Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+        name.
 
         Args:
             amount: Default: 50.
@@ -2508,6 +2722,9 @@ class AsyncOrganizations:
     ) -> Organization:
         """Create an organization
 
+        Creates an organization owned by the authenticated account. Accounts and organizations share one
+        namespace, so a 409 means an account or organization already holds the name, in any case.
+
         Args:
             name: An account or organization name. Accounts and organizations share one namespace. A
                 name keeps the case it was created with, and any spelling that differs only in case refers
@@ -2534,6 +2751,9 @@ class AsyncOrganizations:
     ) -> Organization:
         """Get an organization
 
+        Returns an organization the authenticated account belongs to, with its role there. It answers
+        for a suspended organization too, and reports `suspended`.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -2557,6 +2777,9 @@ class AsyncOrganizations:
         organization: str,
     ) -> None:
         """Delete an organization
+
+        Starts deleting an organization with all its indexes and documents. Only the owner can delete
+        it. The deletion finishes in the background and can't be undone.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -2582,6 +2805,10 @@ class AsyncOrganizations:
         user: str,
     ) -> None:
         """Transfer organization ownership
+
+        Makes another member the owner. Only the owner can transfer ownership, and the previous owner
+        stays a member with the admin role. The new owner must already be a member, and not one with
+        time-limited access.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -2622,6 +2849,8 @@ class AsyncIndexes:
     ) -> AsyncIterator[IndexSummary]:
         """List indexes: every result, page after page.
 
+        Lists the organization's indexes, ordered by name. Any member can list them.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -2654,6 +2883,8 @@ class AsyncIndexes:
         page: str | None = None,
     ) -> IndexPage:
         """List indexes: one page.
+
+        Lists the organization's indexes, ordered by name. Any member can list them.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -2691,6 +2922,10 @@ class AsyncIndexes:
         tags: IndexTags | Mapping[str, str] | None = None,
     ) -> AsyncIndexCreation:
         """Create an index
+
+        Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+        response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+        already has an index with that name, in any case.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -2741,6 +2976,9 @@ class AsyncIndexes:
         index: str,
     ) -> Index:
         """Get an index
+
+        Returns one index with its current state, document count and size, and the progress of its
+        background optimization while one runs. Any member can read it.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -2816,6 +3054,9 @@ class AsyncIndexes:
     ) -> AsyncIndexDeletion:
         """Delete an index
 
+        Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+        `deleting` until the deletion finishes in the background, and it can't be undone.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -2866,6 +3107,11 @@ class AsyncDocuments:
         page: str | None = None,
     ) -> DocumentPage:
         """List documents: one page.
+
+        Lists documents in key byte order, with each one's revision, size, metadata and whether a search
+        can match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a
+        directory tree: keys that share the part up to the next delimiter are returned once, in
+        `common_prefixes`.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -2939,7 +3185,8 @@ class AsyncDocuments:
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
-            key:
+            key: The document's key: a UTF-8, POSIX-style path of at most 1,024 bytes, with no empty,
+                `.` or `..` components. Storing a key that exists replaces that document.
             content: The document bytes, at most 1 GiB. Valid UTF-8 of at most 100 MiB is searchable;
                 other content is stored without being searchable.
             metadata: Document metadata as a request sends it. Values are plain or tagged.
@@ -2983,6 +3230,10 @@ class AsyncDocuments:
     ) -> File:
         """Get a document
 
+        Returns a document's content exactly as it was stored, its revision in the ETag header and its
+        metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the
+        response is then 206, or 416 when the range lies outside the document.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -3020,6 +3271,10 @@ class AsyncDocuments:
         if_match: str | None = None,
     ) -> MutationResult:
         """Delete one document
+
+        Deletes one document. Send If-Match with a revision to delete it only if it still has that
+        revision. Retrying with the same Idempotency-Key returns the original result. Once acknowledged,
+        the document no longer matches any search.
 
         Args:
             organization: An account or organization name. Accounts and organizations share one
@@ -3121,7 +3376,7 @@ class AsyncDocuments:
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
-            objects:
+            objects: The documents to delete, 1 to 2,048.
             idempotency_key:
 
         Returns:
@@ -3167,6 +3422,12 @@ class AsyncSearch:
     ) -> AsyncIterator[QueryResult]:
         """Search an index: every result, page after page.
 
+        Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern`
+        or `invalid_filter`.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -3174,16 +3435,23 @@ class AsyncSearch:
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
-            pattern:
-            mode: One of ``"regex"``, ``"literal"``. Default: "regex".
-            case_sensitive: Default: True.
-            whole_word: Default: False.
+            pattern: What to search for: an RE2 regular expression, or literal text when `mode` is
+                `literal`. Required; at most 8,192 characters of valid UTF-8.
+            mode: How to read the pattern: `regex` (the default) for RE2 syntax, without backreferences
+                or lookaround, or `literal` to match its bytes exactly, with no escaping needed. One of
+                ``"regex"``, ``"literal"``.
+            case_sensitive: Whether case must match. Defaults to true. False matches under Unicode
+                simple case folding; in a regex, `(?i)` does the same for part of the pattern.
+            whole_word: Match only where the characters on either side of the match aren't word
+                characters: letters, digits or `_`. Defaults to false. Valid only in literal mode.
             multiline: Let a match span lines. Without it a pattern matches within one line, `^` and `$`
                 mark the line's edges, and a character class never matches a line break; a pattern that
                 contains a line break is rejected. With it the pattern is matched against the whole
                 document, `^` and `$` still mark line edges, `\\A` and `\\z` mark the document's edges, and
                 a match may contain line breaks. Default: False.
-            filter:
+            filter: Search only the documents whose metadata matches this expression, such as `path
+                STARTSWITH 'src/' AND size < 1048576`. At most 8,192 characters. Omit it to search every
+                document.
             lines_before: How many lines before each result to return with it, from the same document.
                 Default: 0.
             lines_after: How many lines after each result to return with it, from the same document.
@@ -3240,6 +3508,13 @@ class AsyncSearch:
     ) -> QueryPage:
         """Search an index: one page.
 
+        Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern`
+        or `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while
+        more results follow.
+
         Args:
             organization: An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only in
@@ -3247,16 +3522,23 @@ class AsyncSearch:
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
-            pattern:
-            mode: One of ``"regex"``, ``"literal"``. Default: "regex".
-            case_sensitive: Default: True.
-            whole_word: Default: False.
+            pattern: What to search for: an RE2 regular expression, or literal text when `mode` is
+                `literal`. Required; at most 8,192 characters of valid UTF-8.
+            mode: How to read the pattern: `regex` (the default) for RE2 syntax, without backreferences
+                or lookaround, or `literal` to match its bytes exactly, with no escaping needed. One of
+                ``"regex"``, ``"literal"``.
+            case_sensitive: Whether case must match. Defaults to true. False matches under Unicode
+                simple case folding; in a regex, `(?i)` does the same for part of the pattern.
+            whole_word: Match only where the characters on either side of the match aren't word
+                characters: letters, digits or `_`. Defaults to false. Valid only in literal mode.
             multiline: Let a match span lines. Without it a pattern matches within one line, `^` and `$`
                 mark the line's edges, and a character class never matches a line break; a pattern that
                 contains a line break is rejected. With it the pattern is matched against the whole
                 document, `^` and `$` still mark line edges, `\\A` and `\\z` mark the document's edges, and
                 a match may contain line breaks. Default: False.
-            filter:
+            filter: Search only the documents whose metadata matches this expression, such as `path
+                STARTSWITH 'src/' AND size < 1048576`. At most 8,192 characters. Omit it to search every
+                document.
             lines_before: How many lines before each result to return with it, from the same document.
                 Default: 0.
             lines_after: How many lines after each result to return with it, from the same document.
@@ -3313,6 +3595,9 @@ class AsyncAPIKeys:
     ) -> AsyncIterator[APIKey]:
         """List API keys: every result, page after page.
 
+        Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+        itself is never returned again; `prefix` tells keys apart.
+
         Args:
             amount: Default: 50.
 
@@ -3336,6 +3621,9 @@ class AsyncAPIKeys:
         page: str | None = None,
     ) -> APIKeyPage:
         """List API keys: one page.
+
+        Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+        itself is never returned again; `prefix` tells keys apart.
 
         Args:
             amount: Default: 50.
@@ -3364,8 +3652,11 @@ class AsyncAPIKeys:
     ) -> APIKeyCreated:
         """Create an API key
 
+        Creates an API key for the authenticated account. The response is the only time the secret key
+        is shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+
         Args:
-            name:
+            name: A name to tell the key apart, 1 to 128 characters.
 
         Returns:
             APIKeyCreated
@@ -3387,6 +3678,9 @@ class AsyncAPIKeys:
         api_key_id: UUID,
     ) -> None:
         """Revoke an API key
+
+        Revokes one of the authenticated account's API keys. Requests authenticated with it are refused
+        from then on. A key that doesn't exist or belongs to another account is not found.
 
         Args:
             api_key_id:
@@ -3431,8 +3725,8 @@ class AsyncAccount:
             name: An account or organization name. Accounts and organizations share one namespace. A
                 name keeps the case it was created with, and any spelling that differs only in case refers
                 to it; no other account or organization can take such a spelling.
-            email:
-            password:
+            email: The account's email address, at most 320 characters. No other account can use it.
+            password: The password, 12 to 1,024 characters.
             invitation: The token of the invitation link the account was invited with. Required when
                 registration is by invitation.
 
@@ -3487,7 +3781,7 @@ class AsyncAccount:
         not found.
 
         Args:
-            token:
+            token: The token from the invitation link.
 
         Returns:
             InvitationPreview
@@ -3509,6 +3803,10 @@ class AsyncAccount:
         name: str,
     ) -> UsernameAvailability:
         """Check whether a username is available
+
+        Reports whether an account can register this username now. Accounts and organizations share one
+        namespace, so a name either one holds, in any case, is taken. The answer can change before the
+        name is registered.
 
         Args:
             name: An account or organization name. Accounts and organizations share one namespace. A
@@ -3536,9 +3834,14 @@ class AsyncAccount:
     ) -> User:
         """Create a user session
 
+        Signs in with a username or email address and a password, and starts a browser session: the
+        response sets the session cookie and returns, in X-Csrf-Token, the token every state change made
+        with that cookie must send. A 401 means the credentials were not accepted. Programs authenticate
+        with an API key instead.
+
         Args:
             identifier: A username or an email address, matched case-insensitively.
-            password:
+            password: The account's password.
 
         Returns:
             User
@@ -3561,6 +3864,9 @@ class AsyncAccount:
     ) -> None:
         """Revoke the current session
 
+        Ends the session that made the request and clears its cookie. Other sessions and API keys are
+        unaffected.
+
         Returns:
             None
 
@@ -3576,6 +3882,9 @@ class AsyncAccount:
         self,
     ) -> User:
         """Get the current user
+
+        Returns the account the request authenticates as, whether with a session or an API key. A
+        session request also receives its CSRF token in X-Csrf-Token.
 
         Returns:
             User
@@ -3597,9 +3906,13 @@ class AsyncAccount:
     ) -> None:
         """Change the current password
 
+        Changes the signed-in account's password after checking the current one. Every other session of
+        the account is signed out; the session that made the request stays signed in, and API keys keep
+        working. A 401 means the current password was wrong.
+
         Args:
-            current_password:
-            new_password:
+            current_password: The account's current password.
+            new_password: The new password, 12 to 1,024 characters.
 
         Returns:
             None
@@ -3630,8 +3943,13 @@ class AsyncDeviceLogin:
     ) -> DeviceAuthorization:
         """Start device authorization
 
+        Starts signing in a device, such as the command-line client, without entering a password on it.
+        Show the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`)
+        to approve it in a signed-in browser, then poll for the API key with `device_code`. The
+        authorization expires after `expires_in` seconds.
+
         Args:
-            api_key_name:
+            api_key_name: The name to give the API key the device receives, 1 to 128 characters.
 
         Returns:
             DeviceAuthorization
@@ -3655,8 +3973,12 @@ class AsyncDeviceLogin:
     ) -> None:
         """Approve device authorization
 
+        Approves a pending device authorization for the signed-in account, identified by the code the
+        device shows. The device's next poll receives a new API key with the name it asked for. A code
+        that is unknown, already decided or expired is not found.
+
         Args:
-            user_code:
+            user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
 
         Returns:
             None
@@ -3679,8 +4001,12 @@ class AsyncDeviceLogin:
     ) -> None:
         """Deny device authorization
 
+        Denies a pending device authorization, identified by the code the device shows. The device's
+        next poll fails with code `access_denied`. A code that is unknown, already decided or expired is
+        not found.
+
         Args:
-            user_code:
+            user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
 
         Returns:
             None
@@ -3703,8 +4029,13 @@ class AsyncDeviceLogin:
     ) -> APIKeyCreated:
         """Poll for a device API key
 
+        Exchanges an approved device code for an API key, once. Until the user decides, a poll fails
+        with 400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner
+        fails with `slow_down` and adds 5 seconds to the interval. A denied authorization fails with
+        `access_denied`, and an unknown, expired or already used code with `expired_token`.
+
         Args:
-            device_code:
+            device_code: The `device_code` from starting the authorization.
 
         Returns:
             APIKeyCreated
@@ -3767,17 +4098,30 @@ class _AsyncIndexClient:
     ) -> AsyncIterator[QueryResult]:
         """Search an index: every result, page after page.
 
+        Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern`
+        or `invalid_filter`.
+
         Args:
-            pattern:
-            mode: One of ``"regex"``, ``"literal"``. Default: "regex".
-            case_sensitive: Default: True.
-            whole_word: Default: False.
+            pattern: What to search for: an RE2 regular expression, or literal text when `mode` is
+                `literal`. Required; at most 8,192 characters of valid UTF-8.
+            mode: How to read the pattern: `regex` (the default) for RE2 syntax, without backreferences
+                or lookaround, or `literal` to match its bytes exactly, with no escaping needed. One of
+                ``"regex"``, ``"literal"``.
+            case_sensitive: Whether case must match. Defaults to true. False matches under Unicode
+                simple case folding; in a regex, `(?i)` does the same for part of the pattern.
+            whole_word: Match only where the characters on either side of the match aren't word
+                characters: letters, digits or `_`. Defaults to false. Valid only in literal mode.
             multiline: Let a match span lines. Without it a pattern matches within one line, `^` and `$`
                 mark the line's edges, and a character class never matches a line break; a pattern that
                 contains a line break is rejected. With it the pattern is matched against the whole
                 document, `^` and `$` still mark line edges, `\\A` and `\\z` mark the document's edges, and
                 a match may contain line breaks. Default: False.
-            filter:
+            filter: Search only the documents whose metadata matches this expression, such as `path
+                STARTSWITH 'src/' AND size < 1048576`. At most 8,192 characters. Omit it to search every
+                document.
             lines_before: How many lines before each result to return with it, from the same document.
                 Default: 0.
             lines_after: How many lines after each result to return with it, from the same document.
@@ -3832,17 +4176,31 @@ class _AsyncIndexClient:
     ) -> QueryPage:
         """Search an index: one page.
 
+        Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern`
+        or `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while
+        more results follow.
+
         Args:
-            pattern:
-            mode: One of ``"regex"``, ``"literal"``. Default: "regex".
-            case_sensitive: Default: True.
-            whole_word: Default: False.
+            pattern: What to search for: an RE2 regular expression, or literal text when `mode` is
+                `literal`. Required; at most 8,192 characters of valid UTF-8.
+            mode: How to read the pattern: `regex` (the default) for RE2 syntax, without backreferences
+                or lookaround, or `literal` to match its bytes exactly, with no escaping needed. One of
+                ``"regex"``, ``"literal"``.
+            case_sensitive: Whether case must match. Defaults to true. False matches under Unicode
+                simple case folding; in a regex, `(?i)` does the same for part of the pattern.
+            whole_word: Match only where the characters on either side of the match aren't word
+                characters: letters, digits or `_`. Defaults to false. Valid only in literal mode.
             multiline: Let a match span lines. Without it a pattern matches within one line, `^` and `$`
                 mark the line's edges, and a character class never matches a line break; a pattern that
                 contains a line break is rejected. With it the pattern is matched against the whole
                 document, `^` and `$` still mark line edges, `\\A` and `\\z` mark the document's edges, and
                 a match may contain line breaks. Default: False.
-            filter:
+            filter: Search only the documents whose metadata matches this expression, such as `path
+                STARTSWITH 'src/' AND size < 1048576`. At most 8,192 characters. Omit it to search every
+                document.
             lines_before: How many lines before each result to return with it, from the same document.
                 Default: 0.
             lines_after: How many lines after each result to return with it, from the same document.
@@ -3895,6 +4253,11 @@ class _AsyncIndexClient:
     ) -> DocumentPage:
         """List documents: one page.
 
+        Lists documents in key byte order, with each one's revision, size, metadata and whether a search
+        can match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a
+        directory tree: keys that share the part up to the next delimiter are returned once, in
+        `common_prefixes`.
+
         Args:
             amount: Default: 50.
             prefix:
@@ -3930,6 +4293,10 @@ class _AsyncIndexClient:
         range: str | None = None,
     ) -> File:
         """Get a document
+
+        Returns a document's content exactly as it was stored, its revision in the ETag header and its
+        metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the
+        response is then 206, or 416 when the range lies outside the document.
 
         Args:
             key:
@@ -3982,7 +4349,8 @@ class _AsyncIndexClient:
         reports which applies.
 
         Args:
-            key:
+            key: The document's key: a UTF-8, POSIX-style path of at most 1,024 bytes, with no empty,
+                `.` or `..` components. Storing a key that exists replaces that document.
             content: The document bytes, at most 1 GiB. Valid UTF-8 of at most 100 MiB is searchable;
                 other content is stored without being searchable.
             metadata: Document metadata as a request sends it. Values are plain or tagged.
@@ -4024,6 +4392,10 @@ class _AsyncIndexClient:
         if_match: str | None = None,
     ) -> MutationResult:
         """Delete one document
+
+        Deletes one document. Send If-Match with a revision to delete it only if it still has that
+        revision. Retrying with the same Idempotency-Key returns the original result. Once acknowledged,
+        the document no longer matches any search.
 
         Args:
             key:
@@ -4103,7 +4475,7 @@ class _AsyncIndexClient:
         says which happened. Retrying with the same Idempotency-Key returns the same results.
 
         Args:
-            objects:
+            objects: The documents to delete, 1 to 2,048.
             idempotency_key:
 
         Returns:
@@ -4132,6 +4504,10 @@ class _AsyncIndexClient:
         tags: IndexTags | Mapping[str, str] | None = None,
     ) -> AsyncIndexCreation:
         """Create an index
+
+        Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+        response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+        already has an index with that name, in any case.
 
         Args:
             description: What the index holds, in Markdown. Empty when no description was set. Clients
@@ -4174,6 +4550,9 @@ class _AsyncIndexClient:
         self,
     ) -> Index:
         """Get an index
+
+        Returns one index with its current state, document count and size, and the progress of its
+        background optimization while one runs. Any member can read it.
 
         Returns:
             Index
@@ -4230,6 +4609,9 @@ class _AsyncIndexClient:
         self,
     ) -> AsyncIndexDeletion:
         """Delete an index
+
+        Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+        `deleting` until the deletion finishes in the background, and it can't be undone.
 
         Returns:
             AsyncIndexDeletion: the answer as ``result``, and ``wait()`` to wait until the work is done.

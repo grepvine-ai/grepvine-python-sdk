@@ -64,8 +64,12 @@ def sync_detailed(
 ) -> Response[Any | Error]:
     """Deny device authorization
 
+     Denies a pending device authorization, identified by the code the device shows. The device's next
+    poll fails with code `access_denied`. A code that is unknown, already decided or expired is not
+    found.
+
     Args:
-        body (DeviceDecisionRequest):
+        body (DeviceDecisionRequest): The device authorization to approve or deny.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -93,8 +97,12 @@ def sync(
 ) -> Any | Error | None:
     """Deny device authorization
 
+     Denies a pending device authorization, identified by the code the device shows. The device's next
+    poll fails with code `access_denied`. A code that is unknown, already decided or expired is not
+    found.
+
     Args:
-        body (DeviceDecisionRequest):
+        body (DeviceDecisionRequest): The device authorization to approve or deny.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -117,8 +125,12 @@ async def asyncio_detailed(
 ) -> Response[Any | Error]:
     """Deny device authorization
 
+     Denies a pending device authorization, identified by the code the device shows. The device's next
+    poll fails with code `access_denied`. A code that is unknown, already decided or expired is not
+    found.
+
     Args:
-        body (DeviceDecisionRequest):
+        body (DeviceDecisionRequest): The device authorization to approve or deny.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -144,8 +156,12 @@ async def asyncio(
 ) -> Any | Error | None:
     """Deny device authorization
 
+     Denies a pending device authorization, identified by the code the device shows. The device's next
+    poll fails with code `access_denied`. A code that is unknown, already decided or expired is not
+    found.
+
     Args:
-        body (DeviceDecisionRequest):
+        body (DeviceDecisionRequest): The device authorization to approve or deny.
 
     Raises:
         grepvine.APIError: The service answered with an error.

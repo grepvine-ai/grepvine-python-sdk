@@ -15,9 +15,9 @@ class ContextLine:
     extends past either bound is returned in part and marked truncated.
 
         Attributes:
-            line_number (int):
-            text (str):
-            text_truncated (bool):
+            line_number (int): One-based number of the line.
+            text (str): The line's text, without its line break, up to 64 KiB.
+            text_truncated (bool): Whether the line was cut.
     """
 
     line_number: int

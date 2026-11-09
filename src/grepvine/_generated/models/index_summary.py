@@ -23,23 +23,26 @@ class IndexSummary:
     """An index as a listing returns it.
 
     Attributes:
-        id (UUID):
+        id (UUID): The index's unique ID.
         organization (str): An account or organization name. Accounts and organizations share one namespace. A name
             keeps the case it was created with, and any spelling that differs only in case refers to it; no other account or
             organization can take such a spelling.
         name (str): An index name, unique in its organization. A name keeps the case it was created with, and any
             spelling that differs only in case refers to it; no other index in the organization can take such a spelling.
-        canonical_id (str):
+        canonical_id (str): A stable identifier for the index, currently the same as `id`.
         description (str): What the index holds, in Markdown. Empty when no description was set. Clients render it
             without raw HTML.
         tags (IndexTags): Key/value labels on the index, for example the commit it was synced from. At most 64 tags. A
             key is 1 to 128 characters without whitespace or control characters; a value is at most 1,024 characters without
             control characters. Empty when none was set.
-        state (IndexState):
-        document_count (int):
-        content_bytes (int):
-        created_at (datetime.datetime):
-        last_updated_at (datetime.datetime | Unset):
+        state (IndexState): Where an index is in its life. `creating`: not usable yet. `ready`: the only state that
+            answers searches. `recreate_required`: answers nothing until it is deleted, created again and its documents
+            written again. `deleting`: deletion is in progress. `delete_failed`: deletion did not finish and is retried.
+        document_count (int): The number of documents in the index.
+        content_bytes (int): The total size of the documents' content, in bytes.
+        created_at (datetime.datetime): When the index was created.
+        last_updated_at (datetime.datetime | Unset): When a document was last stored or deleted. Omitted when that is
+            not known, such as before the first write.
     """
 
     id: UUID

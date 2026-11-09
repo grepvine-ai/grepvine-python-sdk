@@ -14,10 +14,11 @@ T = TypeVar("T", bound="TaggedStringMetadataValue")
 
 @_attrs_define
 class TaggedStringMetadataValue:
-    """
+    """A string metadata value with its type named.
+
     Attributes:
-        type_ (Literal['string']):
-        value (str):
+        type_ (Literal['string']): The value's type: always `string`.
+        value (str): The value, at most 8,192 characters.
     """
 
     type_: Literal["string"]
