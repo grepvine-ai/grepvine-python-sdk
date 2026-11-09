@@ -110,7 +110,7 @@ def sync_detailed(
         idempotency_key (str | Unset):
         if_match (str | Unset):
         if_none_match (PutDocumentIfNoneMatch | Unset):
-        body (PutDocumentForm):
+        body (PutDocumentForm): One document to store, sent as multipart form fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -163,7 +163,7 @@ def sync(
         idempotency_key (str | Unset):
         if_match (str | Unset):
         if_none_match (PutDocumentIfNoneMatch | Unset):
-        body (PutDocumentForm):
+        body (PutDocumentForm): One document to store, sent as multipart form fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -211,7 +211,7 @@ async def asyncio_detailed(
         idempotency_key (str | Unset):
         if_match (str | Unset):
         if_none_match (PutDocumentIfNoneMatch | Unset):
-        body (PutDocumentForm):
+        body (PutDocumentForm): One document to store, sent as multipart form fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -262,7 +262,7 @@ async def asyncio(
         idempotency_key (str | Unset):
         if_match (str | Unset):
         if_none_match (PutDocumentIfNoneMatch | Unset):
-        body (PutDocumentForm):
+        body (PutDocumentForm): One document to store, sent as multipart form fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.

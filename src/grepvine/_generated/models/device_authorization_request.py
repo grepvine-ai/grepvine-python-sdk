@@ -11,9 +11,10 @@ T = TypeVar("T", bound="DeviceAuthorizationRequest")
 
 @_attrs_define
 class DeviceAuthorizationRequest:
-    """
+    """A request to sign in a device.
+
     Attributes:
-        api_key_name (str):
+        api_key_name (str): The name to give the API key the device receives, 1 to 128 characters.
     """
 
     api_key_name: str

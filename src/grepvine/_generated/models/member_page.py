@@ -16,9 +16,10 @@ T = TypeVar("T", bound="MemberPage")
 
 @_attrs_define
 class MemberPage:
-    """
+    """A page of organization members.
+
     Attributes:
-        results (list[Member]):
+        results (list[Member]): The members on this page.
         pagination (Pagination): A page may hold fewer results than the requested amount, possibly none, while has_next
             is true; a query page stops at the server's soft time budget and next_page_id resumes exactly after the last
             candidate it examined. Clients continue while has_next is true.

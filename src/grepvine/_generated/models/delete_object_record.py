@@ -13,10 +13,12 @@ T = TypeVar("T", bound="DeleteObjectRecord")
 
 @_attrs_define
 class DeleteObjectRecord:
-    """
+    """One document of a batch to delete.
+
     Attributes:
-        key (str):
-        if_match (str | Unset):
+        key (str): The key of the document to delete.
+        if_match (str | Unset): A revision. The document is deleted only if it still has this revision; otherwise its
+            result has the error `precondition_failed`.
     """
 
     key: str

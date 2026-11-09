@@ -86,7 +86,7 @@ def sync_detailed(
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
         idempotency_key (str | Unset):
-        body (DeleteObjectsRequest):
+        body (DeleteObjectsRequest): The documents to delete.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -132,7 +132,7 @@ def sync(
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
         idempotency_key (str | Unset):
-        body (DeleteObjectsRequest):
+        body (DeleteObjectsRequest): The documents to delete.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -173,7 +173,7 @@ async def asyncio_detailed(
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
         idempotency_key (str | Unset):
-        body (DeleteObjectsRequest):
+        body (DeleteObjectsRequest): The documents to delete.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -217,7 +217,7 @@ async def asyncio(
             created with, and any spelling that differs only in case refers to it; no other index in
             the organization can take such a spelling.
         idempotency_key (str | Unset):
-        body (DeleteObjectsRequest):
+        body (DeleteObjectsRequest): The documents to delete.
 
     Raises:
         grepvine.APIError: The service answered with an error.

@@ -22,8 +22,8 @@ class QueryResult:
     the query set multiline and a match spans lines.
 
         Attributes:
-            key (str):
-            revision (str):
+            key (str): The key of the document that matched.
+            revision (str): The revision of the document that matched.
             line_number (int): One-based number of the first line the result covers.
             last_line_number (int): One-based number of the last line the result covers. Equal to line_number unless a match
                 spans lines.

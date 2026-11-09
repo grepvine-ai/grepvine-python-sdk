@@ -48,6 +48,9 @@ def sync_detailed(
 ) -> Response[Any | Error]:
     """Revoke the current session
 
+     Ends the session that made the request and clears its cookie. Other sessions and API keys are
+    unaffected.
+
     Raises:
         grepvine.APIError: The service answered with an error.
         grepvine.TransportError: The request could not be delivered.
@@ -71,6 +74,9 @@ def sync(
 ) -> Any | Error | None:
     """Revoke the current session
 
+     Ends the session that made the request and clears its cookie. Other sessions and API keys are
+    unaffected.
+
     Raises:
         grepvine.APIError: The service answered with an error.
         grepvine.TransportError: The request could not be delivered.
@@ -89,6 +95,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
 ) -> Response[Any | Error]:
     """Revoke the current session
+
+     Ends the session that made the request and clears its cookie. Other sessions and API keys are
+    unaffected.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -110,6 +119,9 @@ async def asyncio(
     client: AuthenticatedClient | Client,
 ) -> Any | Error | None:
     """Revoke the current session
+
+     Ends the session that made the request and clears its cookie. Other sessions and API keys are
+    unaffected.
 
     Raises:
         grepvine.APIError: The service answered with an error.

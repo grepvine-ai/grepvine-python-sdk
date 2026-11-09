@@ -19,11 +19,14 @@ T = TypeVar("T", bound="Member")
 
 @_attrs_define
 class Member:
-    """
+    """A member of an organization.
+
     Attributes:
-        user (User):
-        role (Role):
-        created_at (datetime.datetime):
+        user (User): A user account.
+        role (Role): A member's role in an organization. `owner` can do everything, including deleting the organization
+            and transferring ownership; `admin` also manages members and indexes; `developer` reads, writes and searches
+            documents; `reader` reads and searches them.
+        created_at (datetime.datetime): When the account became a member.
         expires_at (datetime.datetime | Unset): When the membership ends, for time-limited access granted by Grepvine
             support. Omitted for an ordinary membership.
     """

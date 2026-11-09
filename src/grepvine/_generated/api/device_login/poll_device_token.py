@@ -66,8 +66,13 @@ def sync_detailed(
 ) -> Response[APIKeyCreated | Error]:
     """Poll for a device API key
 
+     Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
+    400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
+    `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
+    and an unknown, expired or already used code with `expired_token`.
+
     Args:
-        body (DeviceTokenRequest):
+        body (DeviceTokenRequest): The device code to exchange for an API key.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -95,8 +100,13 @@ def sync(
 ) -> APIKeyCreated | Error | None:
     """Poll for a device API key
 
+     Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
+    400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
+    `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
+    and an unknown, expired or already used code with `expired_token`.
+
     Args:
-        body (DeviceTokenRequest):
+        body (DeviceTokenRequest): The device code to exchange for an API key.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -119,8 +129,13 @@ async def asyncio_detailed(
 ) -> Response[APIKeyCreated | Error]:
     """Poll for a device API key
 
+     Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
+    400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
+    `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
+    and an unknown, expired or already used code with `expired_token`.
+
     Args:
-        body (DeviceTokenRequest):
+        body (DeviceTokenRequest): The device code to exchange for an API key.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -146,8 +161,13 @@ async def asyncio(
 ) -> APIKeyCreated | Error | None:
     """Poll for a device API key
 
+     Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
+    400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
+    `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
+    and an unknown, expired or already used code with `expired_token`.
+
     Args:
-        body (DeviceTokenRequest):
+        body (DeviceTokenRequest): The device code to exchange for an API key.
 
     Raises:
         grepvine.APIError: The service answered with an error.

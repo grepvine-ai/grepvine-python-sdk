@@ -61,8 +61,13 @@ def sync_detailed(
 ) -> Response[DeviceAuthorization | Error]:
     """Start device authorization
 
+     Starts signing in a device, such as the command-line client, without entering a password on it. Show
+    the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
+    it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
+    after `expires_in` seconds.
+
     Args:
-        body (DeviceAuthorizationRequest):
+        body (DeviceAuthorizationRequest): A request to sign in a device.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -90,8 +95,13 @@ def sync(
 ) -> DeviceAuthorization | Error | None:
     """Start device authorization
 
+     Starts signing in a device, such as the command-line client, without entering a password on it. Show
+    the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
+    it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
+    after `expires_in` seconds.
+
     Args:
-        body (DeviceAuthorizationRequest):
+        body (DeviceAuthorizationRequest): A request to sign in a device.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -114,8 +124,13 @@ async def asyncio_detailed(
 ) -> Response[DeviceAuthorization | Error]:
     """Start device authorization
 
+     Starts signing in a device, such as the command-line client, without entering a password on it. Show
+    the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
+    it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
+    after `expires_in` seconds.
+
     Args:
-        body (DeviceAuthorizationRequest):
+        body (DeviceAuthorizationRequest): A request to sign in a device.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -141,8 +156,13 @@ async def asyncio(
 ) -> DeviceAuthorization | Error | None:
     """Start device authorization
 
+     Starts signing in a device, such as the command-line client, without entering a password on it. Show
+    the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
+    it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
+    after `expires_in` seconds.
+
     Args:
-        body (DeviceAuthorizationRequest):
+        body (DeviceAuthorizationRequest): A request to sign in a device.
 
     Raises:
         grepvine.APIError: The service answered with an error.

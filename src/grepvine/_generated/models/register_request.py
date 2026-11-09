@@ -13,13 +13,14 @@ T = TypeVar("T", bound="RegisterRequest")
 
 @_attrs_define
 class RegisterRequest:
-    """
+    """A new local account.
+
     Attributes:
         name (str): An account or organization name. Accounts and organizations share one namespace. A name keeps the
             case it was created with, and any spelling that differs only in case refers to it; no other account or
             organization can take such a spelling.
-        email (str):
-        password (str):
+        email (str): The account's email address, at most 320 characters. No other account can use it.
+        password (str): The password, 12 to 1,024 characters.
         invitation (str | Unset): The token of the invitation link the account was invited with. Required when
             registration is by invitation.
     """

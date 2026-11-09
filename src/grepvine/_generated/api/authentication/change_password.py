@@ -64,8 +64,12 @@ def sync_detailed(
 ) -> Response[Any | Error]:
     """Change the current password
 
+     Changes the signed-in account's password after checking the current one. Every other session of the
+    account is signed out; the session that made the request stays signed in, and API keys keep working.
+    A 401 means the current password was wrong.
+
     Args:
-        body (ChangePasswordRequest):
+        body (ChangePasswordRequest): The current password and its replacement.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -93,8 +97,12 @@ def sync(
 ) -> Any | Error | None:
     """Change the current password
 
+     Changes the signed-in account's password after checking the current one. Every other session of the
+    account is signed out; the session that made the request stays signed in, and API keys keep working.
+    A 401 means the current password was wrong.
+
     Args:
-        body (ChangePasswordRequest):
+        body (ChangePasswordRequest): The current password and its replacement.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -117,8 +125,12 @@ async def asyncio_detailed(
 ) -> Response[Any | Error]:
     """Change the current password
 
+     Changes the signed-in account's password after checking the current one. Every other session of the
+    account is signed out; the session that made the request stays signed in, and API keys keep working.
+    A 401 means the current password was wrong.
+
     Args:
-        body (ChangePasswordRequest):
+        body (ChangePasswordRequest): The current password and its replacement.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -144,8 +156,12 @@ async def asyncio(
 ) -> Any | Error | None:
     """Change the current password
 
+     Changes the signed-in account's password after checking the current one. Every other session of the
+    account is signed out; the session that made the request stays signed in, and API keys keep working.
+    A 401 means the current password was wrong.
+
     Args:
-        body (ChangePasswordRequest):
+        body (ChangePasswordRequest): The current password and its replacement.
 
     Raises:
         grepvine.APIError: The service answered with an error.

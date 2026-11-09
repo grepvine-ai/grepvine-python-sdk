@@ -94,6 +94,8 @@ class Members:
     ) -> MemberPage:
         """List organization members
 
+         Lists an organization's members and their roles, ordered by name. Requires the owner or admin role.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -125,11 +127,14 @@ class Members:
     ) -> Member:
         """Add an organization member
 
+         Adds an existing account to the organization with the admin, developer or reader role. Requires the
+        owner or admin role. An organization has one owner, changed only by transferring ownership.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
                 in case refers to it; no other account or organization can take such a spelling.
-            body (AddMemberRequest):
+            body (AddMemberRequest): The account to add and its role.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -155,6 +160,9 @@ class Members:
     ) -> Member:
         """Change an organization member role
 
+         Changes a member's role to admin, developer or reader. Requires the owner or admin role. The owner's
+        role changes only by transferring ownership.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -162,7 +170,7 @@ class Members:
             user (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
                 in case refers to it; no other account or organization can take such a spelling.
-            body (UpdateMemberRequest):
+            body (UpdateMemberRequest): The member's new role.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -186,6 +194,9 @@ class Members:
         user: str,
     ) -> None:
         """Remove an organization member
+
+         Removes a member from the organization. Requires the owner or admin role. The owner can't be
+        removed; transfer ownership first.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -227,6 +238,9 @@ class Organizations:
     ) -> OrganizationPage:
         """List organizations
 
+         Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+        name.
+
         Args:
             amount (int | Unset):  Default: 50.
             page (str | Unset):
@@ -253,8 +267,11 @@ class Organizations:
     ) -> Organization:
         """Create an organization
 
+         Creates an organization owned by the authenticated account. Accounts and organizations share one
+        namespace, so a 409 means an account or organization already holds the name, in any case.
+
         Args:
-            body (CreateOrganizationRequest):
+            body (CreateOrganizationRequest): A new organization.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -275,6 +292,9 @@ class Organizations:
         organization: str,
     ) -> Organization:
         """Get an organization
+
+         Returns an organization the authenticated account belongs to, with its role there. It answers for a
+        suspended organization too, and reports `suspended`.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -300,6 +320,9 @@ class Organizations:
         organization: str,
     ) -> None:
         """Delete an organization
+
+         Starts deleting an organization with all its indexes and documents. Only the owner can delete it.
+        The deletion finishes in the background and can't be undone.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -327,11 +350,15 @@ class Organizations:
     ) -> None:
         """Transfer organization ownership
 
+         Makes another member the owner. Only the owner can transfer ownership, and the previous owner stays
+        a member with the admin role. The new owner must already be a member, and not one with time-limited
+        access.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
                 in case refers to it; no other account or organization can take such a spelling.
-            body (TransferOwnershipRequest):
+            body (TransferOwnershipRequest): The member who becomes the owner.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -363,6 +390,8 @@ class Indexes:
         prefix: str | Unset = UNSET,
     ) -> IndexPage:
         """List indexes
+
+         Lists the organization's indexes, ordered by name. Any member can list them.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -397,11 +426,15 @@ class Indexes:
     ) -> Index:
         """Create an index
 
+         Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+        response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+        already has an index with that name, in any case.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
                 in case refers to it; no other account or organization can take such a spelling.
-            body (CreateIndexRequest):
+            body (CreateIndexRequest): A new index.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -424,6 +457,9 @@ class Indexes:
         index: str,
     ) -> Index:
         """Get an index
+
+         Returns one index with its current state, document count and size, and the progress of its
+        background optimization while one runs. Any member can read it.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -493,6 +529,9 @@ class Indexes:
     ) -> None:
         """Delete an index
 
+         Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+        `deleting` until the deletion finishes in the background, and it can't be undone.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -533,6 +572,10 @@ class Documents:
         delimiter: str | Unset = UNSET,
     ) -> DocumentPage:
         """List documents
+
+         Lists documents in key byte order, with each one's revision, size, metadata and whether a search can
+        match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a directory
+        tree: keys that share the part up to the next delimiter are returned once, in `common_prefixes`.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -592,7 +635,7 @@ class Documents:
             idempotency_key (str | Unset):
             if_match (str | Unset):
             if_none_match (PutDocumentIfNoneMatch | Unset):
-            body (PutDocumentForm):
+            body (PutDocumentForm): One document to store, sent as multipart form fields.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -622,6 +665,10 @@ class Documents:
         range_: str | Unset = UNSET,
     ) -> File:
         """Get a document
+
+         Returns a document's content exactly as it was stored, its revision in the ETag header and its
+        metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the response
+        is then 206, or 416 when the range lies outside the document.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -660,6 +707,10 @@ class Documents:
         if_match: str | Unset = UNSET,
     ) -> MutationResult:
         """Delete one document
+
+         Deletes one document. Send If-Match with a revision to delete it only if it still has that revision.
+        Retrying with the same Idempotency-Key returns the original result. Once acknowledged, the document
+        no longer matches any search.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -759,7 +810,7 @@ class Documents:
                 created with, and any spelling that differs only in case refers to it; no other index in
                 the organization can take such a spelling.
             idempotency_key (str | Unset):
-            body (DeleteObjectsRequest):
+            body (DeleteObjectsRequest): The documents to delete.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -796,6 +847,13 @@ class Search:
     ) -> QueryPage:
         """Search an index
 
+         Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern` or
+        `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while more
+        results follow.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -805,7 +863,8 @@ class Search:
                 the organization can take such a spelling.
             amount (int | Unset):  Default: 50.
             page (str | Unset):
-            body (QueryRequest):
+            body (QueryRequest): A search: the pattern, how to match it, which documents to search and
+                how much context to return.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -840,6 +899,9 @@ class APIKeys:
     ) -> APIKeyPage:
         """List API keys
 
+         Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+        itself is never returned again; `prefix` tells keys apart.
+
         Args:
             amount (int | Unset):  Default: 50.
             page (str | Unset):
@@ -866,8 +928,11 @@ class APIKeys:
     ) -> APIKeyCreated:
         """Create an API key
 
+         Creates an API key for the authenticated account. The response is the only time the secret key is
+        shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+
         Args:
-            body (CreateAPIKeyRequest):
+            body (CreateAPIKeyRequest): A new API key.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -888,6 +953,9 @@ class APIKeys:
         api_key_id: UUID,
     ) -> None:
         """Revoke an API key
+
+         Revokes one of the authenticated account's API keys. Requests authenticated with it are refused from
+        then on. A key that doesn't exist or belongs to another account is not found.
 
         Args:
             api_key_id (UUID):
@@ -927,7 +995,7 @@ class Account:
         names, if any.
 
         Args:
-            body (RegisterRequest):
+            body (RegisterRequest): A new local account.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -975,7 +1043,7 @@ class Account:
         the body, never in the URL. An invitation that was used, withdrawn or has expired is not found.
 
         Args:
-            body (InvitationCheckRequest):
+            body (InvitationCheckRequest): The invitation to look up.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -996,6 +1064,10 @@ class Account:
         name: str,
     ) -> UsernameAvailability:
         """Check whether a username is available
+
+         Reports whether an account can register this username now. Accounts and organizations share one
+        namespace, so a name either one holds, in any case, is taken. The answer can change before the name
+        is registered.
 
         Args:
             name (str): An account or organization name. Accounts and organizations share one
@@ -1023,8 +1095,13 @@ class Account:
     ) -> User:
         """Create a user session
 
+         Signs in with a username or email address and a password, and starts a browser session: the response
+        sets the session cookie and returns, in X-Csrf-Token, the token every state change made with that
+        cookie must send. A 401 means the credentials were not accepted. Programs authenticate with an API
+        key instead.
+
         Args:
-            body (LoginRequest):
+            body (LoginRequest): Credentials for a new session.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1045,6 +1122,9 @@ class Account:
     ) -> None:
         """Revoke the current session
 
+         Ends the session that made the request and clears its cookie. Other sessions and API keys are
+        unaffected.
+
         Raises:
             grepvine.APIError: The service answered with an error.
             grepvine.TransportError: The request could not be delivered.
@@ -1061,6 +1141,9 @@ class Account:
         self,
     ) -> User:
         """Get the current user
+
+         Returns the account the request authenticates as, whether with a session or an API key. A session
+        request also receives its CSRF token in X-Csrf-Token.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1082,8 +1165,12 @@ class Account:
     ) -> None:
         """Change the current password
 
+         Changes the signed-in account's password after checking the current one. Every other session of the
+        account is signed out; the session that made the request stays signed in, and API keys keep working.
+        A 401 means the current password was wrong.
+
         Args:
-            body (ChangePasswordRequest):
+            body (ChangePasswordRequest): The current password and its replacement.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1112,8 +1199,13 @@ class DeviceLogin:
     ) -> DeviceAuthorization:
         """Start device authorization
 
+         Starts signing in a device, such as the command-line client, without entering a password on it. Show
+        the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
+        it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
+        after `expires_in` seconds.
+
         Args:
-            body (DeviceAuthorizationRequest):
+            body (DeviceAuthorizationRequest): A request to sign in a device.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1136,8 +1228,12 @@ class DeviceLogin:
     ) -> None:
         """Approve device authorization
 
+         Approves a pending device authorization for the signed-in account, identified by the code the device
+        shows. The device's next poll receives a new API key with the name it asked for. A code that is
+        unknown, already decided or expired is not found.
+
         Args:
-            body (DeviceDecisionRequest):
+            body (DeviceDecisionRequest): The device authorization to approve or deny.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1159,8 +1255,12 @@ class DeviceLogin:
     ) -> None:
         """Deny device authorization
 
+         Denies a pending device authorization, identified by the code the device shows. The device's next
+        poll fails with code `access_denied`. A code that is unknown, already decided or expired is not
+        found.
+
         Args:
-            body (DeviceDecisionRequest):
+            body (DeviceDecisionRequest): The device authorization to approve or deny.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1182,8 +1282,13 @@ class DeviceLogin:
     ) -> APIKeyCreated:
         """Poll for a device API key
 
+         Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
+        400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
+        `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
+        and an unknown, expired or already used code with `expired_token`.
+
         Args:
-            body (DeviceTokenRequest):
+            body (DeviceTokenRequest): The device code to exchange for an API key.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1237,6 +1342,8 @@ class AsyncMembers:
     ) -> MemberPage:
         """List organization members
 
+         Lists an organization's members and their roles, ordered by name. Requires the owner or admin role.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -1268,11 +1375,14 @@ class AsyncMembers:
     ) -> Member:
         """Add an organization member
 
+         Adds an existing account to the organization with the admin, developer or reader role. Requires the
+        owner or admin role. An organization has one owner, changed only by transferring ownership.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
                 in case refers to it; no other account or organization can take such a spelling.
-            body (AddMemberRequest):
+            body (AddMemberRequest): The account to add and its role.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1298,6 +1408,9 @@ class AsyncMembers:
     ) -> Member:
         """Change an organization member role
 
+         Changes a member's role to admin, developer or reader. Requires the owner or admin role. The owner's
+        role changes only by transferring ownership.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -1305,7 +1418,7 @@ class AsyncMembers:
             user (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
                 in case refers to it; no other account or organization can take such a spelling.
-            body (UpdateMemberRequest):
+            body (UpdateMemberRequest): The member's new role.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1329,6 +1442,9 @@ class AsyncMembers:
         user: str,
     ) -> None:
         """Remove an organization member
+
+         Removes a member from the organization. Requires the owner or admin role. The owner can't be
+        removed; transfer ownership first.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -1370,6 +1486,9 @@ class AsyncOrganizations:
     ) -> OrganizationPage:
         """List organizations
 
+         Lists the organizations the authenticated account belongs to, with its role in each, ordered by
+        name.
+
         Args:
             amount (int | Unset):  Default: 50.
             page (str | Unset):
@@ -1396,8 +1515,11 @@ class AsyncOrganizations:
     ) -> Organization:
         """Create an organization
 
+         Creates an organization owned by the authenticated account. Accounts and organizations share one
+        namespace, so a 409 means an account or organization already holds the name, in any case.
+
         Args:
-            body (CreateOrganizationRequest):
+            body (CreateOrganizationRequest): A new organization.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1418,6 +1540,9 @@ class AsyncOrganizations:
         organization: str,
     ) -> Organization:
         """Get an organization
+
+         Returns an organization the authenticated account belongs to, with its role there. It answers for a
+        suspended organization too, and reports `suspended`.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -1443,6 +1568,9 @@ class AsyncOrganizations:
         organization: str,
     ) -> None:
         """Delete an organization
+
+         Starts deleting an organization with all its indexes and documents. Only the owner can delete it.
+        The deletion finishes in the background and can't be undone.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -1470,11 +1598,15 @@ class AsyncOrganizations:
     ) -> None:
         """Transfer organization ownership
 
+         Makes another member the owner. Only the owner can transfer ownership, and the previous owner stays
+        a member with the admin role. The new owner must already be a member, and not one with time-limited
+        access.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
                 in case refers to it; no other account or organization can take such a spelling.
-            body (TransferOwnershipRequest):
+            body (TransferOwnershipRequest): The member who becomes the owner.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1506,6 +1638,8 @@ class AsyncIndexes:
         prefix: str | Unset = UNSET,
     ) -> IndexPage:
         """List indexes
+
+         Lists the organization's indexes, ordered by name. Any member can list them.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -1540,11 +1674,15 @@ class AsyncIndexes:
     ) -> Index:
         """Create an index
 
+         Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+        response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+        already has an index with that name, in any case.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
                 in case refers to it; no other account or organization can take such a spelling.
-            body (CreateIndexRequest):
+            body (CreateIndexRequest): A new index.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1567,6 +1705,9 @@ class AsyncIndexes:
         index: str,
     ) -> Index:
         """Get an index
+
+         Returns one index with its current state, document count and size, and the progress of its
+        background optimization while one runs. Any member can read it.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -1636,6 +1777,9 @@ class AsyncIndexes:
     ) -> None:
         """Delete an index
 
+         Starts deleting an index and all its documents. Requires the owner or admin role. The index is
+        `deleting` until the deletion finishes in the background, and it can't be undone.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -1676,6 +1820,10 @@ class AsyncDocuments:
         delimiter: str | Unset = UNSET,
     ) -> DocumentPage:
         """List documents
+
+         Lists documents in key byte order, with each one's revision, size, metadata and whether a search can
+        match it. Narrow the listing with `prefix`, and add `delimiter` to browse keys like a directory
+        tree: keys that share the part up to the next delimiter are returned once, in `common_prefixes`.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -1735,7 +1883,7 @@ class AsyncDocuments:
             idempotency_key (str | Unset):
             if_match (str | Unset):
             if_none_match (PutDocumentIfNoneMatch | Unset):
-            body (PutDocumentForm):
+            body (PutDocumentForm): One document to store, sent as multipart form fields.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1765,6 +1913,10 @@ class AsyncDocuments:
         range_: str | Unset = UNSET,
     ) -> File:
         """Get a document
+
+         Returns a document's content exactly as it was stored, its revision in the ETag header and its
+        metadata in the X-Grepvine-Metadata header. Send a Range header to read one byte range; the response
+        is then 206, or 416 when the range lies outside the document.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -1803,6 +1955,10 @@ class AsyncDocuments:
         if_match: str | Unset = UNSET,
     ) -> MutationResult:
         """Delete one document
+
+         Deletes one document. Send If-Match with a revision to delete it only if it still has that revision.
+        Retrying with the same Idempotency-Key returns the original result. Once acknowledged, the document
+        no longer matches any search.
 
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
@@ -1902,7 +2058,7 @@ class AsyncDocuments:
                 created with, and any spelling that differs only in case refers to it; no other index in
                 the organization can take such a spelling.
             idempotency_key (str | Unset):
-            body (DeleteObjectsRequest):
+            body (DeleteObjectsRequest): The documents to delete.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1939,6 +2095,13 @@ class AsyncSearch:
     ) -> QueryPage:
         """Search an index
 
+         Searches every searchable document in the index for a regular expression or literal text, and
+        returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+        filter restricts the search to matching documents, and context lines can be returned around each
+        result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern` or
+        `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while more
+        results follow.
+
         Args:
             organization (str): An account or organization name. Accounts and organizations share one
                 namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -1948,7 +2111,8 @@ class AsyncSearch:
                 the organization can take such a spelling.
             amount (int | Unset):  Default: 50.
             page (str | Unset):
-            body (QueryRequest):
+            body (QueryRequest): A search: the pattern, how to match it, which documents to search and
+                how much context to return.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1983,6 +2147,9 @@ class AsyncAPIKeys:
     ) -> APIKeyPage:
         """List API keys
 
+         Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+        itself is never returned again; `prefix` tells keys apart.
+
         Args:
             amount (int | Unset):  Default: 50.
             page (str | Unset):
@@ -2009,8 +2176,11 @@ class AsyncAPIKeys:
     ) -> APIKeyCreated:
         """Create an API key
 
+         Creates an API key for the authenticated account. The response is the only time the secret key is
+        shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+
         Args:
-            body (CreateAPIKeyRequest):
+            body (CreateAPIKeyRequest): A new API key.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2031,6 +2201,9 @@ class AsyncAPIKeys:
         api_key_id: UUID,
     ) -> None:
         """Revoke an API key
+
+         Revokes one of the authenticated account's API keys. Requests authenticated with it are refused from
+        then on. A key that doesn't exist or belongs to another account is not found.
 
         Args:
             api_key_id (UUID):
@@ -2070,7 +2243,7 @@ class AsyncAccount:
         names, if any.
 
         Args:
-            body (RegisterRequest):
+            body (RegisterRequest): A new local account.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2118,7 +2291,7 @@ class AsyncAccount:
         the body, never in the URL. An invitation that was used, withdrawn or has expired is not found.
 
         Args:
-            body (InvitationCheckRequest):
+            body (InvitationCheckRequest): The invitation to look up.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2139,6 +2312,10 @@ class AsyncAccount:
         name: str,
     ) -> UsernameAvailability:
         """Check whether a username is available
+
+         Reports whether an account can register this username now. Accounts and organizations share one
+        namespace, so a name either one holds, in any case, is taken. The answer can change before the name
+        is registered.
 
         Args:
             name (str): An account or organization name. Accounts and organizations share one
@@ -2166,8 +2343,13 @@ class AsyncAccount:
     ) -> User:
         """Create a user session
 
+         Signs in with a username or email address and a password, and starts a browser session: the response
+        sets the session cookie and returns, in X-Csrf-Token, the token every state change made with that
+        cookie must send. A 401 means the credentials were not accepted. Programs authenticate with an API
+        key instead.
+
         Args:
-            body (LoginRequest):
+            body (LoginRequest): Credentials for a new session.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2188,6 +2370,9 @@ class AsyncAccount:
     ) -> None:
         """Revoke the current session
 
+         Ends the session that made the request and clears its cookie. Other sessions and API keys are
+        unaffected.
+
         Raises:
             grepvine.APIError: The service answered with an error.
             grepvine.TransportError: The request could not be delivered.
@@ -2204,6 +2389,9 @@ class AsyncAccount:
         self,
     ) -> User:
         """Get the current user
+
+         Returns the account the request authenticates as, whether with a session or an API key. A session
+        request also receives its CSRF token in X-Csrf-Token.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2225,8 +2413,12 @@ class AsyncAccount:
     ) -> None:
         """Change the current password
 
+         Changes the signed-in account's password after checking the current one. Every other session of the
+        account is signed out; the session that made the request stays signed in, and API keys keep working.
+        A 401 means the current password was wrong.
+
         Args:
-            body (ChangePasswordRequest):
+            body (ChangePasswordRequest): The current password and its replacement.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2255,8 +2447,13 @@ class AsyncDeviceLogin:
     ) -> DeviceAuthorization:
         """Start device authorization
 
+         Starts signing in a device, such as the command-line client, without entering a password on it. Show
+        the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
+        it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
+        after `expires_in` seconds.
+
         Args:
-            body (DeviceAuthorizationRequest):
+            body (DeviceAuthorizationRequest): A request to sign in a device.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2279,8 +2476,12 @@ class AsyncDeviceLogin:
     ) -> None:
         """Approve device authorization
 
+         Approves a pending device authorization for the signed-in account, identified by the code the device
+        shows. The device's next poll receives a new API key with the name it asked for. A code that is
+        unknown, already decided or expired is not found.
+
         Args:
-            body (DeviceDecisionRequest):
+            body (DeviceDecisionRequest): The device authorization to approve or deny.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2302,8 +2503,12 @@ class AsyncDeviceLogin:
     ) -> None:
         """Deny device authorization
 
+         Denies a pending device authorization, identified by the code the device shows. The device's next
+        poll fails with code `access_denied`. A code that is unknown, already decided or expired is not
+        found.
+
         Args:
-            body (DeviceDecisionRequest):
+            body (DeviceDecisionRequest): The device authorization to approve or deny.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2325,8 +2530,13 @@ class AsyncDeviceLogin:
     ) -> APIKeyCreated:
         """Poll for a device API key
 
+         Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
+        400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
+        `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
+        and an unknown, expired or already used code with `expired_token`.
+
         Args:
-            body (DeviceTokenRequest):
+            body (DeviceTokenRequest): The device code to exchange for an API key.
 
         Raises:
             grepvine.APIError: The service answered with an error.

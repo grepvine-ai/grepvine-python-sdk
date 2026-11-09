@@ -14,10 +14,11 @@ T = TypeVar("T", bound="TaggedIntegerMetadataValue")
 
 @_attrs_define
 class TaggedIntegerMetadataValue:
-    """
+    """A 64-bit integer metadata value with its type named.
+
     Attributes:
-        type_ (Literal['integer']):
-        value (int):
+        type_ (Literal['integer']): The value's type: always `integer`.
+        value (int): The value, a signed 64-bit integer.
     """
 
     type_: Literal["integer"]

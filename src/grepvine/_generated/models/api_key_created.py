@@ -17,15 +17,16 @@ T = TypeVar("T", bound="APIKeyCreated")
 
 @_attrs_define
 class APIKeyCreated:
-    """
+    """A new API key with its secret, which is shown only this once.
+
     Attributes:
-        id (UUID):
-        name (str):
-        prefix (str):
-        created_at (datetime.datetime):
-        key (str):
-        last_used_at (datetime.datetime | Unset):
-        revoked_at (datetime.datetime | Unset):
+        id (UUID): The key's unique ID.
+        name (str): The name the key was given.
+        prefix (str): The first characters of the key, shown to tell keys apart.
+        created_at (datetime.datetime): When the key was created.
+        key (str): The secret API key. It is shown only in this response; send it as `Authorization: Bearer <key>`.
+        last_used_at (datetime.datetime | Unset): When the key last authenticated a request. Omitted if it never has.
+        revoked_at (datetime.datetime | Unset): When the key was revoked. Omitted while the key is active.
     """
 
     id: UUID

@@ -59,6 +59,9 @@ def sync_detailed(
 ) -> Response[Any | Error]:
     """Delete an organization
 
+     Starts deleting an organization with all its indexes and documents. Only the owner can delete it.
+    The deletion finishes in the background and can't be undone.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -90,6 +93,9 @@ def sync(
 ) -> Any | Error | None:
     """Delete an organization
 
+     Starts deleting an organization with all its indexes and documents. Only the owner can delete it.
+    The deletion finishes in the background and can't be undone.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -115,6 +121,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
 ) -> Response[Any | Error]:
     """Delete an organization
+
+     Starts deleting an organization with all its indexes and documents. Only the owner can delete it.
+    The deletion finishes in the background and can't be undone.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -144,6 +153,9 @@ async def asyncio(
     client: AuthenticatedClient | Client,
 ) -> Any | Error | None:
     """Delete an organization
+
+     Starts deleting an organization with all its indexes and documents. Only the owner can delete it.
+    The deletion finishes in the background and can't be undone.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

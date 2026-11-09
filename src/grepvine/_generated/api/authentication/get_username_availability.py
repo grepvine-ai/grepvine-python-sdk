@@ -56,6 +56,10 @@ def sync_detailed(
 ) -> Response[Error | UsernameAvailability]:
     """Check whether a username is available
 
+     Reports whether an account can register this username now. Accounts and organizations share one
+    namespace, so a name either one holds, in any case, is taken. The answer can change before the name
+    is registered.
+
     Args:
         name (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -87,6 +91,10 @@ def sync(
 ) -> Error | UsernameAvailability | None:
     """Check whether a username is available
 
+     Reports whether an account can register this username now. Accounts and organizations share one
+    namespace, so a name either one holds, in any case, is taken. The answer can change before the name
+    is registered.
+
     Args:
         name (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -112,6 +120,10 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
 ) -> Response[Error | UsernameAvailability]:
     """Check whether a username is available
+
+     Reports whether an account can register this username now. Accounts and organizations share one
+    namespace, so a name either one holds, in any case, is taken. The answer can change before the name
+    is registered.
 
     Args:
         name (str): An account or organization name. Accounts and organizations share one
@@ -141,6 +153,10 @@ async def asyncio(
     client: AuthenticatedClient | Client,
 ) -> Error | UsernameAvailability | None:
     """Check whether a username is available
+
+     Reports whether an account can register this username now. Accounts and organizations share one
+    namespace, so a name either one holds, in any case, is taken. The answer can change before the name
+    is registered.
 
     Args:
         name (str): An account or organization name. Accounts and organizations share one

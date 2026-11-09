@@ -66,6 +66,9 @@ def sync_detailed(
 ) -> Response[APIKeyPage | Error]:
     """List API keys
 
+     Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+    itself is never returned again; `prefix` tells keys apart.
+
     Args:
         amount (int | Unset):  Default: 50.
         page (str | Unset):
@@ -98,6 +101,9 @@ def sync(
 ) -> APIKeyPage | Error | None:
     """List API keys
 
+     Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+    itself is never returned again; `prefix` tells keys apart.
+
     Args:
         amount (int | Unset):  Default: 50.
         page (str | Unset):
@@ -124,6 +130,9 @@ async def asyncio_detailed(
     page: str | Unset = UNSET,
 ) -> Response[APIKeyPage | Error]:
     """List API keys
+
+     Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+    itself is never returned again; `prefix` tells keys apart.
 
     Args:
         amount (int | Unset):  Default: 50.
@@ -154,6 +163,9 @@ async def asyncio(
     page: str | Unset = UNSET,
 ) -> APIKeyPage | Error | None:
     """List API keys
+
+     Lists the authenticated account's API keys, oldest first, including revoked ones. The secret key
+    itself is never returned again; `prefix` tells keys apart.
 
     Args:
         amount (int | Unset):  Default: 50.

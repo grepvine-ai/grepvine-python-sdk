@@ -16,8 +16,8 @@ class Pagination:
     continue while has_next is true.
 
         Attributes:
-            next_page_id (str):
-            has_next (bool):
+            next_page_id (str): The token for the next page: pass it as `page`. Empty when has_next is false.
+            has_next (bool): Whether more results follow. Keep requesting pages until it is false, even after an empty page.
     """
 
     next_page_id: str

@@ -14,10 +14,11 @@ T = TypeVar("T", bound="TaggedNumberMetadataValue")
 
 @_attrs_define
 class TaggedNumberMetadataValue:
-    """
+    """A floating-point metadata value with its type named.
+
     Attributes:
-        type_ (Literal['number']):
-        value (float):
+        type_ (Literal['number']): The value's type: always `number`.
+        value (float): The value, a double-precision floating-point number.
     """
 
     type_: Literal["number"]

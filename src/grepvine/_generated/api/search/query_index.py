@@ -83,6 +83,13 @@ def sync_detailed(
 ) -> Response[Error | QueryPage]:
     """Search an index
 
+     Searches every searchable document in the index for a regular expression or literal text, and
+    returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+    filter restricts the search to matching documents, and context lines can be returned around each
+    result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern` or
+    `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while more
+    results follow.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -92,7 +99,8 @@ def sync_detailed(
             the organization can take such a spelling.
         amount (int | Unset):  Default: 50.
         page (str | Unset):
-        body (QueryRequest):
+        body (QueryRequest): A search: the pattern, how to match it, which documents to search and
+            how much context to return.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -128,6 +136,13 @@ def sync(
 ) -> Error | QueryPage | None:
     """Search an index
 
+     Searches every searchable document in the index for a regular expression or literal text, and
+    returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+    filter restricts the search to matching documents, and context lines can be returned around each
+    result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern` or
+    `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while more
+    results follow.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -137,7 +152,8 @@ def sync(
             the organization can take such a spelling.
         amount (int | Unset):  Default: 50.
         page (str | Unset):
-        body (QueryRequest):
+        body (QueryRequest): A search: the pattern, how to match it, which documents to search and
+            how much context to return.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -168,6 +184,13 @@ async def asyncio_detailed(
 ) -> Response[Error | QueryPage]:
     """Search an index
 
+     Searches every searchable document in the index for a regular expression or literal text, and
+    returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+    filter restricts the search to matching documents, and context lines can be returned around each
+    result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern` or
+    `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while more
+    results follow.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -177,7 +200,8 @@ async def asyncio_detailed(
             the organization can take such a spelling.
         amount (int | Unset):  Default: 50.
         page (str | Unset):
-        body (QueryRequest):
+        body (QueryRequest): A search: the pattern, how to match it, which documents to search and
+            how much context to return.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -211,6 +235,13 @@ async def asyncio(
 ) -> Error | QueryPage | None:
     """Search an index
 
+     Searches every searchable document in the index for a regular expression or literal text, and
+    returns each match with the lines it covers, sorted by key, then line, then offset. A metadata
+    filter restricts the search to matching documents, and context lines can be returned around each
+    result. A pattern or filter that doesn't parse is rejected with 400 and code `invalid_pattern` or
+    `invalid_filter`. Continue with `page` while `has_next` is true: a page can be empty while more
+    results follow.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -220,7 +251,8 @@ async def asyncio(
             the organization can take such a spelling.
         amount (int | Unset):  Default: 50.
         page (str | Unset):
-        body (QueryRequest):
+        body (QueryRequest): A search: the pattern, how to match it, which documents to search and
+            how much context to return.
 
     Raises:
         grepvine.APIError: The service answered with an error.

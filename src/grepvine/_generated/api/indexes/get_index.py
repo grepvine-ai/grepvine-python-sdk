@@ -64,6 +64,9 @@ def sync_detailed(
 ) -> Response[Error | Index]:
     """Get an index
 
+     Returns one index with its current state, document count and size, and the progress of its
+    background optimization while one runs. Any member can read it.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -100,6 +103,9 @@ def sync(
 ) -> Error | Index | None:
     """Get an index
 
+     Returns one index with its current state, document count and size, and the progress of its
+    background optimization while one runs. Any member can read it.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -130,6 +136,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
 ) -> Response[Error | Index]:
     """Get an index
+
+     Returns one index with its current state, document count and size, and the progress of its
+    background optimization while one runs. Any member can read it.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -164,6 +173,9 @@ async def asyncio(
     client: AuthenticatedClient | Client,
 ) -> Error | Index | None:
     """Get an index
+
+     Returns one index with its current state, document count and size, and the progress of its
+    background optimization while one runs. Any member can read it.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

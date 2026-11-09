@@ -11,12 +11,13 @@ T = TypeVar("T", bound="UsernameAvailability")
 
 @_attrs_define
 class UsernameAvailability:
-    """
+    """Whether a username can be registered.
+
     Attributes:
         name (str): An account or organization name. Accounts and organizations share one namespace. A name keeps the
             case it was created with, and any spelling that differs only in case refers to it; no other account or
             organization can take such a spelling.
-        available (bool):
+        available (bool): Whether an account can register this username now.
     """
 
     name: str

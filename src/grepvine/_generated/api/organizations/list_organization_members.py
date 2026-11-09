@@ -71,6 +71,8 @@ def sync_detailed(
 ) -> Response[Error | MemberPage]:
     """List organization members
 
+     Lists an organization's members and their roles, ordered by name. Requires the owner or admin role.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -108,6 +110,8 @@ def sync(
 ) -> Error | MemberPage | None:
     """List organization members
 
+     Lists an organization's members and their roles, ordered by name. Requires the owner or admin role.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -139,6 +143,8 @@ async def asyncio_detailed(
     page: str | Unset = UNSET,
 ) -> Response[Error | MemberPage]:
     """List organization members
+
+     Lists an organization's members and their roles, ordered by name. Requires the owner or admin role.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
@@ -174,6 +180,8 @@ async def asyncio(
     page: str | Unset = UNSET,
 ) -> Error | MemberPage | None:
     """List organization members
+
+     Lists an organization's members and their roles, ordered by name. Requires the owner or admin role.
 
     Args:
         organization (str): An account or organization name. Accounts and organizations share one

@@ -11,7 +11,8 @@ T = TypeVar("T", bound="TransferOwnershipRequest")
 
 @_attrs_define
 class TransferOwnershipRequest:
-    """
+    """The member who becomes the owner.
+
     Attributes:
         user (str): An account or organization name. Accounts and organizations share one namespace. A name keeps the
             case it was created with, and any spelling that differs only in case refers to it; no other account or

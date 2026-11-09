@@ -15,9 +15,10 @@ T = TypeVar("T", bound="DeleteObjectsRequest")
 
 @_attrs_define
 class DeleteObjectsRequest:
-    """
+    """The documents to delete.
+
     Attributes:
-        objects (list[DeleteObjectRecord]):
+        objects (list[DeleteObjectRecord]): The documents to delete, 1 to 2,048.
     """
 
     objects: list[DeleteObjectRecord]

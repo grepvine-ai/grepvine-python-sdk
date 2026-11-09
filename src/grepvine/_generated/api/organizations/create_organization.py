@@ -66,8 +66,11 @@ def sync_detailed(
 ) -> Response[Error | Organization]:
     """Create an organization
 
+     Creates an organization owned by the authenticated account. Accounts and organizations share one
+    namespace, so a 409 means an account or organization already holds the name, in any case.
+
     Args:
-        body (CreateOrganizationRequest):
+        body (CreateOrganizationRequest): A new organization.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -95,8 +98,11 @@ def sync(
 ) -> Error | Organization | None:
     """Create an organization
 
+     Creates an organization owned by the authenticated account. Accounts and organizations share one
+    namespace, so a 409 means an account or organization already holds the name, in any case.
+
     Args:
-        body (CreateOrganizationRequest):
+        body (CreateOrganizationRequest): A new organization.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -119,8 +125,11 @@ async def asyncio_detailed(
 ) -> Response[Error | Organization]:
     """Create an organization
 
+     Creates an organization owned by the authenticated account. Accounts and organizations share one
+    namespace, so a 409 means an account or organization already holds the name, in any case.
+
     Args:
-        body (CreateOrganizationRequest):
+        body (CreateOrganizationRequest): A new organization.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -146,8 +155,11 @@ async def asyncio(
 ) -> Error | Organization | None:
     """Create an organization
 
+     Creates an organization owned by the authenticated account. Accounts and organizations share one
+    namespace, so a 409 means an account or organization already holds the name, in any case.
+
     Args:
-        body (CreateOrganizationRequest):
+        body (CreateOrganizationRequest): A new organization.
 
     Raises:
         grepvine.APIError: The service answered with an error.

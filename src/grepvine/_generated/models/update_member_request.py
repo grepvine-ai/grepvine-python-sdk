@@ -14,9 +14,10 @@ T = TypeVar("T", bound="UpdateMemberRequest")
 
 @_attrs_define
 class UpdateMemberRequest:
-    """
+    """The member's new role.
+
     Attributes:
-        role (UpdateMemberRequestRole):
+        role (UpdateMemberRequestRole): The new role. `owner` is granted only by transferring ownership.
     """
 
     role: UpdateMemberRequestRole

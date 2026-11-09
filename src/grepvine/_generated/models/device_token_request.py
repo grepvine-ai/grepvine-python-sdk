@@ -11,9 +11,10 @@ T = TypeVar("T", bound="DeviceTokenRequest")
 
 @_attrs_define
 class DeviceTokenRequest:
-    """
+    """The device code to exchange for an API key.
+
     Attributes:
-        device_code (str):
+        device_code (str): The `device_code` from starting the authorization.
     """
 
     device_code: str

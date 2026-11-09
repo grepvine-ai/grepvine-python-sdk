@@ -17,14 +17,15 @@ T = TypeVar("T", bound="User")
 
 @_attrs_define
 class User:
-    """
+    """A user account.
+
     Attributes:
-        id (UUID):
+        id (UUID): The account's unique ID.
         name (str): An account or organization name. Accounts and organizations share one namespace. A name keeps the
             case it was created with, and any spelling that differs only in case refers to it; no other account or
             organization can take such a spelling.
-        email (str):
-        created_at (datetime.datetime):
+        email (str): The account's email address.
+        created_at (datetime.datetime): When the account was created.
         staff_role (StaffRole | Unset): The account's role on the Grepvine team, when it has one. Omitted for every
             other account.
     """

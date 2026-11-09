@@ -18,10 +18,12 @@ T = TypeVar("T", bound="DocumentPage")
 
 @_attrs_define
 class DocumentPage:
-    """
+    """A page of a document listing.
+
     Attributes:
-        results (list[DocumentSummary]):
-        common_prefixes (list[str]):
+        results (list[DocumentSummary]): The documents on this page, in key byte order.
+        common_prefixes (list[str]): With a delimiter, each distinct key prefix that ends at the delimiter, standing for
+            every document under it. Empty without a delimiter.
         pagination (Pagination): A page may hold fewer results than the requested amount, possibly none, while has_next
             is true; a query page stops at the server's soft time budget and next_page_id resumes exactly after the last
             candidate it examined. Clients continue while has_next is true.

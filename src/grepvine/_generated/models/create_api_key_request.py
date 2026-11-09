@@ -11,9 +11,10 @@ T = TypeVar("T", bound="CreateAPIKeyRequest")
 
 @_attrs_define
 class CreateAPIKeyRequest:
-    """
+    """A new API key.
+
     Attributes:
-        name (str):
+        name (str): A name to tell the key apart, 1 to 128 characters.
     """
 
     name: str

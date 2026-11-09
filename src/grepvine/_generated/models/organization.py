@@ -16,16 +16,19 @@ T = TypeVar("T", bound="Organization")
 
 @_attrs_define
 class Organization:
-    """
+    """An organization, as seen by one of its members.
+
     Attributes:
-        id (UUID):
+        id (UUID): The organization's unique ID.
         name (str): An account or organization name. Accounts and organizations share one namespace. A name keeps the
             case it was created with, and any spelling that differs only in case refers to it; no other account or
             organization can take such a spelling.
-        role (Role):
+        role (Role): A member's role in an organization. `owner` can do everything, including deleting the organization
+            and transferring ownership; `admin` also manages members and indexes; `developer` reads, writes and searches
+            documents; `reader` reads and searches them.
         suspended (bool): A suspended organization keeps its data, but refuses every operation on its members, indexes,
             documents and searches until it is resumed. Contact support.
-        created_at (datetime.datetime):
+        created_at (datetime.datetime): When the organization was created.
     """
 
     id: UUID

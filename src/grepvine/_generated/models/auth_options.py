@@ -14,7 +14,8 @@ T = TypeVar("T", bound="AuthOptions")
 
 @_attrs_define
 class AuthOptions:
-    """
+    """How accounts are created on this service.
+
     Attributes:
         signup (SignupMode): How accounts are created. `open` lets anyone register; `invite` registers only with an
             invitation.

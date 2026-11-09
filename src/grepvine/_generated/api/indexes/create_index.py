@@ -71,11 +71,15 @@ def sync_detailed(
 ) -> Response[Error | Index]:
     """Create an index
 
+     Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+    response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+    already has an index with that name, in any case.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (CreateIndexRequest):
+        body (CreateIndexRequest): A new index.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -105,11 +109,15 @@ def sync(
 ) -> Error | Index | None:
     """Create an index
 
+     Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+    response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+    already has an index with that name, in any case.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (CreateIndexRequest):
+        body (CreateIndexRequest): A new index.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -134,11 +142,15 @@ async def asyncio_detailed(
 ) -> Response[Error | Index]:
     """Create an index
 
+     Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+    response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+    already has an index with that name, in any case.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (CreateIndexRequest):
+        body (CreateIndexRequest): A new index.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -166,11 +178,15 @@ async def asyncio(
 ) -> Error | Index | None:
     """Create an index
 
+     Creates an empty index. Requires the owner or admin role. A new index is usually `ready` in the
+    response; if it is still `creating`, read it until it is `ready`. A 409 means the organization
+    already has an index with that name, in any case.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (CreateIndexRequest):
+        body (CreateIndexRequest): A new index.
 
     Raises:
         grepvine.APIError: The service answered with an error.

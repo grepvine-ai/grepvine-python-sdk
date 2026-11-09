@@ -64,11 +64,15 @@ def sync_detailed(
 ) -> Response[Any | Error]:
     """Transfer organization ownership
 
+     Makes another member the owner. Only the owner can transfer ownership, and the previous owner stays
+    a member with the admin role. The new owner must already be a member, and not one with time-limited
+    access.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (TransferOwnershipRequest):
+        body (TransferOwnershipRequest): The member who becomes the owner.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -98,11 +102,15 @@ def sync(
 ) -> Any | Error | None:
     """Transfer organization ownership
 
+     Makes another member the owner. Only the owner can transfer ownership, and the previous owner stays
+    a member with the admin role. The new owner must already be a member, and not one with time-limited
+    access.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (TransferOwnershipRequest):
+        body (TransferOwnershipRequest): The member who becomes the owner.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -127,11 +135,15 @@ async def asyncio_detailed(
 ) -> Response[Any | Error]:
     """Transfer organization ownership
 
+     Makes another member the owner. Only the owner can transfer ownership, and the previous owner stays
+    a member with the admin role. The new owner must already be a member, and not one with time-limited
+    access.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (TransferOwnershipRequest):
+        body (TransferOwnershipRequest): The member who becomes the owner.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -159,11 +171,15 @@ async def asyncio(
 ) -> Any | Error | None:
     """Transfer organization ownership
 
+     Makes another member the owner. Only the owner can transfer ownership, and the previous owner stays
+    a member with the admin role. The new owner must already be a member, and not one with time-limited
+    access.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (TransferOwnershipRequest):
+        body (TransferOwnershipRequest): The member who becomes the owner.
 
     Raises:
         grepvine.APIError: The service answered with an error.

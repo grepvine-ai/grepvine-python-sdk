@@ -69,6 +69,9 @@ def sync_detailed(
 ) -> Response[Error | Member]:
     """Change an organization member role
 
+     Changes a member's role to admin, developer or reader. Requires the owner or admin role. The owner's
+    role changes only by transferring ownership.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -76,7 +79,7 @@ def sync_detailed(
         user (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (UpdateMemberRequest):
+        body (UpdateMemberRequest): The member's new role.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -108,6 +111,9 @@ def sync(
 ) -> Error | Member | None:
     """Change an organization member role
 
+     Changes a member's role to admin, developer or reader. Requires the owner or admin role. The owner's
+    role changes only by transferring ownership.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -115,7 +121,7 @@ def sync(
         user (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (UpdateMemberRequest):
+        body (UpdateMemberRequest): The member's new role.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -142,6 +148,9 @@ async def asyncio_detailed(
 ) -> Response[Error | Member]:
     """Change an organization member role
 
+     Changes a member's role to admin, developer or reader. Requires the owner or admin role. The owner's
+    role changes only by transferring ownership.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -149,7 +158,7 @@ async def asyncio_detailed(
         user (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (UpdateMemberRequest):
+        body (UpdateMemberRequest): The member's new role.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -179,6 +188,9 @@ async def asyncio(
 ) -> Error | Member | None:
     """Change an organization member role
 
+     Changes a member's role to admin, developer or reader. Requires the owner or admin role. The owner's
+    role changes only by transferring ownership.
+
     Args:
         organization (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
@@ -186,7 +198,7 @@ async def asyncio(
         user (str): An account or organization name. Accounts and organizations share one
             namespace. A name keeps the case it was created with, and any spelling that differs only
             in case refers to it; no other account or organization can take such a spelling.
-        body (UpdateMemberRequest):
+        body (UpdateMemberRequest): The member's new role.
 
     Raises:
         grepvine.APIError: The service answered with an error.

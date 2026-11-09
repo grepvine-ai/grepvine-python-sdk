@@ -11,14 +11,15 @@ T = TypeVar("T", bound="DeviceAuthorization")
 
 @_attrs_define
 class DeviceAuthorization:
-    """
+    """A pending device sign-in: the codes to show the user and to poll with.
+
     Attributes:
-        device_code (str):
-        user_code (str):
-        verification_uri (str):
-        verification_uri_complete (str):
-        expires_in (int):
-        interval (int):
+        device_code (str): The secret code the device polls with. Keep it on the device; never show it.
+        user_code (str): The short code to show the user, who confirms it when approving.
+        verification_uri (str): The page where the user enters `user_code` and approves the device.
+        verification_uri_complete (str): The same page with `user_code` already filled in, for a link or QR code.
+        expires_in (int): Seconds until the codes expire.
+        interval (int): The minimum number of seconds to wait between polls.
     """
 
     device_code: str

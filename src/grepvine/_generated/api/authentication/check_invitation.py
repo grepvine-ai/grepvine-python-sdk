@@ -70,7 +70,7 @@ def sync_detailed(
     the body, never in the URL. An invitation that was used, withdrawn or has expired is not found.
 
     Args:
-        body (InvitationCheckRequest):
+        body (InvitationCheckRequest): The invitation to look up.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -102,7 +102,7 @@ def sync(
     the body, never in the URL. An invitation that was used, withdrawn or has expired is not found.
 
     Args:
-        body (InvitationCheckRequest):
+        body (InvitationCheckRequest): The invitation to look up.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -129,7 +129,7 @@ async def asyncio_detailed(
     the body, never in the URL. An invitation that was used, withdrawn or has expired is not found.
 
     Args:
-        body (InvitationCheckRequest):
+        body (InvitationCheckRequest): The invitation to look up.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -159,7 +159,7 @@ async def asyncio(
     the body, never in the URL. An invitation that was used, withdrawn or has expired is not found.
 
     Args:
-        body (InvitationCheckRequest):
+        body (InvitationCheckRequest): The invitation to look up.
 
     Raises:
         grepvine.APIError: The service answered with an error.

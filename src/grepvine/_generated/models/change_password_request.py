@@ -11,10 +11,11 @@ T = TypeVar("T", bound="ChangePasswordRequest")
 
 @_attrs_define
 class ChangePasswordRequest:
-    """
+    """The current password and its replacement.
+
     Attributes:
-        current_password (str):
-        new_password (str):
+        current_password (str): The account's current password.
+        new_password (str): The new password, 12 to 1,024 characters.
     """
 
     current_password: str
