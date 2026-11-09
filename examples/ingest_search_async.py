@@ -10,7 +10,7 @@ async def main() -> None:
     async with grepvine.AsyncClient() as client:
         index = client.index(f"example-python-async-{uuid.uuid4().hex[:8]}")
         creation = await index.create()
-        await creation.wait_until_ready()
+        await creation.wait()
         print(f"Created index {index.name}")
         try:
             await index.put_many(

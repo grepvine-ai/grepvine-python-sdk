@@ -80,24 +80,39 @@ index = client.index("acme/support")
 index.create(
     description="# Support tickets\n\nOne Markdown file per ticket.",  # Markdown, optional
     tags={"team": "support"},  # optional
-).wait_until_ready(timeout=60)
+).wait(timeout=60)
 
 info = index.info()
 print(info.state, info.document_count, info.tags["team"])
 
 # Set one tag and remove another; tags left out stay as they are.
 index.update(tags={"team": "platform", "commit": None})
-index.delete_index().wait_until_deleted()
+index.delete_index().wait()
 ```
 
 Creating and deleting an index finish in the background, so `create` returns
 an `IndexCreation` and `delete_index` an `IndexDeletion`. Their `result` is the
-service's answer: for a creation, the index in its `creating` state.
-`wait_until_ready()` reads the index until it is `ready` and returns it;
-`wait_until_deleted()` reads it until it is gone and its name can be used
-again. Both take `timeout` (seconds, 300 by default) and `interval` (1), raise
-`TimeoutError` when the time runs out, and raise `GrepvineError` when the index
-reaches a state it will not leave by itself, such as `delete_failed`.
+service's answer: for a creation, the index in its `creating` state. `wait()`
+reads the index until the work is done: a creation returns the ready index, and
+a deletion returns once the index is gone and its name can be used again.
+
+`wait(timeout)` takes seconds, 300 by default; `wait(None)` waits without a
+limit. A wait that ends before the work is done raises a `WaitError`, with
+`target` (such as `"index acme/support"`) and the last `state` seen:
+
+```python
+creation = index.create()
+try:
+    creation.wait(timeout=30)
+except grepvine.WaitTimeoutError:
+    ...  # not ready yet; the index is still being created, so wait again later
+except grepvine.OperationFailedError as error:
+    print(f"{error.target} is {error.state}")  # it will not become ready by itself
+```
+
+`WaitTimeoutError` is also a built-in `TimeoutError`. `except grepvine.WaitError`
+catches both, and `except grepvine.GrepvineError` also catches a failed request
+while waiting.
 
 `index.wait_until_ready()` waits for an index that was created elsewhere, such
 as by another process.
@@ -253,7 +268,8 @@ when the service sent one, `retry_after`:
 | `RateLimitedError` | The service kept asking the client to slow down for longer than the client was willing to wait. |
 | `ServerError` | The service failed on every attempt. |
 
-`ConfigurationError` means a setting is not usable: the endpoint is not an
+`WaitError` (`WaitTimeoutError` or `OperationFailedError`) is described under
+[Indexes](#indexes). `ConfigurationError` means a setting is not usable: the endpoint is not an
 `http` or `https` URL, the configuration file is missing, unreadable or
 readable by other users, or an index is named without an organization and
 there is no default one. `TransportError` means the request could not be
@@ -408,7 +424,7 @@ client = grepvine.Client(api_key=key.key)
 
 A denied login raises `InvalidRequestError` with code `"access_denied"`, and
 an expired one with `"expired_token"`. A login that is not approved within
-`timeout` seconds, or before it expires, raises `TimeoutError`.
+`timeout` seconds, or before it expires, raises `WaitTimeoutError`.
 
 The steps are also available one at a time: the program calls
 `device_login.start(api_key_name=...)` and `device_login.poll(device_code=...)`,

@@ -173,7 +173,7 @@ async def test_create_wait_update_and_delete_the_index(fx: Flavor, service: Serv
     created = await fx.run(index.create(description="# Docs", tags={"team": "search"}))
     assert isinstance(created, (grepvine.IndexCreation, grepvine.AsyncIndexCreation))
     assert created.result.state == IndexState.CREATING
-    ready = await fx.run(created.wait_until_ready())
+    ready = await fx.run(created.wait())
     assert ready.state == IndexState.READY
     await fx.run(index.update(tags={"team": None, "commit": "3f9c2a1"}))
     deletion = await fx.run(index.delete_index())
@@ -211,7 +211,7 @@ async def test_deletion_waits_until_the_index_is_gone(
     )
     deletion = await fx.run(fx.client.index("acme/docs").delete_index())
     assert deletion.result is None
-    assert await fx.run(deletion.wait_until_deleted(interval=2)) is None
+    assert await fx.run(deletion.wait(interval=2)) is None
     assert [request.method for request in service.requests] == ["DELETE", "GET", "GET", "GET"]
     assert clock.sleeps == [2, 2]
 
@@ -219,8 +219,12 @@ async def test_deletion_waits_until_the_index_is_gone(
 async def test_deletion_that_failed_is_reported(fx: Flavor, service: Service) -> None:
     service.reply(httpx.Response(202), httpx.Response(200, json=index_json(state="delete_failed")))
     deletion = await fx.run(fx.client.indexes.delete("acme", "docs"))
-    with pytest.raises(grepvine.GrepvineError, match="index acme/docs is delete_failed"):
-        await fx.run(deletion.wait_until_deleted())
+    with pytest.raises(
+        grepvine.OperationFailedError, match="index acme/docs is delete_failed"
+    ) as raised:
+        await fx.run(deletion.wait())
+    assert isinstance(raised.value, grepvine.WaitError)
+    assert (raised.value.target, raised.value.state) == ("index acme/docs", "delete_failed")
 
 
 async def test_creation_times_out(fx: Flavor, service: Service) -> None:
@@ -228,5 +232,37 @@ async def test_creation_times_out(fx: Flavor, service: Service) -> None:
         201 if request.method == "POST" else 200, json=index_json(state="creating")
     )
     creation = await fx.run(fx.client.indexes.create("acme", name="docs"))
-    with pytest.raises(TimeoutError, match="index acme/docs was not done in 3s"):
-        await fx.run(creation.wait_until_ready(timeout=3))
+    with pytest.raises(
+        grepvine.WaitTimeoutError, match="not done within 3s; it is creating"
+    ) as raised:
+        await fx.run(creation.wait(3))
+    assert isinstance(raised.value, (grepvine.WaitError, TimeoutError))
+    assert (raised.value.timeout, raised.value.state) == (3, "creating")
+
+
+async def test_wait_without_a_limit(fx: Flavor, service: Service, clock: Any) -> None:
+    states = ["creating"] * 500 + ["ready"]
+    service.route = lambda request: httpx.Response(
+        201 if request.method == "POST" else 200, json=index_json(state=states.pop(0))
+    )
+    creation = await fx.run(fx.client.index("acme/docs").create())
+    ready = await fx.run(creation.wait(timeout=None))
+    assert ready.state == IndexState.READY and len(clock.sleeps) == 499
+
+
+async def test_one_except_catches_every_way_a_wait_ends_early(fx: Flavor, service: Service) -> None:
+    service.reply(
+        httpx.Response(201, json=index_json(state="creating")),
+        httpx.Response(200, json=index_json(state="recreate_required")),
+        httpx.Response(201, json=index_json(state="creating")),
+        httpx.Response(200, json=index_json(state="creating")),
+    )
+    index = fx.client.index("acme/docs")
+    caught = []
+    for timeout in (60, 0):
+        creation = await fx.run(index.create())
+        try:
+            await fx.run(creation.wait(timeout))
+        except grepvine.WaitError as error:
+            caught.append(type(error))
+    assert caught == [grepvine.OperationFailedError, grepvine.WaitTimeoutError]

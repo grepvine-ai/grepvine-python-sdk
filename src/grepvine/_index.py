@@ -104,8 +104,12 @@ class IndexClient(_IndexClient):
             self._organization, self._index, prefix=prefix, delimiter=delimiter, amount=amount
         )
 
-    def wait_until_ready(self, *, timeout: float = 300.0, interval: float = 1.0) -> Index:
-        """Read the index until it is ready, and return it; see ``Indexes.wait_until_ready``."""
+    def wait_until_ready(self, *, timeout: float | None = 300.0, interval: float = 1.0) -> Index:
+        """Wait until an index created elsewhere is ready, and return it.
+
+        After ``create``, call ``wait()`` on the `IndexCreation` it returns instead. Raises the
+        same errors; see ``Indexes.wait_until_ready``.
+        """
         started = _retry.monotonic()
         while not _helpers._check_state(
             found := self.info(), _retry.monotonic() - started, timeout
@@ -163,8 +167,10 @@ class AsyncIndexClient(_AsyncIndexClient):
             self._organization, self._index, prefix=prefix, delimiter=delimiter, amount=amount
         )
 
-    async def wait_until_ready(self, *, timeout: float = 300.0, interval: float = 1.0) -> Index:
-        """Read the index until it is ready, and return it; see ``Indexes.wait_until_ready``."""
+    async def wait_until_ready(
+        self, *, timeout: float | None = 300.0, interval: float = 1.0
+    ) -> Index:
+        """Wait until an index created elsewhere is ready; see ``IndexClient.wait_until_ready``."""
         started = _retry.monotonic()
         while not _helpers._check_state(
             found := await self.info(), _retry.monotonic() - started, timeout

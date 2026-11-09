@@ -79,4 +79,7 @@ __all__ = [
     "ConfigurationError",
     "TransportError",
     "PartialBatchError",
+    "WaitError",
+    "WaitTimeoutError",
+    "OperationFailedError",
 ]

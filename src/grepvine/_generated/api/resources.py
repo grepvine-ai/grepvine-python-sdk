@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import Any, Literal, TypeVar, cast
 
 from ... import _retry
-from ...errors import GrepvineError, NotFoundError
+from ...errors import NotFoundError, OperationFailedError, WaitTimeoutError
 from ..client import Client
 from ..types import File
 from ..models.add_member_request import AddMemberRequest
@@ -141,17 +141,17 @@ class _Pending:
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._what!r})"
 
-    def _finished(self, found: Any, waited: float, timeout: float) -> bool:
+    def _finished(self, found: Any, waited: float, timeout: float | None) -> bool:
         state = str(found.state)
         if not self._gone and state in self._done:
             return True
         if state in self._failed:
-            raise GrepvineError(f"{self._what} is {state}")
-        if waited >= timeout:
-            raise TimeoutError(f"{self._what} was not done in {timeout:g}s; it is {state}")
+            raise OperationFailedError(target=self._what, state=state)
+        if timeout is not None and waited >= timeout:
+            raise WaitTimeoutError(target=self._what, state=state, timeout=timeout)
         return False
 
-    def _wait(self, timeout: float, interval: float) -> Any:
+    def _wait(self, timeout: float | None, interval: float) -> Any:
         started = _retry.monotonic()
         while True:
             try:
@@ -164,7 +164,7 @@ class _Pending:
                 return found
             _retry.sleep(interval)
 
-    async def _async_wait(self, timeout: float, interval: float) -> Any:
+    async def _async_wait(self, timeout: float | None, interval: float) -> Any:
         started = _retry.monotonic()
         while True:
             try:
@@ -179,7 +179,7 @@ class _Pending:
 
 
 class IndexCreation(_Pending):
-    """An index being created. ``result`` is the index as the service answered; ``wait_until_ready`` waits until it can be used."""
+    """An index being created. ``result`` is the index as the service answered; ``wait()`` waits until it can be used."""
 
     result: Index
     _done = ("ready",)
@@ -189,18 +189,28 @@ class IndexCreation(_Pending):
         "recreate_required",
     )
 
-    def wait_until_ready(self, *, timeout: float = 300.0, interval: float = 1.0) -> Index:
-        """Read the index until it is ready, and return it.
+    def wait(self, timeout: float | None = 300.0, *, interval: float = 1.0) -> Index:
+        """Wait until the index is ready.
+
+        Args:
+            timeout: Seconds to wait before giving up; ``None`` waits without a limit.
+            interval: Seconds between reads.
+
+        Returns:
+            The index, ready to use.
 
         Raises:
-            TimeoutError: The work was not done within ``timeout`` seconds.
-            grepvine.GrepvineError: The index reached a state it will not leave by itself.
+            grepvine.WaitTimeoutError: The work was not done within ``timeout`` seconds. It goes
+                on in the service; wait again to keep waiting.
+            grepvine.OperationFailedError: The index reached a state it will not leave
+                by itself: ``deleting``, ``delete_failed``, ``recreate_required``.
+            grepvine.APIError: Reading the index failed.
         """
         return cast(Index, self._wait(timeout, interval))
 
 
 class AsyncIndexCreation(_Pending):
-    """An index being created. ``result`` is the index as the service answered; ``wait_until_ready`` waits until it can be used."""
+    """An index being created. ``result`` is the index as the service answered; ``wait()`` waits until it can be used."""
 
     result: Index
     _done = ("ready",)
@@ -210,46 +220,76 @@ class AsyncIndexCreation(_Pending):
         "recreate_required",
     )
 
-    async def wait_until_ready(self, *, timeout: float = 300.0, interval: float = 1.0) -> Index:
-        """Read the index until it is ready, and return it.
+    async def wait(self, timeout: float | None = 300.0, *, interval: float = 1.0) -> Index:
+        """Wait until the index is ready.
+
+        Args:
+            timeout: Seconds to wait before giving up; ``None`` waits without a limit.
+            interval: Seconds between reads.
+
+        Returns:
+            The index, ready to use.
 
         Raises:
-            TimeoutError: The work was not done within ``timeout`` seconds.
-            grepvine.GrepvineError: The index reached a state it will not leave by itself.
+            grepvine.WaitTimeoutError: The work was not done within ``timeout`` seconds. It goes
+                on in the service; wait again to keep waiting.
+            grepvine.OperationFailedError: The index reached a state it will not leave
+                by itself: ``deleting``, ``delete_failed``, ``recreate_required``.
+            grepvine.APIError: Reading the index failed.
         """
         return cast(Index, await self._async_wait(timeout, interval))
 
 
 class IndexDeletion(_Pending):
-    """An index being deleted. ``wait_until_deleted`` waits until it is gone and its name can be used again."""
+    """An index being deleted. ``wait()`` waits until it is gone and its name can be used again."""
 
     result: None
     _gone = True
     _failed = ("delete_failed",)
 
-    def wait_until_deleted(self, *, timeout: float = 300.0, interval: float = 1.0) -> None:
-        """Read the index until it no longer exists.
+    def wait(self, timeout: float | None = 300.0, *, interval: float = 1.0) -> None:
+        """Wait until the index no longer exists.
+
+        Args:
+            timeout: Seconds to wait before giving up; ``None`` waits without a limit.
+            interval: Seconds between reads.
+
+        Returns:
+            None, once the index is gone.
 
         Raises:
-            TimeoutError: The work was not done within ``timeout`` seconds.
-            grepvine.GrepvineError: The index reached a state it will not leave by itself.
+            grepvine.WaitTimeoutError: The work was not done within ``timeout`` seconds. It goes
+                on in the service; wait again to keep waiting.
+            grepvine.OperationFailedError: The index reached a state it will not leave
+                by itself: ``delete_failed``.
+            grepvine.APIError: Reading the index failed.
         """
         self._wait(timeout, interval)
 
 
 class AsyncIndexDeletion(_Pending):
-    """An index being deleted. ``wait_until_deleted`` waits until it is gone and its name can be used again."""
+    """An index being deleted. ``wait()`` waits until it is gone and its name can be used again."""
 
     result: None
     _gone = True
     _failed = ("delete_failed",)
 
-    async def wait_until_deleted(self, *, timeout: float = 300.0, interval: float = 1.0) -> None:
-        """Read the index until it no longer exists.
+    async def wait(self, timeout: float | None = 300.0, *, interval: float = 1.0) -> None:
+        """Wait until the index no longer exists.
+
+        Args:
+            timeout: Seconds to wait before giving up; ``None`` waits without a limit.
+            interval: Seconds between reads.
+
+        Returns:
+            None, once the index is gone.
 
         Raises:
-            TimeoutError: The work was not done within ``timeout`` seconds.
-            grepvine.GrepvineError: The index reached a state it will not leave by itself.
+            grepvine.WaitTimeoutError: The work was not done within ``timeout`` seconds. It goes
+                on in the service; wait again to keep waiting.
+            grepvine.OperationFailedError: The index reached a state it will not leave
+                by itself: ``delete_failed``.
+            grepvine.APIError: Reading the index failed.
         """
         await self._async_wait(timeout, interval)
 
@@ -685,7 +725,7 @@ class Indexes:
                 most 1,024 characters without control characters. Empty when none was set.
 
         Returns:
-            IndexCreation: the answer as ``result``, and ``wait_until_ready`` to wait until the work is done.
+            IndexCreation: the answer as ``result``, and ``wait()`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -804,7 +844,7 @@ class Indexes:
                 can take such a spelling.
 
         Returns:
-            IndexDeletion: the answer as ``result``, and ``wait_until_deleted`` to wait until the work is done.
+            IndexDeletion: the answer as ``result``, and ``wait()`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2120,7 +2160,7 @@ class _IndexClient:
                 most 1,024 characters without control characters. Empty when none was set.
 
         Returns:
-            IndexCreation: the answer as ``result``, and ``wait_until_ready`` to wait until the work is done.
+            IndexCreation: the answer as ``result``, and ``wait()`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2211,7 +2251,7 @@ class _IndexClient:
         """Delete an index
 
         Returns:
-            IndexDeletion: the answer as ``result``, and ``wait_until_deleted`` to wait until the work is done.
+            IndexDeletion: the answer as ``result``, and ``wait()`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2666,7 +2706,7 @@ class AsyncIndexes:
                 most 1,024 characters without control characters. Empty when none was set.
 
         Returns:
-            AsyncIndexCreation: the answer as ``result``, and ``wait_until_ready`` to wait until the work is done.
+            AsyncIndexCreation: the answer as ``result``, and ``wait()`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2785,7 +2825,7 @@ class AsyncIndexes:
                 can take such a spelling.
 
         Returns:
-            AsyncIndexDeletion: the answer as ``result``, and ``wait_until_deleted`` to wait until the work is done.
+            AsyncIndexDeletion: the answer as ``result``, and ``wait()`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -4101,7 +4141,7 @@ class _AsyncIndexClient:
                 most 1,024 characters without control characters. Empty when none was set.
 
         Returns:
-            AsyncIndexCreation: the answer as ``result``, and ``wait_until_ready`` to wait until the work is done.
+            AsyncIndexCreation: the answer as ``result``, and ``wait()`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -4192,7 +4232,7 @@ class _AsyncIndexClient:
         """Delete an index
 
         Returns:
-            AsyncIndexDeletion: the answer as ``result``, and ``wait_until_deleted`` to wait until the work is done.
+            AsyncIndexDeletion: the answer as ``result``, and ``wait()`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.

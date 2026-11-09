@@ -25,7 +25,13 @@ from grepvine._generated.models import (
     Pagination,
 )
 from grepvine._generated.types import File
-from grepvine.errors import GrepvineError, InvalidRequestError, PartialBatchError
+from grepvine.errors import (
+    GrepvineError,
+    InvalidRequestError,
+    OperationFailedError,
+    PartialBatchError,
+    WaitTimeoutError,
+)
 
 T = TypeVar("T")
 MAX_BATCH_DOCUMENTS: Final = 2048
@@ -206,13 +212,14 @@ def _partial(
     )
 
 
-def _check_state(index: Index, waited: float, timeout: float) -> bool:
+def _check_state(index: Index, waited: float, timeout: float | None) -> bool:
+    target = f"index {index.organization}/{index.name}"
     if index.state == IndexState.READY:
         return True
     if index.state != IndexState.CREATING:
-        raise GrepvineError(f"index {index.organization}/{index.name} is {index.state}")
-    if waited >= timeout:
-        raise TimeoutError(f"index {index.organization}/{index.name} was not ready in {timeout:g}s")
+        raise OperationFailedError(target=target, state=str(index.state))
+    if timeout is not None and waited >= timeout:
+        raise WaitTimeoutError(target=target, state=str(index.state), timeout=timeout)
     return False
 
 
@@ -233,13 +240,15 @@ def _poll_interval(
 
 class Indexes(resources.Indexes):
     def wait_until_ready(
-        self, organization: str, index: str, *, timeout: float = 300.0, interval: float = 1.0
+        self, organization: str, index: str, *, timeout: float | None = 300.0, interval: float = 1.0
     ) -> Index:
         """Read the index until it is ready, and return it.
 
+        ``timeout`` is in seconds; ``None`` waits without a limit.
+
         Raises:
-            TimeoutError: The index was not ready within ``timeout`` seconds.
-            grepvine.GrepvineError: The index is being deleted and will never be ready.
+            grepvine.WaitTimeoutError: The index was not ready within ``timeout`` seconds.
+            grepvine.OperationFailedError: The index is being deleted and will never be ready.
         """
         started = _retry.monotonic()
         while not _check_state(
@@ -251,7 +260,7 @@ class Indexes(resources.Indexes):
 
 class AsyncIndexes(resources.AsyncIndexes):
     async def wait_until_ready(
-        self, organization: str, index: str, *, timeout: float = 300.0, interval: float = 1.0
+        self, organization: str, index: str, *, timeout: float | None = 300.0, interval: float = 1.0
     ) -> Index:
         """Read the index until it is ready, and return it; see ``Indexes.wait_until_ready``."""
         started = _retry.monotonic()
@@ -368,7 +377,8 @@ class DeviceLogin(resources.DeviceLogin):
         Raises:
             grepvine.InvalidRequestError: The login was denied (code ``"access_denied"``)
                 or expired (``"expired_token"``).
-            TimeoutError: The login was not approved within ``timeout`` seconds.
+            grepvine.WaitTimeoutError: The login was not approved within ``timeout`` seconds,
+                or before it expired.
         """
         authorization = self.start(api_key_name=api_key_name)
         on_code(authorization)
@@ -379,7 +389,11 @@ class DeviceLogin(resources.DeviceLogin):
                 return self.poll(device_code=authorization.device_code)
             except InvalidRequestError as exc:
                 interval = _next_poll(exc, interval)
-        raise TimeoutError("the device login was not approved in time")
+        raise WaitTimeoutError(
+            target="device login",
+            state="authorization_pending",
+            timeout=authorization.expires_in if timeout is None else timeout,
+        )
 
 
 class AsyncDeviceLogin(resources.AsyncDeviceLogin):
@@ -400,4 +414,8 @@ class AsyncDeviceLogin(resources.AsyncDeviceLogin):
                 return await self.poll(device_code=authorization.device_code)
             except InvalidRequestError as exc:
                 interval = _next_poll(exc, interval)
-        raise TimeoutError("the device login was not approved in time")
+        raise WaitTimeoutError(
+            target="device login",
+            state="authorization_pending",
+            timeout=authorization.expires_in if timeout is None else timeout,
+        )

@@ -21,7 +21,7 @@ def main() -> None:
         if not client.settings.organization:
             parser.error("set GREPVINE_ORGANIZATION, or gv config set organization")
         index = client.index(f"example-python-{uuid.uuid4().hex[:8]}")
-        index.create(description="Python SDK example").wait_until_ready()
+        index.create(description="Python SDK example").wait()
         print(f"Created index {index.name}")
         try:
             results = index.put_many(

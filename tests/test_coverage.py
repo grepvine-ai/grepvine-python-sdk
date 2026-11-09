@@ -169,4 +169,4 @@ def test_waiters_name_real_operations(operation: str) -> None:
     assert {operation, waiter["poll"]} <= SPEC_OPERATIONS
     for prefix in ("", "Async"):
         pending = getattr(grepvine, prefix + waiter["class"])
-        assert callable(getattr(pending, waiter["method"]))
+        assert inspect.iscoroutinefunction(pending.wait) == (prefix == "Async")

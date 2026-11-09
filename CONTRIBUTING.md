@@ -70,10 +70,12 @@ generator cannot know.
 - `sdk-waiters.json` names the operations whose work the service finishes in
   the background: creating an index and deleting one. Each such method
   returns a pending object (`IndexCreation`, `IndexDeletion` and their `Async`
-  twins), whose `result` is the answer and whose wait method reads the
+  twins), whose `result` is the answer and whose `wait(timeout)` reads the
   `poll` operation, with the `arguments` taken from the original call, until
   the state is one of `done` (or the resource is gone, for `"gone"`). A state
-  in `failed` raises `GrepvineError`. Deleting an organization is not listed:
+  in `failed` raises `OperationFailedError`, and running out of time raises
+  `WaitTimeoutError`; both are `WaitError`s. `indexes.wait_until_ready` and
+  `device_login.authorize` raise the same errors. Deleting an organization is not listed:
   the organization reads as not found as soon as the call returns.
 - The adapter in `generate.py` makes these changes before generating: the
   `If-None-Match` constant becomes a singleton enum; the NDJSON batch body

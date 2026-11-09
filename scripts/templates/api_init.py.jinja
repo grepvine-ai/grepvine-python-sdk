@@ -15,7 +15,7 @@ and `pagination` gets an iterator over every result on every page; every listing
 variant that returns one page. Methods return the decoded model of a successful answer; the
 client's HTTPX hooks raise error answers before they reach a method. An operation named in
 sdk-waiters.json, whose work finishes in the background, returns a pending object instead: its
-`result` is the answer, and its wait method reads another operation until the work is done.
+`result` is the answer, and its `wait` reads another operation until the work is done.
 #}
 {% from "sdk_resources.jinja" import resources, roots, scopes, waiters %}
 {% set endpoints = {} %}
@@ -229,7 +229,7 @@ Raises:
     {{ "async " if is_async }}def {{ name }}(
         {{ signature(False) | indent(8) }}
     ) -> {{ pending }}:
-        {{ docstring(summary, False, pending ~ ": the answer as ``result``, and ``" ~ waiter.method ~ "`` to wait until the work is done.") | indent(8) }}
+        {{ docstring(summary, False, pending ~ ": the answer as ``result``, and ``wait()`` to wait until the work is done.") | indent(8) }}
 {{ arguments() }}
         response = {{ "await " if is_async }}{{ call }}(**kwargs)
         source = {{ source }}
@@ -301,7 +301,7 @@ from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import Any, Literal, TypeVar, cast
 
 from ... import _retry
-from ...errors import GrepvineError, NotFoundError
+from ...errors import NotFoundError, OperationFailedError, WaitTimeoutError
 from ..client import Client
 from ..types import File
 {% for line in imports | unique | sort %}
@@ -351,17 +351,17 @@ class _Pending:
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._what!r})"
 
-    def _finished(self, found: Any, waited: float, timeout: float) -> bool:
+    def _finished(self, found: Any, waited: float, timeout: float | None) -> bool:
         state = str(found.state)
         if not self._gone and state in self._done:
             return True
         if state in self._failed:
-            raise GrepvineError(f"{self._what} is {state}")
-        if waited >= timeout:
-            raise TimeoutError(f"{self._what} was not done in {timeout:g}s; it is {state}")
+            raise OperationFailedError(target=self._what, state=state)
+        if timeout is not None and waited >= timeout:
+            raise WaitTimeoutError(target=self._what, state=state, timeout=timeout)
         return False
 
-    def _wait(self, timeout: float, interval: float) -> Any:
+    def _wait(self, timeout: float | None, interval: float) -> Any:
         started = _retry.monotonic()
         while True:
             try:
@@ -374,7 +374,7 @@ class _Pending:
                 return found
             _retry.sleep(interval)
 
-    async def _async_wait(self, timeout: float, interval: float) -> Any:
+    async def _async_wait(self, timeout: float | None, interval: float) -> Any:
         started = _retry.monotonic()
         while True:
             try:
@@ -405,12 +405,22 @@ class {{ "Async" if is_async }}{{ waiter.class }}(_Pending):
 {% endif %}
     _failed = {{ waiter.failed | tojson | replace("[", "(") | replace("]", ",)") }}
 
-    {{ "async " if is_async }}def {{ waiter.method }}(self, *, timeout: float = 300.0, interval: float = 1.0) -> {{ returns }}:
+    {{ "async " if is_async }}def wait(self, timeout: float | None = 300.0, *, interval: float = 1.0) -> {{ returns }}:
         """{{ waiter.summary }}
 
+        Args:
+            timeout: Seconds to wait before giving up; ``None`` waits without a limit.
+            interval: Seconds between reads.
+
+        Returns:
+            {{ waiter.returns }}
+
         Raises:
-            TimeoutError: The work was not done within ``timeout`` seconds.
-            grepvine.GrepvineError: The {{ waiter.noun }} reached a state it will not leave by itself.
+            grepvine.WaitTimeoutError: The work was not done within ``timeout`` seconds. It goes
+                on in the service; wait again to keep waiting.
+            grepvine.OperationFailedError: The {{ waiter.noun }} reached a state it will not leave
+                by itself: {% for state in waiter.failed %}``{{ state }}``{{ ", " if not loop.last }}{% endfor %}.
+            grepvine.APIError: Reading the {{ waiter.noun }} failed.
         """
 {% if returns == "None" %}
         {{ "await self._async_wait" if is_async else "self._wait" }}(timeout, interval)
