@@ -2,7 +2,7 @@
 
 - Most of the package is generated. Generated code under
   `src/grepvine/_generated` is never edited by hand; change the contract
-  snapshot, `sdk-operations.json`, `sdk-scopes.json`,
+  snapshot, `sdk-operations.json`, `sdk-scopes.json`, `sdk-waiters.json`,
   `openapi-python-client.yaml`, the template in `scripts/templates` or the
   adapter in `scripts/generate.py`, and regenerate. It is private: nothing
   public mentions `_generated`, and the docs build fails when a page does.

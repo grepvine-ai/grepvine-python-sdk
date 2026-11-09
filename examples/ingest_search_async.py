@@ -9,8 +9,8 @@ import grepvine
 async def main() -> None:
     async with grepvine.AsyncClient() as client:
         index = client.index(f"example-python-async-{uuid.uuid4().hex[:8]}")
-        await index.create()
-        await index.wait_until_ready()
+        creation = await index.create()
+        await creation.wait_until_ready()
         print(f"Created index {index.name}")
         try:
             await index.put_many(
@@ -27,7 +27,7 @@ async def main() -> None:
                     },
                 ]
             )
-            hits = index.query(pattern="hello", mode="literal", filter="kind = 'guide'")
+            hits = index.search(pattern="hello", mode="literal", filter="kind = 'guide'")
             async for hit in hits:
                 print(f"  {hit.key}:{hit.line_number}: {hit.text.rstrip()}")
             listed = [entry async for entry in index.list(prefix="docs/")]

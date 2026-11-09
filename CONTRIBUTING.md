@@ -67,6 +67,14 @@ generator cannot know.
   fills a body field from a bound parameter (`createIndex` takes the index
   name from the client). `tests/test_coverage.py` checks that every
   operation on an index's path is on `IndexClient`.
+- `sdk-waiters.json` names the operations whose work the service finishes in
+  the background: creating an index and deleting one. Each such method
+  returns a pending object (`IndexCreation`, `IndexDeletion` and their `Async`
+  twins), whose `result` is the answer and whose wait method reads the
+  `poll` operation, with the `arguments` taken from the original call, until
+  the state is one of `done` (or the resource is gone, for `"gone"`). A state
+  in `failed` raises `GrepvineError`. Deleting an organization is not listed:
+  the organization reads as not found as soon as the call returns.
 - The adapter in `generate.py` makes these changes before generating: the
   `If-None-Match` constant becomes a singleton enum; the NDJSON batch body
   becomes a binary `File` whose bytes the template buffers so both HTTPX

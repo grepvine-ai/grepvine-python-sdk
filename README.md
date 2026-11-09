@@ -10,7 +10,7 @@ accounts and device login.
 import grepvine
 
 index = grepvine.index("acme/support")  # configured like gv; see Configuration
-for hit in index.query(pattern=r"(TODO|FIXME)\b", filter="path STARTSWITH 'src/'"):
+for hit in index.search(pattern=r"(TODO|FIXME)\b", filter="path STARTSWITH 'src/'"):
     print(f"{hit.key}:{hit.line_number}: {hit.text}")
 ```
 
@@ -80,21 +80,27 @@ index = client.index("acme/support")
 index.create(
     description="# Support tickets\n\nOne Markdown file per ticket.",  # Markdown, optional
     tags={"team": "support"},  # optional
-)
-index.wait_until_ready(timeout=60)
+).wait_until_ready(timeout=60)
 
 info = index.info()
 print(info.state, info.document_count, info.tags["team"])
 
 # Set one tag and remove another; tags left out stay as they are.
 index.update(tags={"team": "platform", "commit": None})
-index.delete_index()  # deletion completes in the background
+index.delete_index().wait_until_deleted()
 ```
 
-A new index is `creating` for a moment before it is `ready`.
-`wait_until_ready(timeout=..., interval=...)` reads the index until it is ready
-and returns it. It raises `TimeoutError` after `timeout` seconds (300 by
-default), and `GrepvineError` for an index that is being deleted.
+Creating and deleting an index finish in the background, so `create` returns
+an `IndexCreation` and `delete_index` an `IndexDeletion`. Their `result` is the
+service's answer: for a creation, the index in its `creating` state.
+`wait_until_ready()` reads the index until it is `ready` and returns it;
+`wait_until_deleted()` reads it until it is gone and its name can be used
+again. Both take `timeout` (seconds, 300 by default) and `interval` (1), raise
+`TimeoutError` when the time runs out, and raise `GrepvineError` when the index
+reaches a state it will not leave by itself, such as `delete_failed`.
+
+`index.wait_until_ready()` waits for an index that was created elsewhere, such
+as by another process.
 
 An index's `description` is Markdown, at most 16,384 characters, and empty
 when none was set. `update` sends only the arguments you pass, so changing the
@@ -111,7 +117,7 @@ for summary in client.indexes.list("acme", prefix="docs-"):
 ## Search
 
 ```python
-for hit in index.query(
+for hit in index.search(
     pattern="connection reset by peer",
     mode="literal",  # the default is "regex"
     case_sensitive=False,
@@ -123,7 +129,8 @@ for hit in index.query(
     print(f"{hit.key}:{hit.line_number}: {hit.text}")
 ```
 
-`query` returns an iterator over every result on every page; it sends a
+`search` returns an iterator over every result on every page, as `gv search`
+prints them; it sends a
 request when the iteration reaches a page, so stopping early sends no more.
 A result carries the covered `text`, its `line_number`, the context lines, and
 the `matches` as byte offsets within the document. An option left out, or
@@ -209,10 +216,10 @@ key and the same documents: no document is written twice.
 
 ## Pagination
 
-Every listing, and `query`, has two forms. The plain method, such as
-`index.query(...)` or `client.organizations.list()`, is an iterator over every
+Every listing, and `search`, has two forms. The plain method, such as
+`index.search(...)` or `client.organizations.list()`, is an iterator over every
 result, following `next_page_id` while `has_next` is true. The `_page` form,
-such as `index.query_page(...)`, returns one page: its `results` and a
+such as `index.search_page(...)`, returns one page: its `results` and a
 `pagination` with `next_page_id` and `has_next`.
 
 ```python
@@ -282,7 +289,7 @@ async def main() -> None:
     async with grepvine.AsyncClient() as client:
         index = client.index("acme/support")
         await index.put_many([{"key": "a.txt", "content": "alpha"}])
-        async for hit in index.query(pattern="alpha"):
+        async for hit in index.search(pattern="alpha"):
             print(hit.key, hit.line_number)
 
 
@@ -313,7 +320,7 @@ for member in members.list("my-org"):
 members.remove("my-org", "bob")
 
 client.organizations.transfer_ownership("my-org", user="carol")  # the old owner becomes an admin
-client.organizations.delete("my-org")  # deletion completes in the background
+client.organizations.delete("my-org")  # the organization is gone at once; its data is removed in the background
 ```
 
 Organizations and user accounts share one namespace, so an organization name

@@ -5,13 +5,14 @@ from __future__ import annotations
 import io
 import json
 from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 import pytest
 
 import grepvine
 from grepvine.models import DocumentSummary, IndexState, QueryResult
-from tests.conftest import Flavor, Service, index_json, page_json
+from tests.conftest import Flavor, Service, error, index_json, page_json
 
 pytestmark = pytest.mark.anyio
 
@@ -56,14 +57,14 @@ def test_bad_names_are_refused(name: str) -> None:
         grepvine.Client(use_environment=False).index(name)
 
 
-async def test_query_follows_pages_and_sends_only_given_options(
+async def test_search_follows_pages_and_sends_only_given_options(
     fx: Flavor, service: Service
 ) -> None:
     service.reply(
         httpx.Response(200, json=page_json([HIT], "p2")),
         httpx.Response(200, json=page_json([HIT])),
     )
-    hits = fx.client.index("acme/docs").query(
+    hits = fx.client.index("acme/docs").search(
         pattern="TODO", mode="literal", filter=None, lines_after=2
     )
     assert service.requests == []
@@ -78,10 +79,10 @@ async def test_query_follows_pages_and_sends_only_given_options(
     assert service.requests[1].url.params["page"] == "p2"
 
 
-async def test_query_page(fx: Flavor, service: Service) -> None:
+async def test_search_page(fx: Flavor, service: Service) -> None:
     service.reply(httpx.Response(200, json=page_json([HIT], "p2")))
     page = await fx.run(
-        fx.client.index("acme/docs").query_page(pattern="x", filter="path STARTSWITH 'src/'")
+        fx.client.index("acme/docs").search_page(pattern="x", filter="path STARTSWITH 'src/'")
     )
     assert page.pagination.next_page_id == "p2"
     assert service.json(0)["filter"] == "path STARTSWITH 'src/'"
@@ -170,11 +171,13 @@ async def test_create_wait_update_and_delete_the_index(fx: Flavor, service: Serv
     )
     index = fx.client.index("acme/docs")
     created = await fx.run(index.create(description="# Docs", tags={"team": "search"}))
-    assert created.state == IndexState.CREATING
-    ready = await fx.run(index.wait_until_ready())
+    assert isinstance(created, (grepvine.IndexCreation, grepvine.AsyncIndexCreation))
+    assert created.result.state == IndexState.CREATING
+    ready = await fx.run(created.wait_until_ready())
     assert ready.state == IndexState.READY
     await fx.run(index.update(tags={"team": None, "commit": "3f9c2a1"}))
-    assert await fx.run(index.delete_index()) is None
+    deletion = await fx.run(index.delete_index())
+    assert isinstance(deletion, (grepvine.IndexDeletion, grepvine.AsyncIndexDeletion))
     assert service.json(0) == {"name": "docs", "description": "# Docs", "tags": {"team": "search"}}
     assert service.requests[0].url.path == "/v1/organizations/acme/indexes"
     assert service.json(3) == {"tags": {"team": None, "commit": "3f9c2a1"}}
@@ -186,3 +189,44 @@ async def test_info(fx: Flavor, service: Service) -> None:
     service.reply(httpx.Response(200, json=index_json()))
     info = await fx.run(fx.client.index("acme/docs").info())
     assert isinstance(info, grepvine.models.Index) and info.name == "docs"
+
+
+async def test_index_client_waits_for_an_index_made_elsewhere(fx: Flavor, service: Service) -> None:
+    service.reply(
+        httpx.Response(200, json=index_json(state="creating")),
+        httpx.Response(200, json=index_json()),
+    )
+    ready = await fx.run(fx.client.index("acme/docs").wait_until_ready())
+    assert ready.state == IndexState.READY
+
+
+async def test_deletion_waits_until_the_index_is_gone(
+    fx: Flavor, service: Service, clock: Any
+) -> None:
+    service.reply(
+        httpx.Response(202),
+        httpx.Response(200, json=index_json(state="deleting")),
+        httpx.Response(200, json=index_json(state="deleting")),
+        error(404, "not_found"),
+    )
+    deletion = await fx.run(fx.client.index("acme/docs").delete_index())
+    assert deletion.result is None
+    assert await fx.run(deletion.wait_until_deleted(interval=2)) is None
+    assert [request.method for request in service.requests] == ["DELETE", "GET", "GET", "GET"]
+    assert clock.sleeps == [2, 2]
+
+
+async def test_deletion_that_failed_is_reported(fx: Flavor, service: Service) -> None:
+    service.reply(httpx.Response(202), httpx.Response(200, json=index_json(state="delete_failed")))
+    deletion = await fx.run(fx.client.indexes.delete("acme", "docs"))
+    with pytest.raises(grepvine.GrepvineError, match="index acme/docs is delete_failed"):
+        await fx.run(deletion.wait_until_deleted())
+
+
+async def test_creation_times_out(fx: Flavor, service: Service) -> None:
+    service.route = lambda request: httpx.Response(
+        201 if request.method == "POST" else 200, json=index_json(state="creating")
+    )
+    creation = await fx.run(fx.client.indexes.create("acme", name="docs"))
+    with pytest.raises(TimeoutError, match="index acme/docs was not done in 3s"):
+        await fx.run(creation.wait_until_ready(timeout=3))

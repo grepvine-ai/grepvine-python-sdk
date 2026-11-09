@@ -49,6 +49,7 @@ PAGED = {
     )
 }
 SCOPES: dict[str, dict] = json.loads((ROOT / "sdk-scopes.json").read_text())
+WAITERS: dict[str, dict] = json.loads((ROOT / "sdk-waiters.json").read_text())
 
 
 def calls(method: object) -> set[str]:
@@ -67,7 +68,9 @@ def check(target: object, name: str, operation: str, is_async: bool) -> None:
     """A listing is ``name_page``, which returns one page; any other operation is ``name``."""
     method = getattr(target, f"{name}_page" if operation in PAGED else name)
     assert inspect.iscoroutinefunction(method) == is_async
-    assert calls(method) == {snake(operation)}
+    # An operation finished in the background also hands its pending object the poll operation.
+    polled = {snake(WAITERS[operation]["poll"])} if operation in WAITERS else set()
+    assert calls(method) == {snake(operation)} | polled
 
 
 def test_paged_operations_are_the_listings() -> None:
@@ -149,7 +152,7 @@ def test_index_client_has_no_other_methods() -> None:
         name = entry if isinstance(entry, str) else entry[0]
         if not name.startswith("_"):
             names.add(snake(name))
-    names |= {f"{name}_page" for name in ("query", "list")}
+    names |= {f"{name}_page" for name in ("search", "list")}
     helpers = {"put", "put_many", "wait_until_ready"}
     index = grepvine.Client(use_environment=False).index("acme/docs")
     public = {
@@ -158,3 +161,12 @@ def test_index_client_has_no_other_methods() -> None:
         if not attribute.startswith("_") and callable(getattr(index, attribute))
     }
     assert public == names | helpers
+
+
+@pytest.mark.parametrize("operation", sorted(WAITERS))
+def test_waiters_name_real_operations(operation: str) -> None:
+    waiter = WAITERS[operation]
+    assert {operation, waiter["poll"]} <= SPEC_OPERATIONS
+    for prefix in ("", "Async"):
+        pending = getattr(grepvine, prefix + waiter["class"])
+        assert callable(getattr(pending, waiter["method"]))

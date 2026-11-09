@@ -6,6 +6,8 @@ import builtins
 from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import Any, Literal, TypeVar, cast
 
+from ... import _retry
+from ...errors import GrepvineError, NotFoundError
 from ..client import Client
 from ..types import File
 from ..models.add_member_request import AddMemberRequest
@@ -121,6 +123,135 @@ async def _async_pages(call: Any, kwargs: dict[str, Any]) -> AsyncIterator[Any]:
         if not page.pagination.has_next:
             return
         kwargs = {**kwargs, "page": page.pagination.next_page_id}
+
+
+class _Pending:
+    """Work the service finishes in the background, and how to wait for it."""
+
+    _done: tuple[str, ...] = ()
+    _gone = False
+    _failed: tuple[str, ...] = ()
+
+    def __init__(self, result: Any, poll: Any, kwargs: dict[str, Any], what: str) -> None:
+        self.result = result
+        self._poll = poll
+        self._kwargs = kwargs
+        self._what = what
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self._what!r})"
+
+    def _finished(self, found: Any, waited: float, timeout: float) -> bool:
+        state = str(found.state)
+        if not self._gone and state in self._done:
+            return True
+        if state in self._failed:
+            raise GrepvineError(f"{self._what} is {state}")
+        if waited >= timeout:
+            raise TimeoutError(f"{self._what} was not done in {timeout:g}s; it is {state}")
+        return False
+
+    def _wait(self, timeout: float, interval: float) -> Any:
+        started = _retry.monotonic()
+        while True:
+            try:
+                found = self._poll(**self._kwargs).parsed
+            except NotFoundError:
+                if self._gone:
+                    return None
+                raise
+            if self._finished(found, _retry.monotonic() - started, timeout):
+                return found
+            _retry.sleep(interval)
+
+    async def _async_wait(self, timeout: float, interval: float) -> Any:
+        started = _retry.monotonic()
+        while True:
+            try:
+                found = (await self._poll(**self._kwargs)).parsed
+            except NotFoundError:
+                if self._gone:
+                    return None
+                raise
+            if self._finished(found, _retry.monotonic() - started, timeout):
+                return found
+            await _retry.async_sleep(interval)
+
+
+class IndexCreation(_Pending):
+    """An index being created. ``result`` is the index as the service answered; ``wait_until_ready`` waits until it can be used."""
+
+    result: Index
+    _done = ("ready",)
+    _failed = (
+        "deleting",
+        "delete_failed",
+        "recreate_required",
+    )
+
+    def wait_until_ready(self, *, timeout: float = 300.0, interval: float = 1.0) -> Index:
+        """Read the index until it is ready, and return it.
+
+        Raises:
+            TimeoutError: The work was not done within ``timeout`` seconds.
+            grepvine.GrepvineError: The index reached a state it will not leave by itself.
+        """
+        return cast(Index, self._wait(timeout, interval))
+
+
+class AsyncIndexCreation(_Pending):
+    """An index being created. ``result`` is the index as the service answered; ``wait_until_ready`` waits until it can be used."""
+
+    result: Index
+    _done = ("ready",)
+    _failed = (
+        "deleting",
+        "delete_failed",
+        "recreate_required",
+    )
+
+    async def wait_until_ready(self, *, timeout: float = 300.0, interval: float = 1.0) -> Index:
+        """Read the index until it is ready, and return it.
+
+        Raises:
+            TimeoutError: The work was not done within ``timeout`` seconds.
+            grepvine.GrepvineError: The index reached a state it will not leave by itself.
+        """
+        return cast(Index, await self._async_wait(timeout, interval))
+
+
+class IndexDeletion(_Pending):
+    """An index being deleted. ``wait_until_deleted`` waits until it is gone and its name can be used again."""
+
+    result: None
+    _gone = True
+    _failed = ("delete_failed",)
+
+    def wait_until_deleted(self, *, timeout: float = 300.0, interval: float = 1.0) -> None:
+        """Read the index until it no longer exists.
+
+        Raises:
+            TimeoutError: The work was not done within ``timeout`` seconds.
+            grepvine.GrepvineError: The index reached a state it will not leave by itself.
+        """
+        self._wait(timeout, interval)
+
+
+class AsyncIndexDeletion(_Pending):
+    """An index being deleted. ``wait_until_deleted`` waits until it is gone and its name can be used again."""
+
+    result: None
+    _gone = True
+    _failed = ("delete_failed",)
+
+    async def wait_until_deleted(self, *, timeout: float = 300.0, interval: float = 1.0) -> None:
+        """Read the index until it no longer exists.
+
+        Raises:
+            TimeoutError: The work was not done within ``timeout`` seconds.
+            grepvine.GrepvineError: The index reached a state it will not leave by itself.
+        """
+        await self._async_wait(timeout, interval)
 
 
 class Members:
@@ -537,7 +668,7 @@ class Indexes:
         name: str,
         description: str | None = None,
         tags: IndexTags | Mapping[str, str] | None = None,
-    ) -> Index:
+    ) -> IndexCreation:
         """Create an index
 
         Args:
@@ -554,7 +685,7 @@ class Indexes:
                 most 1,024 characters without control characters. Empty when none was set.
 
         Returns:
-            Index
+            IndexCreation: the answer as ``result``, and ``wait_until_ready`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -571,7 +702,17 @@ class Indexes:
         kwargs["body"] = CreateIndexRequest(**fields)
 
         response = create_index.sync_detailed(**kwargs)
-        return cast(Index, response.parsed)
+        source = {**kwargs, **fields}
+        polled = {
+            "organization": source["organization"],
+            "index": source["name"],
+        }
+        return IndexCreation(
+            response.parsed,
+            get_index.sync_detailed,
+            {"client": self._client, **polled},
+            "index " + "/".join(polled.values()),
+        )
 
     def get(
         self,
@@ -651,7 +792,7 @@ class Indexes:
         self,
         organization: str,
         index: str,
-    ) -> None:
+    ) -> IndexDeletion:
         """Delete an index
 
         Args:
@@ -663,7 +804,7 @@ class Indexes:
                 can take such a spelling.
 
         Returns:
-            None
+            IndexDeletion: the answer as ``result``, and ``wait_until_deleted`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -673,7 +814,18 @@ class Indexes:
         kwargs["organization"] = organization
         kwargs["index"] = index
 
-        delete_index.sync_detailed(**kwargs)
+        response = delete_index.sync_detailed(**kwargs)
+        source = kwargs
+        polled = {
+            "organization": source["organization"],
+            "index": source["index"],
+        }
+        return IndexDeletion(
+            response.parsed,
+            get_index.sync_detailed,
+            {"client": self._client, **polled},
+            "index " + "/".join(polled.values()),
+        )
 
 
 class Documents:
@@ -1579,7 +1731,7 @@ class _IndexClient:
         self._organization = organization
         self._index = index
 
-    def query(
+    def search(
         self,
         *,
         pattern: str,
@@ -1643,7 +1795,7 @@ class _IndexClient:
 
         return _pages(query_index.sync_detailed, kwargs)
 
-    def query_page(
+    def search_page(
         self,
         *,
         pattern: str,
@@ -1957,7 +2109,7 @@ class _IndexClient:
         *,
         description: str | None = None,
         tags: IndexTags | Mapping[str, str] | None = None,
-    ) -> Index:
+    ) -> IndexCreation:
         """Create an index
 
         Args:
@@ -1968,7 +2120,7 @@ class _IndexClient:
                 most 1,024 characters without control characters. Empty when none was set.
 
         Returns:
-            Index
+            IndexCreation: the answer as ``result``, and ``wait_until_ready`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1985,7 +2137,17 @@ class _IndexClient:
         kwargs["body"] = CreateIndexRequest(**fields)
 
         response = create_index.sync_detailed(**kwargs)
-        return cast(Index, response.parsed)
+        source = {**kwargs, **fields}
+        polled = {
+            "organization": source["organization"],
+            "index": source["name"],
+        }
+        return IndexCreation(
+            response.parsed,
+            get_index.sync_detailed,
+            {"client": self._client, **polled},
+            "index " + "/".join(polled.values()),
+        )
 
     def info(
         self,
@@ -2045,11 +2207,11 @@ class _IndexClient:
 
     def delete_index(
         self,
-    ) -> None:
+    ) -> IndexDeletion:
         """Delete an index
 
         Returns:
-            None
+            IndexDeletion: the answer as ``result``, and ``wait_until_deleted`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2059,7 +2221,18 @@ class _IndexClient:
         kwargs["organization"] = self._organization
         kwargs["index"] = self._index
 
-        delete_index.sync_detailed(**kwargs)
+        response = delete_index.sync_detailed(**kwargs)
+        source = kwargs
+        polled = {
+            "organization": source["organization"],
+            "index": source["index"],
+        }
+        return IndexDeletion(
+            response.parsed,
+            get_index.sync_detailed,
+            {"client": self._client, **polled},
+            "index " + "/".join(polled.values()),
+        )
 
 
 class AsyncMembers:
@@ -2476,7 +2649,7 @@ class AsyncIndexes:
         name: str,
         description: str | None = None,
         tags: IndexTags | Mapping[str, str] | None = None,
-    ) -> Index:
+    ) -> AsyncIndexCreation:
         """Create an index
 
         Args:
@@ -2493,7 +2666,7 @@ class AsyncIndexes:
                 most 1,024 characters without control characters. Empty when none was set.
 
         Returns:
-            Index
+            AsyncIndexCreation: the answer as ``result``, and ``wait_until_ready`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2510,7 +2683,17 @@ class AsyncIndexes:
         kwargs["body"] = CreateIndexRequest(**fields)
 
         response = await create_index.asyncio_detailed(**kwargs)
-        return cast(Index, response.parsed)
+        source = {**kwargs, **fields}
+        polled = {
+            "organization": source["organization"],
+            "index": source["name"],
+        }
+        return AsyncIndexCreation(
+            response.parsed,
+            get_index.asyncio_detailed,
+            {"client": self._client, **polled},
+            "index " + "/".join(polled.values()),
+        )
 
     async def get(
         self,
@@ -2590,7 +2773,7 @@ class AsyncIndexes:
         self,
         organization: str,
         index: str,
-    ) -> None:
+    ) -> AsyncIndexDeletion:
         """Delete an index
 
         Args:
@@ -2602,7 +2785,7 @@ class AsyncIndexes:
                 can take such a spelling.
 
         Returns:
-            None
+            AsyncIndexDeletion: the answer as ``result``, and ``wait_until_deleted`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -2612,7 +2795,18 @@ class AsyncIndexes:
         kwargs["organization"] = organization
         kwargs["index"] = index
 
-        await delete_index.asyncio_detailed(**kwargs)
+        response = await delete_index.asyncio_detailed(**kwargs)
+        source = kwargs
+        polled = {
+            "organization": source["organization"],
+            "index": source["index"],
+        }
+        return AsyncIndexDeletion(
+            response.parsed,
+            get_index.asyncio_detailed,
+            {"client": self._client, **polled},
+            "index " + "/".join(polled.values()),
+        )
 
 
 class AsyncDocuments:
@@ -3518,7 +3712,7 @@ class _AsyncIndexClient:
         self._organization = organization
         self._index = index
 
-    def query(
+    def search(
         self,
         *,
         pattern: str,
@@ -3582,7 +3776,7 @@ class _AsyncIndexClient:
 
         return _async_pages(query_index.asyncio_detailed, kwargs)
 
-    async def query_page(
+    async def search_page(
         self,
         *,
         pattern: str,
@@ -3896,7 +4090,7 @@ class _AsyncIndexClient:
         *,
         description: str | None = None,
         tags: IndexTags | Mapping[str, str] | None = None,
-    ) -> Index:
+    ) -> AsyncIndexCreation:
         """Create an index
 
         Args:
@@ -3907,7 +4101,7 @@ class _AsyncIndexClient:
                 most 1,024 characters without control characters. Empty when none was set.
 
         Returns:
-            Index
+            AsyncIndexCreation: the answer as ``result``, and ``wait_until_ready`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -3924,7 +4118,17 @@ class _AsyncIndexClient:
         kwargs["body"] = CreateIndexRequest(**fields)
 
         response = await create_index.asyncio_detailed(**kwargs)
-        return cast(Index, response.parsed)
+        source = {**kwargs, **fields}
+        polled = {
+            "organization": source["organization"],
+            "index": source["name"],
+        }
+        return AsyncIndexCreation(
+            response.parsed,
+            get_index.asyncio_detailed,
+            {"client": self._client, **polled},
+            "index " + "/".join(polled.values()),
+        )
 
     async def info(
         self,
@@ -3984,11 +4188,11 @@ class _AsyncIndexClient:
 
     async def delete_index(
         self,
-    ) -> None:
+    ) -> AsyncIndexDeletion:
         """Delete an index
 
         Returns:
-            None
+            AsyncIndexDeletion: the answer as ``result``, and ``wait_until_deleted`` to wait until the work is done.
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -3998,4 +4202,15 @@ class _AsyncIndexClient:
         kwargs["organization"] = self._organization
         kwargs["index"] = self._index
 
-        await delete_index.asyncio_detailed(**kwargs)
+        response = await delete_index.asyncio_detailed(**kwargs)
+        source = kwargs
+        polled = {
+            "organization": source["organization"],
+            "index": source["index"],
+        }
+        return AsyncIndexDeletion(
+            response.parsed,
+            get_index.asyncio_detailed,
+            {"client": self._client, **polled},
+            "index " + "/".join(polled.values()),
+        )

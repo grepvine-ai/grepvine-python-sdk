@@ -18,6 +18,7 @@ SPEC = SNAPSHOT
 OUTPUT = PACKAGE / "src/grepvine/_generated"
 OPERATIONS = PACKAGE / "sdk-operations.json"
 SCOPES = PACKAGE / "sdk-scopes.json"
+WAITERS = PACKAGE / "sdk-waiters.json"
 TEMPLATES = PACKAGE / "scripts/templates"
 # Docstrings of the resource classes; a resource missing here gets one from its name.
 TITLES = {
@@ -183,9 +184,14 @@ def main() -> None:
         )
         tree, roots = resources(operations)
         scoped = scopes(operations, json.loads(SCOPES.read_text()))
+        waiters = json.loads(WAITERS.read_text())
+        for operation, waiter in waiters.items():
+            if not {operation, waiter["poll"]} <= operation_ids:
+                sys.exit(f"{WAITERS.name}: {operation} names an operation the API does not have")
         (templates / "sdk_resources.jinja").write_text(
             f"{{% set resources = {json.dumps(tree)} %}}\n{{% set roots = {json.dumps(roots)} %}}\n"
             f"{{% set scopes = {json.dumps(scoped)} %}}\n"
+            f"{{% set waiters = {json.dumps(waiters)} %}}\n"
         )
         result = subprocess.run(
             [

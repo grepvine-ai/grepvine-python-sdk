@@ -29,7 +29,7 @@ def config_file(tmp_path: Path) -> Path:
 def sent(service: Service, client: grepvine.Client, name: str = "docs") -> tuple[str, str | None]:
     service.reply(httpx.Response(200, json=page_json([])))
     with client:
-        list(client.index(name).query(pattern="x"))
+        list(client.index(name).search(pattern="x"))
     request = service.requests[-1]
     return str(request.url).split("?")[0], request.headers.get("Authorization")
 
@@ -133,7 +133,7 @@ def test_module_level_index_uses_the_default_client(service: Service, config_fil
     assert grepvine.default_client() is grepvine.default_client()
     grepvine.set_default_client(grepvine.Client(api_key="gvk_mine", transport=transport(service)))
     service.reply(httpx.Response(200, json=page_json([])))
-    assert list(grepvine.index("docs").query(pattern="x")) == []
+    assert list(grepvine.index("docs").search(pattern="x")) == []
     request = service.requests[0]
     assert request.url.host == "file.example"
     assert request.headers["Authorization"] == "Bearer gvk_mine"

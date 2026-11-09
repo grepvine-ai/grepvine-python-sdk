@@ -91,7 +91,7 @@ with Client(transport=httpx.MockTransport(handler), retry=RetryPolicy(), **optio
     assert isinstance(result, MutationResult) and result.revision == 'r1'
     assert list(client.search.query('acme', 'docs', pattern='hello')) == []
     index = client.index('acme/docs')
-    assert list(index.query(pattern='hello', mode='literal')) == []
+    assert list(index.search(pattern='hello', mode='literal')) == []
     assert index.put_many(documents)[0].revision == 'r1'
     assert client.http.get('/organizations/acme/indexes/docs').json()['name'] == 'docs'
     try:
@@ -104,7 +104,7 @@ async def check_async():
     async with AsyncClient(transport=httpx.MockTransport(handler), **options) as client:
         assert (await client.indexes.get('acme', 'docs')).name == 'docs'
         assert (await client.documents.put_many('acme', 'docs', documents))[0].revision == 'r1'
-        hits = client.index('acme/docs').query(pattern='hello')
+        hits = client.index('acme/docs').search(pattern='hello')
         assert [hit async for hit in hits] == []
 asyncio.run(check_async())
 print('Installed wheel sync and async client requests passed')

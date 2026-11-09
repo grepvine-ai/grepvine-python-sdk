@@ -3,7 +3,7 @@
     "title": "One index: its documents, search and settings. Make one with ``client.index(\"organization/index\")``.",
     "binds": ["organization", "index"],
     "methods": {
-      "queryIndex": "query",
+      "queryIndex": "search",
       "listDocuments": "list",
       "getDocument": "get",
       "putDocument": "_put",

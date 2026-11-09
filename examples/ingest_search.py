@@ -21,8 +21,7 @@ def main() -> None:
         if not client.settings.organization:
             parser.error("set GREPVINE_ORGANIZATION, or gv config set organization")
         index = client.index(f"example-python-{uuid.uuid4().hex[:8]}")
-        index.create(description="Python SDK example")
-        index.wait_until_ready()
+        index.create(description="Python SDK example").wait_until_ready()
         print(f"Created index {index.name}")
         try:
             results = index.put_many(
@@ -51,11 +50,11 @@ def main() -> None:
             print(f"Stored {len(results)} documents")
 
             print('Search: literal "hello"')
-            hits = list(index.query(pattern="hello", mode="literal"))
+            hits = list(index.search(pattern="hello", mode="literal"))
             for hit in hits:
                 print(f"  {hit.key}:{hit.line_number}: {hit.text.rstrip()}")
             print("Search: literal \"hello\", filtered by kind = 'guide'")
-            filtered = list(index.query(pattern="hello", mode="literal", filter="kind = 'guide'"))
+            filtered = list(index.search(pattern="hello", mode="literal", filter="kind = 'guide'"))
             print(f"Found {len(hits)} matches and {len(filtered)} filtered matches")
             if len(hits) != 3 or len(filtered) != 2:
                 raise RuntimeError(f"Expected 3 and 2 matches, got {len(hits)} and {len(filtered)}")

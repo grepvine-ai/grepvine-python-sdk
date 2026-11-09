@@ -64,7 +64,7 @@ def test_store_list_and_search(client: grepvine.Client, index: str) -> None:
         "docs/a.txt",
         "notes/b.txt",
     ]
-    hits = client.index(f"{ORGANIZATION}/{index}").query(
+    hits = client.index(f"{ORGANIZATION}/{index}").search(
         pattern="hello", mode="literal", filter="kind = 'guide'"
     )
     assert [hit.key for hit in hits] == ["docs/a.txt"]
