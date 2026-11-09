@@ -224,7 +224,32 @@ Publishing a GitHub release uploads the tag's version (`v0.2.0` becomes
 (`0.2.0rc1`, `0.2.0.dev1`), which `pip` installs only when asked for
 explicitly or with `--pre`. Final versions go to PyPI only through a release.
 Each index needs a trusted publisher for this repository, workflow
-`publish.yml`, and a matching `pypi` or `testpypi` environment.
+`publish.yml`, and a matching `pypi` or `testpypi` environment. TestPyPI
+publishing is disabled for now (pypi/support#13008); a manual run with
+`testpypi` fails until it is restored.
+
+## Releasing
+
+The version in `pyproject.toml` is not edited by hand: the workflow sets it
+from the tag or the manual input. Follow [Semantic Versioning](https://semver.org);
+while the major version is 0, a breaking change raises the minor version.
+
+1. Check that `main` is green and pick the version. `git log v<last>..main`
+   lists what changed since the last release.
+2. Publish a release candidate from `main`: run `Build and publish SDK`
+   manually with version `X.Y.Zrc1` and index `pypi`.
+3. Install it (`pip install grepvine==X.Y.Zrc1`) and run the README and
+   `examples/` against a real Grepvine stack. Fix what fails on `main` and
+   publish the next candidate.
+4. Check that the Python pages of the Grepvine docs match the release.
+5. Create a GitHub release with tag `vX.Y.Z` on `main` and notes listing what
+   changed, breaking changes first. Save it as a draft for review, then
+   publish it. Publishing uploads `X.Y.Z` to PyPI and deploys the API
+   documentation.
+6. Check `pip install grepvine==X.Y.Z` and the documentation site.
+
+A published version cannot be replaced on PyPI. If a release is broken,
+publish a fix as the next patch version.
 
 The `Documentation` workflow builds the API documentation on every pull request
 and push to `main`, so a broken docstring reference fails CI. Publishing a
