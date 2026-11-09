@@ -1,7 +1,7 @@
 """Check an installed wheel independently of the source-tree editable package."""
 
 import subprocess
-import tomllib
+from importlib.metadata import version
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -9,8 +9,7 @@ PACKAGE = Path(__file__).resolve().parents[1]
 
 
 def main() -> None:
-    project = tomllib.loads((PACKAGE / "pyproject.toml").read_text())["project"]
-    wheel = PACKAGE / "dist" / f"grepvine-{project['version']}-py3-none-any.whl"
+    wheel = PACKAGE / "dist" / f"grepvine-{version('grepvine')}-py3-none-any.whl"
     with TemporaryDirectory(prefix="grepvine-wheel-") as directory:
         environment = Path(directory) / "venv"
         requirements = Path(directory) / "requirements.txt"

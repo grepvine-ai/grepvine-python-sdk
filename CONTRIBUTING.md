@@ -230,8 +230,10 @@ publishing is disabled for now (pypi/support#13008); a manual run with
 
 ## Releasing
 
-The version in `pyproject.toml` is not edited by hand: the workflow sets it
-from the tag or the manual input. Follow [Semantic Versioning](https://semver.org);
+The version is not written anywhere in the repository: `hatch-vcs` takes it
+from git tags, so a checkout of `v0.2.0` builds `0.2.0` and later commits
+build a development version such as `0.2.1.dev3+g1a2b3c4`. The publish
+workflow pins it to the release tag or the manual input. Follow [Semantic Versioning](https://semver.org);
 while the major version is 0, a breaking change raises the minor version.
 
 1. Check that `main` is green and pick the version. `git log v<last>..main`
