@@ -8,7 +8,7 @@ from typing import Any, Final, Self
 
 import httpx
 
-from grepvine._config import Settings, resolve
+from grepvine._config import Settings, environment, read_file, resolve
 from grepvine._generated.api.resources import _GeneratedAsyncClient, _GeneratedClient
 from grepvine._generated.client import Client as _Connection
 from grepvine._helpers import (
@@ -62,13 +62,14 @@ def _session(http: httpx.Client | httpx.AsyncClient, response: httpx.Response) -
 class Client(_GeneratedClient):
     """A client of the Grepvine API.
 
-    ``Client()`` with no arguments is configured like ``gv``; see below.
-
-    Each of ``api_key``, ``endpoint`` and ``organization`` is taken from its
-    argument, else from its environment variable (``GREPVINE_API_KEY``,
+    ``Client()`` with no arguments is configured like ``gv``: each of
+    ``api_key``, ``endpoint`` and ``organization`` is taken from its argument,
+    else from its environment variable (``GREPVINE_API_KEY``,
     ``GREPVINE_API_ENDPOINT``, ``GREPVINE_ORGANIZATION``), else from the
-    configuration file that ``gv`` writes, else from its default. Clients
-    configured differently can be used side by side.
+    configuration file (``$GREPVINE_CONFIG``, else ``~/.grepvine/config.yaml``
+    when it exists), else from its default. `from_env` and `from_config` make
+    a client from one of those sources alone. Clients configured differently
+    can be used side by side.
 
     Args:
         api_key: The API key sent as a bearer token. Without one, only the
@@ -79,12 +80,9 @@ class Client(_GeneratedClient):
             ``https://api.grepvine.ai``.
         organization: The organization of an index named without one, as in
             ``client.index("support")``.
-        config_file: The configuration file. Default: ``$GREPVINE_CONFIG``,
-            else ``~/.grepvine/config.yaml`` when it exists. A file other
-            users can read is refused.
-        use_environment: Whether to read the environment variables and the
-            default configuration file. With ``False``, the client uses only
-            its arguments and an explicit ``config_file``.
+        trust_env: Whether to read the environment variables and the
+            configuration file. With ``False``, the client uses only its
+            arguments and the defaults.
         timeout: Seconds, or an ``httpx.Timeout``, for each request.
         retry: How requests are retried; see `RetryPolicy`.
         transport: The ``httpx`` transport requests go through, for example
@@ -104,8 +102,7 @@ class Client(_GeneratedClient):
         api_key: str | None = None,
         endpoint: str | None = None,
         organization: str | None = None,
-        config_file: str | os.PathLike[str] | None = None,
-        use_environment: bool = True,
+        trust_env: bool = True,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.BaseTransport | None = None,
@@ -114,8 +111,7 @@ class Client(_GeneratedClient):
             endpoint=endpoint,
             api_key=api_key,
             organization=organization,
-            config_file=config_file,
-            use_environment=use_environment,
+            trust_env=trust_env,
         )
         options = _options(self.settings.api_key, self.settings.endpoint, timeout)
         inner = transport or httpx.HTTPTransport()
@@ -130,6 +126,41 @@ class Client(_GeneratedClient):
         self.documents = Documents(connection)
         self.device_login = DeviceLogin(connection)
         self._connection = connection
+
+    @classmethod
+    def from_env(
+        cls,
+        *,
+        timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
+        retry: RetryPolicy | None = None,
+        transport: httpx.BaseTransport | None = None,
+    ) -> Self:
+        """A client configured only from ``GREPVINE_API_KEY``, ``GREPVINE_API_ENDPOINT`` and
+        ``GREPVINE_ORGANIZATION``; no configuration file is read. A variable that is not set
+        leaves its setting at its default."""
+        return cls(
+            **environment(), trust_env=False, timeout=timeout, retry=retry, transport=transport
+        )
+
+    @classmethod
+    def from_config(
+        cls,
+        path: str | os.PathLike[str],
+        *,
+        timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
+        retry: RetryPolicy | None = None,
+        transport: httpx.BaseTransport | None = None,
+    ) -> Self:
+        """A client configured only from the configuration file at ``path``, in the format
+        ``gv`` writes (``~`` is expanded); no environment variable is read.
+
+        Raises:
+            grepvine.ConfigurationError: The file does not exist, other users can read it, or
+                it is not a mapping of settings.
+        """
+        return cls(
+            **read_file(path), trust_env=False, timeout=timeout, retry=retry, transport=transport
+        )
 
     def index(self, name: str) -> IndexClient:
         """The index ``organization/index``, or ``index`` in the default organization.
@@ -173,8 +204,7 @@ class AsyncClient(_GeneratedAsyncClient):
         api_key: str | None = None,
         endpoint: str | None = None,
         organization: str | None = None,
-        config_file: str | os.PathLike[str] | None = None,
-        use_environment: bool = True,
+        trust_env: bool = True,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
@@ -183,8 +213,7 @@ class AsyncClient(_GeneratedAsyncClient):
             endpoint=endpoint,
             api_key=api_key,
             organization=organization,
-            config_file=config_file,
-            use_environment=use_environment,
+            trust_env=trust_env,
         )
         options = _options(self.settings.api_key, self.settings.endpoint, timeout)
         inner = transport or httpx.AsyncHTTPTransport()
@@ -199,6 +228,41 @@ class AsyncClient(_GeneratedAsyncClient):
         self.documents = AsyncDocuments(connection)
         self.device_login = AsyncDeviceLogin(connection)
         self._connection = connection
+
+    @classmethod
+    def from_env(
+        cls,
+        *,
+        timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
+        retry: RetryPolicy | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> Self:
+        """A client configured only from ``GREPVINE_API_KEY``, ``GREPVINE_API_ENDPOINT`` and
+        ``GREPVINE_ORGANIZATION``; no configuration file is read. A variable that is not set
+        leaves its setting at its default."""
+        return cls(
+            **environment(), trust_env=False, timeout=timeout, retry=retry, transport=transport
+        )
+
+    @classmethod
+    def from_config(
+        cls,
+        path: str | os.PathLike[str],
+        *,
+        timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
+        retry: RetryPolicy | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> Self:
+        """A client configured only from the configuration file at ``path``, in the format
+        ``gv`` writes (``~`` is expanded); no environment variable is read.
+
+        Raises:
+            grepvine.ConfigurationError: The file does not exist, other users can read it, or
+                it is not a mapping of settings.
+        """
+        return cls(
+            **read_file(path), trust_env=False, timeout=timeout, retry=retry, transport=transport
+        )
 
     def index(self, name: str) -> AsyncIndexClient:
         """The index ``organization/index``, or ``index`` in the default organization.

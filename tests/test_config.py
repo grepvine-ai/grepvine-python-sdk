@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -84,7 +85,7 @@ def test_clients_configured_differently_side_by_side(
         "endpoint: https://staging.example\napi_key: gvk_stage\norganization: beta\n",
     )
     default = grepvine.Client(transport=transport(service))
-    other = grepvine.Client(config_file=staging, transport=transport(service))
+    other = grepvine.Client.from_config(staging, transport=transport(service))
     assert sent(service, default)[0].startswith("https://file.example/v1/organizations/acme/")
     assert sent(service, other) == (
         "https://staging.example/v1/organizations/beta/indexes/docs/query",
@@ -100,12 +101,46 @@ def test_config_environment_variable_names_the_file(
     assert grepvine.Client(transport=transport(service)).settings.organization == "other"
 
 
-def test_isolated_client_ignores_environment_and_file(
+def test_trust_env_false_reads_neither_environment_nor_file(
     service: Service, config_file: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("GREPVINE_API_KEY", "gvk_env")
-    client = grepvine.Client(use_environment=False, transport=transport(service))
+    monkeypatch.setenv("GREPVINE_CONFIG", str(config_file))
+    client = grepvine.Client(trust_env=False, transport=transport(service))
     assert client.settings == grepvine.Settings("https://api.grepvine.ai", None, None)
+    client = grepvine.Client(api_key="gvk_arg", trust_env=False, transport=transport(service))
+    assert client.settings.api_key == "gvk_arg"
+
+
+@pytest.mark.parametrize("client_class", [grepvine.Client, grepvine.AsyncClient])
+def test_from_env_reads_only_the_environment(
+    client_class: Any, config_file: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GREPVINE_API_KEY", "gvk_env")
+    monkeypatch.setenv("GREPVINE_ORGANIZATION", "env-org")
+    client = client_class.from_env(timeout=5)
+    assert isinstance(client, client_class)
+    # The endpoint is unset in the environment: its default, not the file's.
+    assert client.settings == grepvine.Settings("https://api.grepvine.ai", "gvk_env", "env-org")
+    assert client.http.timeout.read == 5
+
+
+@pytest.mark.parametrize("client_class", [grepvine.Client, grepvine.AsyncClient])
+def test_from_config_reads_only_the_file(
+    client_class: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    staging = write(tmp_path / "staging.yaml", "api_key: gvk_stage\norganization: beta\nother: 1\n")
+    monkeypatch.setenv("GREPVINE_API_KEY", "gvk_env")
+    monkeypatch.setenv("GREPVINE_API_ENDPOINT", "https://env.example")
+    client = client_class.from_config(staging)
+    assert isinstance(client, client_class)
+    assert client.settings == grepvine.Settings("https://api.grepvine.ai", "gvk_stage", "beta")
+
+
+def test_from_config_expands_the_home_directory(tmp_path: Path) -> None:
+    write(tmp_path / ".grepvine/staging.yaml", "organization: beta\n")
+    client = grepvine.Client.from_config("~/.grepvine/staging.yaml")
+    assert client.settings.organization == "beta"
 
 
 def test_index_without_organization_needs_one() -> None:
@@ -119,14 +154,17 @@ def test_a_file_others_can_read_is_refused(config_file: Path) -> None:
         grepvine.Client()
 
 
-def test_a_named_file_must_exist(tmp_path: Path) -> None:
+def test_a_named_file_must_exist(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(grepvine.ConfigurationError, match="does not exist"):
-        grepvine.Client(config_file=tmp_path / "missing.yaml")
+        grepvine.Client.from_config(tmp_path / "missing.yaml")
+    monkeypatch.setenv("GREPVINE_CONFIG", str(tmp_path / "missing.yaml"))
+    with pytest.raises(grepvine.ConfigurationError, match="does not exist"):
+        grepvine.Client()
 
 
 def test_a_file_must_be_a_mapping(tmp_path: Path) -> None:
     with pytest.raises(grepvine.ConfigurationError, match="must map"):
-        grepvine.Client(config_file=write(tmp_path / "list.yaml", "- a\n"))
+        grepvine.Client.from_config(write(tmp_path / "list.yaml", "- a\n"))
 
 
 def test_module_level_index_uses_the_default_client(service: Service, config_file: Path) -> None:

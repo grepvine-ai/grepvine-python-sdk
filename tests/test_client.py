@@ -55,9 +55,7 @@ def test_isolated_client_reads_no_environment(
     monkeypatch.setenv("GREPVINE_API_KEY", "from-env")
     monkeypatch.setenv("GREPVINE_API_ENDPOINT", "https://env.example.com")
     service.reply(httpx.Response(200, json=index_json()))
-    with grepvine.Client(
-        use_environment=False, transport=httpx.MockTransport(service.handle)
-    ) as client:
+    with grepvine.Client(trust_env=False, transport=httpx.MockTransport(service.handle)) as client:
         client.indexes.get("acme", "docs")
     assert service.requests[0].url.host == "api.grepvine.ai"
     assert "Authorization" not in service.requests[0].headers

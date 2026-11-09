@@ -32,8 +32,8 @@ needs no setup. Each setting comes from the first of:
 
 1. the argument to `grepvine.Client(...)`;
 2. its environment variable;
-3. the configuration file: `config_file=`, else `$GREPVINE_CONFIG`, else
-   `~/.grepvine/config.yaml` when it exists;
+3. the configuration file: `$GREPVINE_CONFIG`, else `~/.grepvine/config.yaml`
+   when it exists;
 4. its default.
 
 | Argument | Environment variable | Default |
@@ -47,11 +47,18 @@ import os
 
 import grepvine
 
-client = grepvine.Client()                                   # configured like gv
+client = grepvine.Client()                                       # configured like gv
 client = grepvine.Client(api_key=os.environ["CI_GREPVINE_KEY"])  # one setting overridden
-staging = grepvine.Client(config_file="~/.grepvine/staging.yaml")  # another file
-isolated = grepvine.Client(api_key="gvk_...", use_environment=False)  # arguments only
+from_env = grepvine.Client.from_env()                            # environment variables only
+staging = grepvine.Client.from_config("~/.grepvine/staging.yaml")  # one file only
+isolated = grepvine.Client(api_key="gvk_...", trust_env=False)   # arguments only
 ```
+
+`Client.from_env()` reads only the three environment variables, and
+`Client.from_config(path)` reads only that file; a setting either leaves out
+takes its default. `trust_env=False` makes a client that reads neither and uses
+only its arguments. `AsyncClient` has the same three forms. All of them take
+`timeout`, `retry` and `transport`.
 
 Clients configured differently can be used side by side. The configuration
 file is refused if other users can read it, as `gv` refuses it. An endpoint
@@ -416,7 +423,7 @@ that create an account and its first API key. Create the client without an
 API key for them:
 
 ```python
-client = grepvine.Client(endpoint="https://grepvine.example.com", use_environment=False)
+client = grepvine.Client(endpoint="https://grepvine.example.com", trust_env=False)
 
 if client.account.username_availability("alice").available:
     client.account.register(name="alice", email="alice@example.com", password="a long passphrase")
@@ -457,7 +464,7 @@ def show(authorization: DeviceAuthorization) -> None:
     print(f"and check that it shows {authorization.user_code}")
 
 
-with grepvine.Client(use_environment=False) as anonymous:  # starting needs no API key
+with grepvine.Client(trust_env=False) as anonymous:  # starting needs no API key
     key = anonymous.device_login.authorize("my laptop", on_code=show, timeout=600)
 client = grepvine.Client(api_key=key.key)
 ```

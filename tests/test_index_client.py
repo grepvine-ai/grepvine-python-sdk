@@ -54,7 +54,7 @@ def test_making_one_sends_no_request(service: Service) -> None:
 @pytest.mark.parametrize("name", ["docs", "acme/", "/docs", "acme/docs/x"])
 def test_bad_names_are_refused(name: str) -> None:
     with pytest.raises((ValueError, grepvine.ConfigurationError)):
-        grepvine.Client(use_environment=False).index(name)
+        grepvine.Client(trust_env=False).index(name)
 
 
 async def test_search_follows_pages_and_sends_only_given_options(

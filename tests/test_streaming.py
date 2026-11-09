@@ -137,13 +137,13 @@ async def test_content_in_memory_is_retried(fx: Flavor, service: Service) -> Non
 
 async def test_async_chunks_need_an_async_client(service: Service) -> None:
     with pytest.raises(TypeError, match="AsyncClient"):
-        grepvine.Client(use_environment=False).index("acme/docs").put("a", async_chunks(1))  # type: ignore[arg-type]
+        grepvine.Client(trust_env=False).index("acme/docs").put("a", async_chunks(1))  # type: ignore[arg-type]
 
 
 async def test_async_client_streams_async_chunks(service: Service) -> None:
     service.route = ok
     transport = httpx.MockTransport(service.handle)
-    async with grepvine.AsyncClient(api_key="k", use_environment=False, transport=transport) as c:
+    async with grepvine.AsyncClient(api_key="k", trust_env=False, transport=transport) as c:
         await c.index("acme/docs").put("big.bin", async_chunks(20), size=20_000)
     request = service.requests[0]
     assert content_of(request) == b"".join(chunks(20))

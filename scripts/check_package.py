@@ -80,7 +80,7 @@ def handler(request):
     return httpx.Response(404, json={'code': 'not_found', 'reason': 'resource', 'error': 'no'})
 options = {'api_key': 'gvk', 'endpoint': 'https://example.test'}
 documents = [{'key': 'a', 'content': 'hello', 'metadata': {'kind': 'guide'}}]
-options['use_environment'] = False
+options['trust_env'] = False
 with Client(transport=httpx.MockTransport(handler), retry=RetryPolicy(), **options) as client:
     assert isinstance(client.indexes.wait_until_ready('acme', 'docs'), Index)
     [summary] = client.indexes.list('acme')

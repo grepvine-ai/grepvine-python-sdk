@@ -87,7 +87,7 @@ def test_paged_operations_are_the_listings() -> None:
 @pytest.mark.parametrize("client_class", [grepvine.Client, grepvine.AsyncClient])
 @pytest.mark.parametrize("operation", sorted(OPERATIONS))
 def test_method_calls_its_operation(client_class: type, operation: str) -> None:
-    target = client_class(use_environment=False)
+    target = client_class(trust_env=False)
     *resources, name = OPERATIONS[operation]
     for segment in resources:
         target = getattr(target, snake(segment))
@@ -101,7 +101,7 @@ def test_method_calls_its_operation(client_class: type, operation: str) -> None:
 )
 def test_scoped_method_calls_its_operation(client_class: type, scope: str, operation: str) -> None:
     assert scope == "IndexClient"
-    target = client_class(use_environment=False).index("acme/docs")
+    target = client_class(trust_env=False).index("acme/docs")
     entry = SCOPES[scope]["methods"][operation]
     name = entry if isinstance(entry, str) else entry[0]
     private = "_" if name.startswith("_") else ""
@@ -135,7 +135,7 @@ def test_resources_have_no_other_operation_methods() -> None:
         "documents": {"put_many"},
         "device_login": {"authorize"},
     }
-    client = grepvine.Client(use_environment=False)
+    client = grepvine.Client(trust_env=False)
     for name, methods in expected.items():
         resource = getattr(client, name, None) or client.organizations.members
         public = {
@@ -154,7 +154,7 @@ def test_index_client_has_no_other_methods() -> None:
             names.add(snake(name))
     names |= {f"{name}_page" for name in ("search", "list")}
     helpers = {"put", "put_many", "wait_until_ready"}
-    index = grepvine.Client(use_environment=False).index("acme/docs")
+    index = grepvine.Client(trust_env=False).index("acme/docs")
     public = {
         attribute
         for attribute in dir(index)

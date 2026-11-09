@@ -110,9 +110,11 @@ successful answers. The helpers keep the names the TypeScript SDK uses
 
 A client reads `GREPVINE_API_KEY`, `GREPVINE_API_ENDPOINT`,
 `GREPVINE_ORGANIZATION` and `gv`'s configuration file unless created with
-`use_environment=False`. The tests' autouse `no_configuration` fixture clears
-those variables and points `HOME` at a temporary directory, so a developer's
-own configuration never reaches a test.
+`trust_env=False`; `Client.from_env()` and `Client.from_config(path)` read one
+of those sources alone (`_config.environment` and `_config.read_file`). The
+tests' autouse `no_configuration` fixture clears those variables and points
+`HOME` at a temporary directory, so a developer's own configuration never
+reaches a test.
 
 `tests/test_coverage.py` checks that `sdk-operations.json` names exactly the
 operations of the contract and of `spec/source.json`, and that each one is a
