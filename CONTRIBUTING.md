@@ -48,6 +48,25 @@ generator cannot know.
   Each method reuses the generator's own `arguments` and `docstring` macros,
   delegates to the operation's `sync_detailed` or `asyncio_detailed`, and
   returns the decoded model of a successful answer.
+- Every method, on the resources and on the scoped classes, follows one
+  convention, rendered by the template's `method` macro: path parameters by
+  position, and the request body's fields, query parameters and headers by
+  name. An optional argument defaults to `None`, which leaves it out of the
+  request. An enum takes its string value (typed as a `Literal`), a key/value
+  model such as `IndexTags` takes a mapping, and a list of models takes
+  models or mappings. A listing (an operation with a `page` parameter) gets a
+  `_page` method that returns one page, and, when its page holds only
+  `results` and `pagination`, an iterator method over every result. Docstrings
+  carry the contract's descriptions, enum values and defaults.
+  `generate.py` fails when a body field has the name of a parameter of the
+  same operation, since both would be keyword arguments.
+- `sdk-scopes.json` (Python only, for now) defines the scoped classes:
+  `IndexClient` holds an index's organization and name, so its methods take
+  neither. Each entry maps an operation to a method name; a name starting
+  with `_` is generated private, and an entry `[name, {"field": "bound"}]`
+  fills a body field from a bound parameter (`createIndex` takes the index
+  name from the client). `tests/test_coverage.py` checks that every
+  operation on an index's path is on `IndexClient`.
 - The adapter in `generate.py` makes these changes before generating: the
   `If-None-Match` constant becomes a singleton enum; the NDJSON batch body
   becomes a binary `File` whose bytes the template buffers so both HTTPX
@@ -63,10 +82,12 @@ generator cannot know.
 
 | Path | Contents |
 | --- | --- |
-| `src/grepvine/_client.py` | `Client` and `AsyncClient`, built on the root classes: options, bearer authentication, the session after `account.login`, the hook that raises errors, closing. |
+| `src/grepvine/_client.py` | `Client` and `AsyncClient`, built on the root classes: options, bearer authentication, the session after `account.login`, the hook that raises errors, closing, `client.index`, and the default client behind `grepvine.index`. |
+| `src/grepvine/_config.py` | Settings resolved like `gv`: argument, environment variable, configuration file, default. |
+| `src/grepvine/_index.py` | `IndexClient` and `AsyncIndexClient` on the scoped classes: `put` (text, bytes or a file, plain metadata), `put_many`, `list` with prefixes, `wait_until_ready`. |
 | `src/grepvine/errors.py` | The exceptions, and `map_error`, the one function every error answer goes through. |
 | `src/grepvine/_retry.py` | `RetryPolicy` and the retrying HTTPX transports, which also add the `Idempotency-Key` of every write. |
-| `src/grepvine/_helpers.py` | `paginate`, and subclasses of three resource classes adding `indexes.wait_until_ready`, `documents.put_many` and `device_login.authorize`. |
+| `src/grepvine/_helpers.py` | `paginate`, `Prefix`, and subclasses of three resource classes adding `indexes.wait_until_ready`, `documents.put_many`, `documents.list` (which also yields prefixes) and `device_login.authorize`. |
 | `src/grepvine/models.py` | Exports the models under their API names. |
 
 Retries live in the HTTPX transport, so a retried request is the same
@@ -75,8 +96,11 @@ error answer before the operation decodes it, so methods return only
 successful answers. The helpers keep the names the TypeScript SDK uses
 (`paginate`, `waitUntilReady`, `authorize`, `putMany`).
 
-Loading the endpoint and API key from the environment or from `gv`'s
-configuration file is deferred: the client uses only its arguments.
+A client reads `GREPVINE_API_KEY`, `GREPVINE_API_ENDPOINT`,
+`GREPVINE_ORGANIZATION` and `gv`'s configuration file unless created with
+`use_environment=False`. The tests' autouse `no_configuration` fixture clears
+those variables and points `HOME` at a temporary directory, so a developer's
+own configuration never reaches a test.
 
 `tests/test_coverage.py` checks that `sdk-operations.json` names exactly the
 operations of the contract and of `spec/source.json`, and that each one is a

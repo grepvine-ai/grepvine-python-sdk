@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import builtins
 import inspect
 import io
 import json
 import math
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Mapping
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Final, Protocol, Required, TypeAlias, TypedDict, TypeVar, overload
 
@@ -15,14 +17,14 @@ from grepvine._generated.api import resources
 from grepvine._generated.models import (
     APIKeyCreated,
     DeviceAuthorization,
-    DeviceAuthorizationRequest,
-    DeviceTokenRequest,
+    DocumentPage,
+    DocumentSummary,
     Index,
     IndexState,
     MutationResult,
     Pagination,
 )
-from grepvine._generated.types import UNSET, File
+from grepvine._generated.types import File
 from grepvine.errors import GrepvineError, InvalidRequestError, PartialBatchError
 
 T = TypeVar("T")
@@ -38,6 +40,7 @@ __all__ = [
     "Documents",
     "Indexes",
     "MetadataValue",
+    "Prefix",
     "paginate",
 ]
 
@@ -60,6 +63,20 @@ class DocumentInput(TypedDict, total=False):
     if_none_match: bool
 
 
+@dataclass(frozen=True)
+class Prefix:
+    """A common prefix of a listing with a ``delimiter``: its keys, folded like a folder."""
+
+    prefix: str
+
+
+def _entries(page: DocumentPage) -> Iterator[DocumentSummary | Prefix]:
+    """A page's common prefixes, then its documents, as ``gv list`` prints them."""
+    for prefix in page.common_prefixes:
+        yield Prefix(prefix)
+    yield from page.results
+
+
 class _Page(Protocol[T]):
     results: list[T]
     pagination: Pagination
@@ -72,8 +89,8 @@ def paginate(method: Callable[..., _Page[T]], /, **params: Any) -> Iterator[T]: 
 def paginate(method: Callable[..., Any], /, **params: Any) -> Any:
     """Iterate over every result of a list or search method, page after page.
 
-    Pass the method and its arguments by name, for example
-    ``paginate(client.indexes.list, organization="acme")``. Iteration follows
+    Pass a ``_page`` method and its arguments by name, for example
+    ``paginate(client.indexes.list_page, organization="acme")``. Iteration follows
     each page's ``pagination.next_page_id`` while ``has_next`` is true, also
     across pages that hold no results. With an ``AsyncClient`` method, iterate
     with ``async for``.
@@ -100,6 +117,29 @@ async def _async_pages(method: Callable[..., Any], params: dict[str, Any]) -> As
         if not page.pagination.has_next:
             return
         params = {**params, "page": page.pagination.next_page_id}
+
+
+def _page_sequence(
+    method: Callable[..., Any], args: tuple[Any, ...], options: dict[str, Any]
+) -> Iterator[Any]:
+    """Every page of a ``_page`` method, following ``next_page_id`` while ``has_next``."""
+    while True:
+        page = method(*args, **options)
+        yield page
+        if not page.pagination.has_next:
+            return
+        options = {**options, "page": page.pagination.next_page_id}
+
+
+async def _async_page_sequence(
+    method: Callable[..., Any], args: tuple[Any, ...], options: dict[str, Any]
+) -> AsyncIterator[Any]:
+    while True:
+        page = await method(*args, **options)
+        yield page
+        if not page.pagination.has_next:
+            return
+        options = {**options, "page": page.pagination.next_page_id}
 
 
 def _tag(value: MetadataValue) -> dict[str, Any]:
@@ -148,7 +188,7 @@ def _batches(documents: Iterable[DocumentInput]) -> list[tuple[list[str], bytes]
 def _batch_arguments(body: bytes, idempotency_key: str | None, position: int) -> dict[str, Any]:
     return {
         "body": File(payload=io.BytesIO(body), mime_type="application/x-ndjson"),
-        "idempotency_key": f"{idempotency_key}-{position}" if idempotency_key else UNSET,
+        "idempotency_key": f"{idempotency_key}-{position}" if idempotency_key else None,
     }
 
 
@@ -223,6 +263,24 @@ class AsyncIndexes(resources.AsyncIndexes):
 
 
 class Documents(resources.Documents):
+    def list(
+        self,
+        organization: str,
+        index: str,
+        *,
+        prefix: str | None = None,
+        delimiter: str | None = None,
+        amount: int | None = None,
+    ) -> Iterator[DocumentSummary | Prefix]:
+        """List documents, page after page, in key order.
+
+        With a ``delimiter``, keys that share the text up to the next delimiter after ``prefix``
+        are folded into one `Prefix`, yielded before the documents of the same page.
+        """
+        options = {"prefix": prefix, "delimiter": delimiter, "amount": amount}
+        for page in _page_sequence(self.list_page, (organization, index), options):
+            yield from _entries(page)
+
     def put_many(
         self,
         organization: str,
@@ -230,7 +288,7 @@ class Documents(resources.Documents):
         documents: Iterable[DocumentInput],
         *,
         idempotency_key: str | None = None,
-    ) -> list[MutationResult]:
+    ) -> builtins.list[MutationResult]:
         """Store text documents in as few requests as the batch limits allow.
 
         Each document gets ``path`` (its key) and ``size`` metadata, overlaid
@@ -243,7 +301,7 @@ class Documents(resources.Documents):
             grepvine.PartialBatchError: A request failed after earlier ones succeeded.
         """
         batches = _batches(documents)
-        results: list[MutationResult] = []
+        results: builtins.list[MutationResult] = []
         for position, (_, body) in enumerate(batches):
             try:
                 answer = self.put_batch(
@@ -256,6 +314,21 @@ class Documents(resources.Documents):
 
 
 class AsyncDocuments(resources.AsyncDocuments):
+    async def list(
+        self,
+        organization: str,
+        index: str,
+        *,
+        prefix: str | None = None,
+        delimiter: str | None = None,
+        amount: int | None = None,
+    ) -> AsyncIterator[DocumentSummary | Prefix]:
+        """List documents, page after page; see ``Documents.list``."""
+        options = {"prefix": prefix, "delimiter": delimiter, "amount": amount}
+        async for page in _async_page_sequence(self.list_page, (organization, index), options):
+            for entry in _entries(page):
+                yield entry
+
     async def put_many(
         self,
         organization: str,
@@ -263,10 +336,10 @@ class AsyncDocuments(resources.AsyncDocuments):
         documents: Iterable[DocumentInput],
         *,
         idempotency_key: str | None = None,
-    ) -> list[MutationResult]:
+    ) -> builtins.list[MutationResult]:
         """Store text documents in batches; see ``Documents.put_many``."""
         batches = _batches(documents)
-        results: list[MutationResult] = []
+        results: builtins.list[MutationResult] = []
         for position, (_, body) in enumerate(batches):
             try:
                 answer = await self.put_batch(
@@ -297,13 +370,13 @@ class DeviceLogin(resources.DeviceLogin):
                 or expired (``"expired_token"``).
             TimeoutError: The login was not approved within ``timeout`` seconds.
         """
-        authorization = self.start(body=DeviceAuthorizationRequest(api_key_name=api_key_name))
+        authorization = self.start(api_key_name=api_key_name)
         on_code(authorization)
         interval, deadline = _poll_interval(authorization, timeout)
         while _retry.monotonic() + interval <= deadline:
             _retry.sleep(interval)
             try:
-                return self.poll(body=DeviceTokenRequest(device_code=authorization.device_code))
+                return self.poll(device_code=authorization.device_code)
             except InvalidRequestError as exc:
                 interval = _next_poll(exc, interval)
         raise TimeoutError("the device login was not approved in time")
@@ -318,15 +391,13 @@ class AsyncDeviceLogin(resources.AsyncDeviceLogin):
         timeout: float | None = None,
     ) -> APIKeyCreated:
         """Start a device login and poll until the key is issued; see ``DeviceLogin.authorize``."""
-        authorization = await self.start(body=DeviceAuthorizationRequest(api_key_name=api_key_name))
+        authorization = await self.start(api_key_name=api_key_name)
         on_code(authorization)
         interval, deadline = _poll_interval(authorization, timeout)
         while _retry.monotonic() + interval <= deadline:
             await _retry.async_sleep(interval)
             try:
-                return await self.poll(
-                    body=DeviceTokenRequest(device_code=authorization.device_code)
-                )
+                return await self.poll(device_code=authorization.device_code)
             except InvalidRequestError as exc:
                 interval = _next_poll(exc, interval)
         raise TimeoutError("the device login was not approved in time")

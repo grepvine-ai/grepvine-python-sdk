@@ -17,6 +17,7 @@ SNAPSHOT = PACKAGE / "spec/openapi.json"
 SPEC = SNAPSHOT
 OUTPUT = PACKAGE / "src/grepvine/_generated"
 OPERATIONS = PACKAGE / "sdk-operations.json"
+SCOPES = PACKAGE / "sdk-scopes.json"
 TEMPLATES = PACKAGE / "scripts/templates"
 # Docstrings of the resource classes; a resource missing here gets one from its name.
 TITLES = {
@@ -61,6 +62,52 @@ def resources(operations: dict[str, list[str]]) -> tuple[list[dict], list[list[s
     return [item for _, item in ordered], roots
 
 
+def scopes(operations: dict[str, list[str]], definitions: dict[str, dict]) -> list[dict]:
+    """Scoped classes from sdk-scopes.json: each method as [name, operation, body bindings]."""
+    rendered = []
+    for name, scope in definitions.items():
+        methods = []
+        for operation, target in scope["methods"].items():
+            if operation not in operations:
+                sys.exit(
+                    f"{SCOPES.name}: {name} names an operation the API does not have: {operation}"
+                )
+            method, binds = (target, {}) if isinstance(target, str) else target
+            private = method.startswith("_")
+            methods.append(
+                [("_" if private else "") + "_".join(words(method.lstrip("_"))), operation, binds]
+            )
+        rendered.append(
+            {"name": name, "title": scope["title"], "binds": scope["binds"], "methods": methods}
+        )
+    return rendered
+
+
+def flattened_collisions(spec: dict) -> list[str]:
+    """Operations whose request body has a field named like one of their parameters."""
+
+    def resolve(node: dict) -> dict:
+        while "$ref" in node:
+            _, section, kind, name = node["$ref"].split("/")
+            node = spec[section][kind][name]
+        return node
+
+    found = []
+    for path in spec["paths"].values():
+        for operation in path.values():
+            if not isinstance(operation, dict) or "requestBody" not in operation:
+                continue
+            names = {
+                resolve(p)["name"].replace("-", "_").lower()
+                for p in operation.get("parameters", [])
+            }
+            for content in operation["requestBody"]["content"].values():
+                fields = set(resolve(content.get("schema", {})).get("properties", {}))
+                if clash := names & fields:
+                    found.append(f"{operation['operationId']}: {sorted(clash)}")
+    return found
+
+
 def main() -> None:
     yaml = YAML()
     provenance = json.loads((PACKAGE / "spec/source.json").read_text())
@@ -78,6 +125,9 @@ def main() -> None:
         sys.exit(f"Add these operations to {OPERATIONS.name}: {unmapped}")
     if stale := sorted(set(operations) - operation_ids):
         sys.exit(f"{OPERATIONS.name} names operations the API does not have: {stale}")
+    # Methods take body fields and parameters as keyword arguments, so their names must differ.
+    if collisions := flattened_collisions(spec):
+        sys.exit(f"Body fields collide with parameters: {collisions}")
     # 0.29.1 rejects const headers. A singleton enum accepts exactly the same value.
     header = spec["components"]["parameters"]["IfNoneMatch"]["schema"]
     assert header["const"] == "*"
@@ -132,8 +182,10 @@ def main() -> None:
             template.replace(statement, statement + ".read()")
         )
         tree, roots = resources(operations)
+        scoped = scopes(operations, json.loads(SCOPES.read_text()))
         (templates / "sdk_resources.jinja").write_text(
             f"{{% set resources = {json.dumps(tree)} %}}\n{{% set roots = {json.dumps(roots)} %}}\n"
+            f"{{% set scopes = {json.dumps(scoped)} %}}\n"
         )
         result = subprocess.run(
             [

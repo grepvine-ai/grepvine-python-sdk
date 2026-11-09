@@ -14,9 +14,7 @@ import pytest
 import grepvine
 from grepvine.models import (
     File,
-    Metadata,
     MutationResult,
-    PutDocumentForm,
     TaggedNumberMetadataValue,
     TaggedStringMetadataValue,
 )
@@ -188,16 +186,19 @@ async def test_put_sends_metadata_as_json_and_lists_it_tagged(fx: Flavor, servic
             | {"common_prefixes": []},
         ),
     )
-    form = PutDocumentForm(
-        key="a.bin",
-        content=File(payload=io.BytesIO(b"\x00\x01\x02")),
-        metadata=Metadata.from_dict(metadata),
+    await fx.run(
+        fx.client.documents.put(
+            "acme",
+            "docs",
+            key="a.bin",
+            content=File(payload=io.BytesIO(b"\x00\x01\x02")),
+            metadata=metadata,
+        )
     )
-    await fx.run(fx.client.documents.put("acme", "docs", body=form))
     body = service.requests[0].content
     assert b"Content-Type: application/json" in body
     assert json.dumps(metadata).encode() in body
-    page = await fx.run(fx.client.documents.list("acme", "docs"))
+    page = await fx.run(fx.client.documents.list_page("acme", "docs"))
     listed = page.results[0].metadata
     assert isinstance(listed["lang"], TaggedStringMetadataValue)
     assert isinstance(listed["score"], TaggedNumberMetadataValue)

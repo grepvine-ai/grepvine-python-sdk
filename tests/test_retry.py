@@ -8,7 +8,7 @@ import httpx
 import pytest
 
 import grepvine
-from grepvine.models import CreateIndexRequest, DeleteObjectsRequest, File
+from grepvine.models import File
 from tests.conftest import Clock, Flavor, Service, connect, error, index_json
 
 pytestmark = pytest.mark.anyio
@@ -89,7 +89,7 @@ async def test_writes_keep_one_idempotency_key_across_retries(fx: Flavor, servic
         error(429, "rate_limited"),
         httpx.Response(201, json=index_json()),
     )
-    await fx.run(fx.client.indexes.create("acme", body=CreateIndexRequest(name="docs")))
+    await fx.run(fx.client.indexes.create("acme", name="docs"))
     keys = {request.headers["Idempotency-Key"] for request in service.requests}
     assert len(service.requests) == 3 and len(keys) == 1
     assert len(keys.pop()) >= 16
@@ -97,9 +97,8 @@ async def test_writes_keep_one_idempotency_key_across_retries(fx: Flavor, servic
 
 async def test_each_write_gets_its_own_key(fx: Flavor, service: Service) -> None:
     service.route = lambda request: httpx.Response(200, json={"results": []})
-    body = DeleteObjectsRequest(objects=[])
-    await fx.run(fx.client.documents.delete_batch("acme", "docs", body=body))
-    await fx.run(fx.client.documents.delete_batch("acme", "docs", body=body))
+    await fx.run(fx.client.documents.delete_batch("acme", "docs", objects=[]))
+    await fx.run(fx.client.documents.delete_batch("acme", "docs", objects=[]))
     first, second = (request.headers["Idempotency-Key"] for request in service.requests)
     assert first != second
 

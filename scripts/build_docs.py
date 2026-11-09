@@ -23,14 +23,14 @@ REPOSITORY_URL = "https://github.com/grepvine-ai/grepvine-python-sdk"
 # The guide's sections, in the order every Grepvine SDK uses.
 GUIDE_SECTIONS = [
     "Installation",
-    "Authentication",
-    "Organizations",
+    "Configuration",
     "Indexes",
     "Search",
     "Documents",
     "Pagination",
     "Errors",
     "Asynchronous use",
+    "Organizations",
     "API keys",
     "Account",
     "Device login",
@@ -38,7 +38,16 @@ GUIDE_SECTIONS = [
 # The reference on the landing page, by resource, in the guide's order. Every name the package
 # exports must appear exactly once, apart from `models`, which has its own page.
 REFERENCE_GROUPS = {
-    "Clients and configuration": ["Client", "AsyncClient", "RetryPolicy"],
+    "Clients and configuration": [
+        "Client",
+        "AsyncClient",
+        "Settings",
+        "RetryPolicy",
+        "index",
+        "default_client",
+        "set_default_client",
+    ],
+    "One index": ["IndexClient", "AsyncIndexClient", "Prefix"],
     "Organizations": ["Organizations", "AsyncOrganizations", "Members", "AsyncMembers"],
     "Indexes": ["Indexes", "AsyncIndexes"],
     "Search": ["Search", "AsyncSearch"],

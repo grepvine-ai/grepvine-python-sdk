@@ -4,6 +4,7 @@ from importlib.metadata import version
 
 from grepvine import models
 from grepvine._client import *
+from grepvine._config import Settings
 from grepvine._generated.api.resources import (
     Account,
     APIKeys,
@@ -17,6 +18,7 @@ from grepvine._generated.api.resources import (
     Search,
 )
 from grepvine._helpers import *
+from grepvine._index import *
 from grepvine._retry import RetryPolicy
 from grepvine.errors import *
 
@@ -25,9 +27,16 @@ __all__ = [
     "__version__",
     "models",
     "paginate",
+    "index",
+    "default_client",
+    "set_default_client",
     "Client",
     "AsyncClient",
+    "IndexClient",
+    "AsyncIndexClient",
+    "Prefix",
     "RetryPolicy",
+    "Settings",
     "Organizations",
     "AsyncOrganizations",
     "Members",

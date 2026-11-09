@@ -1,0 +1,19 @@
+{
+  "IndexClient": {
+    "title": "One index: its documents, search and settings. Make one with ``client.index(\"organization/index\")``.",
+    "binds": ["organization", "index"],
+    "methods": {
+      "queryIndex": "query",
+      "listDocuments": "list",
+      "getDocument": "get",
+      "putDocument": "_put",
+      "deleteDocument": "delete",
+      "putObjects": "_putBatch",
+      "deleteObjects": "deleteBatch",
+      "createIndex": ["create", {"name": "index"}],
+      "getIndex": "info",
+      "updateIndex": "update",
+      "deleteIndex": "deleteIndex"
+    }
+  }
+}

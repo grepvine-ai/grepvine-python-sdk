@@ -50,7 +50,7 @@ import json
 import httpx
 import grepvine
 from grepvine import AsyncClient, Client, NotFoundError, RetryPolicy, paginate
-from grepvine.models import Index, IndexSummary, MutationResult, QueryRequest
+from grepvine.models import Index, IndexSummary, MutationResult
 assert importlib.util.find_spec('grepvine.generated') is None
 assert not hasattr(grepvine, 'AuthenticatedClient')
 INDEX = {
@@ -80,14 +80,19 @@ def handler(request):
     return httpx.Response(404, json={'code': 'not_found', 'reason': 'resource', 'error': 'no'})
 options = {'api_key': 'gvk', 'endpoint': 'https://example.test'}
 documents = [{'key': 'a', 'content': 'hello', 'metadata': {'kind': 'guide'}}]
-query = QueryRequest(pattern='hello')
+options['use_environment'] = False
 with Client(transport=httpx.MockTransport(handler), retry=RetryPolicy(), **options) as client:
     assert isinstance(client.indexes.wait_until_ready('acme', 'docs'), Index)
-    [summary] = paginate(client.indexes.list, organization='acme')
+    [summary] = client.indexes.list('acme')
+    pages = paginate(client.indexes.list_page, organization='acme')
+    assert [item.name for item in pages] == ['docs']
     assert isinstance(summary, IndexSummary)
     [result] = client.documents.put_many('acme', 'docs', documents)
     assert isinstance(result, MutationResult) and result.revision == 'r1'
-    assert list(paginate(client.search.query, organization='acme', index='docs', body=query)) == []
+    assert list(client.search.query('acme', 'docs', pattern='hello')) == []
+    index = client.index('acme/docs')
+    assert list(index.query(pattern='hello', mode='literal')) == []
+    assert index.put_many(documents)[0].revision == 'r1'
     assert client.http.get('/organizations/acme/indexes/docs').json()['name'] == 'docs'
     try:
         client.organizations.get('missing')
@@ -99,7 +104,7 @@ async def check_async():
     async with AsyncClient(transport=httpx.MockTransport(handler), **options) as client:
         assert (await client.indexes.get('acme', 'docs')).name == 'docs'
         assert (await client.documents.put_many('acme', 'docs', documents))[0].revision == 'r1'
-        hits = paginate(client.search.query, organization='acme', index='docs', body=query)
+        hits = client.index('acme/docs').query(pattern='hello')
         assert [hit async for hit in hits] == []
 asyncio.run(check_async())
 print('Installed wheel sync and async client requests passed')

@@ -6,7 +6,6 @@ import httpx
 import pytest
 
 import grepvine
-from grepvine.models import DeviceDecisionRequest, LoginRequest
 from tests.conftest import API_KEY, Flavor, Service, index_json
 
 pytestmark = pytest.mark.anyio
@@ -40,7 +39,7 @@ def test_endpoint_gets_v1_once(endpoint: str, url: str, service: Service) -> Non
     with grepvine.Client(
         endpoint=endpoint, transport=httpx.MockTransport(service.handle)
     ) as client:
-        client.organizations.list()
+        client.organizations.list_page()
     assert str(service.requests[0].url).split("?")[0] == url
     assert "Authorization" not in service.requests[0].headers
 
@@ -50,11 +49,15 @@ def test_endpoint_must_be_a_url() -> None:
         grepvine.Client(endpoint="api.grepvine.ai")
 
 
-def test_reads_no_environment(monkeypatch: pytest.MonkeyPatch, service: Service) -> None:
+def test_isolated_client_reads_no_environment(
+    monkeypatch: pytest.MonkeyPatch, service: Service
+) -> None:
     monkeypatch.setenv("GREPVINE_API_KEY", "from-env")
     monkeypatch.setenv("GREPVINE_API_ENDPOINT", "https://env.example.com")
     service.reply(httpx.Response(200, json=index_json()))
-    with grepvine.Client(transport=httpx.MockTransport(service.handle)) as client:
+    with grepvine.Client(
+        use_environment=False, transport=httpx.MockTransport(service.handle)
+    ) as client:
         client.indexes.get("acme", "docs")
     assert service.requests[0].url.host == "api.grepvine.ai"
     assert "Authorization" not in service.requests[0].headers
@@ -78,14 +81,9 @@ async def test_login_session_carries_cookie_and_csrf(fx: Flavor, service: Servic
         ),
         httpx.Response(204),
     )
-    signed_in = await fx.run(
-        fx.client.account.login(body=LoginRequest(identifier="alice", password="pw"))
-    )
+    signed_in = await fx.run(fx.client.account.login(identifier="alice", password="pw"))
     assert signed_in.name == "alice"
-    assert (
-        await fx.run(fx.client.device_login.approve(body=DeviceDecisionRequest(user_code="ABCD")))
-        is None
-    )
+    assert await fx.run(fx.client.device_login.approve(user_code="ABCD")) is None
     approve = service.requests[1]
     assert approve.headers["X-Csrf-Token"] == "csrf-1"
     assert "__Host-grepvine-session=s3cret" in approve.headers["Cookie"]

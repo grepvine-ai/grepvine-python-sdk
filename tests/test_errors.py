@@ -6,7 +6,6 @@ import httpx
 import pytest
 
 import grepvine
-from grepvine.models import CreateIndexRequest
 from tests.conftest import Flavor, Service, connect, error
 
 pytestmark = pytest.mark.anyio
@@ -33,7 +32,7 @@ async def test_status_maps_to_error(
 ) -> None:
     service.route = lambda request: error(status, code, "it failed", **{"X-Request-Id": "req-1"})
     with pytest.raises(expected) as raised:
-        await fx.run(fx.client.indexes.create("acme", body=CreateIndexRequest(name="docs")))
+        await fx.run(fx.client.indexes.create("acme", name="docs"))
     exc = raised.value
     assert type(exc) is expected
     assert (exc.status_code, exc.code, exc.reason, exc.message) == (

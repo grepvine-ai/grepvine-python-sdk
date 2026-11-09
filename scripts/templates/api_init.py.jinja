@@ -1,14 +1,25 @@
 {#
 Rendered as api/__init__.py; scripts/generate.py moves the result to api/resources.py.
-Resource classes for the operations, rendered from the naming map in sdk-operations.json.
-scripts/generate.py writes the map as `resources` (nested classes first) and `roots` into
-sdk_resources.jinja. Every method takes the operation's own arguments, delegates to the
-operation module and returns the decoded model of a successful answer; the client's HTTPX
-hooks raise error answers before they reach a method.
+
+Two kinds of classes are rendered here, both with the `method` macro below:
+- resource classes from the naming map in sdk-operations.json (`resources`, nested ones first, and
+  `roots`), the attributes of `_GeneratedClient` and `_GeneratedAsyncClient`;
+- scoped classes from sdk-scopes.json (`scopes`), bound to path parameters such as an index's
+  organization and name.
+
+Every method takes the operation's unbound path parameters by position, and the fields of its
+request body, its query parameters and its headers by name. An optional argument defaults to None
+and is then left out of the request. An enum takes its string value, a key/value model takes a
+mapping, and a list of models takes models or mappings. A listing whose page holds only `results`
+and `pagination` gets an iterator over every result on every page; every listing gets a `_page`
+variant that returns one page. Methods return the decoded model of a successful answer; the
+client's HTTPX hooks raise error answers before they reach a method.
 #}
-{% from "sdk_resources.jinja" import resources, roots %}
-{% from "endpoint_macros.py.jinja" import arguments, kwargs as keyword_arguments, docstring %}
+{% from "sdk_resources.jinja" import resources, roots, scopes %}
 {% set endpoints = {} %}
+{# Models by class name: a property that refers to a model may not carry the model's fields. #}
+{% set models = {} %}
+{% for model in openapi.models %}{% set _ = models.update({model.class_info.name | string: model}) %}{% endfor %}
 {% set imports = [] %}
 {% for tag, collection in endpoint_collections_by_tag.items() %}
 {% for endpoint in collection.endpoints %}
@@ -17,8 +28,23 @@ hooks raise error answers before they reach a method.
 {% for relative in endpoint.relative_imports %}
 {% set _ = imports.append(relative | replace("from ...", "from ..", 1)) %}
 {% endfor %}
+{% for body in endpoint.bodies if body.prop.required_properties is defined and body.prop.required_properties is not none %}
+{% for p in body.prop.required_properties + body.prop.optional_properties %}
+{% for line in p.get_imports(prefix="..") | list + p.get_lazy_imports(prefix="..") | list %}{% set _ = imports.append(line) %}{% endfor %}
+{% set m = models.get(p.class_info.name | string, p) if p.class_info is defined else p %}
+{% if m.additional_properties is defined and m.additional_properties %}
+{% for line in m.additional_properties.get_imports(prefix="..") | list + m.additional_properties.get_lazy_imports(prefix="..") | list %}{% set _ = imports.append(line) %}{% endfor %}
+{% endif %}
 {% endfor %}
 {% endfor %}
+{% for r in endpoint.responses.patterns if r.prop.required_properties is defined and r.prop.required_properties %}
+{% for p in r.prop.required_properties if p.name == "results" %}
+{% for line in p.inner_property.get_imports(prefix="..") | list + p.inner_property.get_lazy_imports(prefix="..") | list %}{% set _ = imports.append(line) %}{% endfor %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
+{% set keywords = ["from", "class", "import", "global", "in", "is", "not", "and", "or", "def", "return", "lambda", "with", "as", "if", "else", "for", "while", "try", "except", "finally", "raise", "pass", "break", "continue", "del", "yield", "async", "await", "nonlocal", "assert", "elif", "None", "True", "False"] %}
 {% macro success_type(endpoint) -%}
 {% set types = [] %}
 {% for response in endpoint.responses.patterns if response.status_code.range[1] < 400 %}
@@ -27,6 +53,184 @@ hooks raise error answers before they reach a method.
 {% endfor %}
 {{ types | join(" | ") if types else "None" }}
 {%- endmacro %}
+{# The argument name: the API's name, unless it is a Python keyword. #}
+{% macro arg(prop) -%}
+{% set n = prop.python_name | string %}{{ n[:-1] if (n.endswith("_") and n[:-1] not in keywords) else n }}
+{%- endmacro %}
+{% macro is_mapping_model(prop) -%}
+{% set m = models.get(prop.class_info.name | string, prop) if prop.template == "model_property.py.jinja" else none %}
+{{ "yes" if m is not none and m.required_properties is not none and not m.required_properties and not m.optional_properties and m.additional_properties }}
+{%- endmacro %}
+{% macro is_model_list(prop) -%}
+{{ "yes" if prop.template == "list_property.py.jinja" and prop.inner_property.template == "model_property.py.jinja" }}
+{%- endmacro %}
+{# The type an argument accepts. #}
+{% macro accepts(prop) -%}
+{% if prop.template == "enum_property.py.jinja" -%}
+Literal[{% for value in prop.values.values() %}{{ value | tojson }}{{ ", " if not loop.last }}{% endfor %}]
+{%- elif is_mapping_model(prop) -%}
+{{ prop.class_info.name }} | Mapping[str, {{ models[prop.class_info.name | string].additional_properties.get_type_string() | as_unembedded_code }}]
+{%- elif is_model_list(prop) -%}
+builtins.list[{{ prop.inner_property.class_info.name }} | Mapping[str, Any]]
+{%- else -%}
+{{ prop.get_type_string(no_optional=True) | as_unembedded_code | replace("list[", "builtins.list[") }}
+{%- endif %}
+{%- endmacro %}
+{# The value the operation module receives for an argument. #}
+{% macro convert(prop) -%}
+{% if prop.template == "enum_property.py.jinja" -%}
+{{ prop.class_info.name }}({{ arg(prop) }})
+{%- elif is_mapping_model(prop) -%}
+_model({{ prop.class_info.name }}, {{ arg(prop) }})
+{%- elif is_model_list(prop) -%}
+[_model({{ prop.inner_property.class_info.name }}, item) for item in {{ arg(prop) }}]
+{%- else -%}
+{{ arg(prop) }}
+{%- endif %}
+{%- endmacro %}
+{% macro declare(prop) -%}
+{{ arg(prop) }}: {{ accepts(prop) }}{{ " | None = None" if not prop.required }}
+{%- endmacro %}
+{% macro describe(prop) -%}
+{% set parts = [] %}
+{%- if prop.description %}{% set _ = parts.append(prop.description | safe_for_docstring) %}{% endif %}
+{%- if prop.template == "enum_property.py.jinja" %}{% set choices = [] %}{% for value in prop.values.values() %}{% set _ = choices.append("``" ~ (value | tojson) ~ "``") %}{% endfor %}{% set _ = parts.append("One of " ~ choices | join(", ") ~ ".") %}{% endif %}
+{%- if prop.default is not none and not prop.required %}{% set _ = parts.append("Default: " ~ ((prop.default.raw_value | tojson) if prop.default.raw_value is string else (prop.default.python_code | as_unembedded_code)) ~ ".") %}{% endif %}
+{{- arg(prop) }}:{{ (" " ~ parts | join(" ")) if parts }}
+{%- endmacro %}
+{#
+One method. `bound` names the path parameters the class holds as attributes; `body_binds` maps body
+fields to bound parameters (an index's `name` is its `index`).
+#}
+{% macro method(name, operation, bound, body_binds, is_async) %}
+{% set endpoint = endpoints[python_identifier(operation) | string] %}
+{% set returns = success_type(endpoint) | trim %}
+{% set body = endpoint.bodies[0] if endpoint.bodies | length == 1 else none %}
+{% set flatten = body is not none and body.body_type in ["json", "files"] and body.prop.required_properties is defined and body.prop.required_properties is not none %}
+{% set paged = endpoint.query_parameters | selectattr("python_name", "equalto", "page") | list | length > 0 %}
+{% set item_types = [] %}
+{% set page_fields = [] %}
+{% for r in endpoint.responses.patterns if paged and r.status_code.range[1] < 400 and r.prop.required_properties is defined %}
+{% for p in r.prop.required_properties + r.prop.optional_properties %}{% set _ = page_fields.append(p.name | safe_for_docstring) %}{% endfor %}
+{% for p in r.prop.required_properties if p.name | safe_for_docstring == "results" %}{% set _ = item_types.append(p.inner_property.get_type_string() | as_unembedded_code) %}{% endfor %}
+{% endfor %}
+{% set iterable = paged and item_types and page_fields | sort == ["pagination", "results"] %}
+{% set positional = [] %}
+{% for p in endpoint.path_parameters if p.python_name not in bound %}{% set _ = positional.append(p) %}{% endfor %}
+{% set fields = [] %}
+{% if flatten %}
+{% for p in body.prop.required_properties + body.prop.optional_properties if p.python_name not in body_binds %}{% set _ = fields.append(p) %}{% endfor %}
+{% endif %}
+{% set named = [] %}
+{% for p in fields if p.required %}{% set _ = named.append(p) %}{% endfor %}
+{% for p in fields if not p.required %}{% set _ = named.append(p) %}{% endfor %}
+{% set options = [] %}
+{% for p in endpoint.query_parameters + endpoint.header_parameters if p.python_name != "page" %}{% set _ = options.append(p) %}{% endfor %}
+{% set summary = (endpoint.summary | safe_for_docstring) if endpoint.summary else name %}
+{% macro signature(with_page) -%}
+self,
+{% for p in positional %}{{ declare(p) }},
+{% endfor %}
+{% if (body is not none and not flatten) or named or options or with_page %}*,
+{% endif %}
+{% if body is not none and not flatten %}body: {{ body.prop.get_type_string() | as_unembedded_code }},
+{% endif %}
+{% for p in named + options %}{{ declare(p) }},
+{% endfor %}
+{% if with_page %}page: str | None = None,
+{% endif %}
+{%- endmacro %}
+{% macro docstring(first_line, with_page, returned) -%}
+"""{{ first_line }}
+{% if endpoint.description %}
+
+{{ endpoint.description | safe_for_docstring | wordwrap(96) }}
+{% endif %}
+{% set documented = positional + named + options %}
+{% if documented or with_page %}
+
+Args:
+{% for p in documented %}
+    {{ describe(p) | wordwrap(92) | indent(8) }}
+{% endfor %}
+{% if with_page %}
+    page: The ``pagination.next_page_id`` of the previous page; the first page without it.
+{% endif %}
+{% endif %}
+
+Returns:
+    {{ returned }}
+
+Raises:
+    grepvine.APIError: The service answered with an error.
+    grepvine.TransportError: The request could not be delivered.
+"""
+{%- endmacro %}
+{% macro arguments() %}
+        kwargs: dict[str, Any] = {"client": self._client}
+{% for p in endpoint.path_parameters %}
+        kwargs["{{ p.python_name }}"] = {{ ("self._" ~ p.python_name) if p.python_name in bound else p.python_name }}
+{% endfor %}
+{% for p in options %}
+{% if p.required %}
+        kwargs["{{ p.python_name }}"] = {{ convert(p) }}
+{% else %}
+        if {{ arg(p) }} is not None:
+            kwargs["{{ p.python_name }}"] = {{ convert(p) }}
+{% endif %}
+{% endfor %}
+{% if body is not none and flatten %}
+        fields: dict[str, Any] = {}
+{% for field, target in body_binds.items() %}
+        fields["{{ field }}"] = self._{{ target }}
+{% endfor %}
+{% for p in named %}
+{% if p.required %}
+        fields["{{ p.python_name }}"] = {{ convert(p) }}
+{% else %}
+        if {{ arg(p) }} is not None:
+            fields["{{ p.python_name }}"] = {{ convert(p) }}
+{% endif %}
+{% endfor %}
+        kwargs["body"] = {{ body.prop.class_info.name }}(**fields)
+{% elif body is not none %}
+        kwargs["body"] = body
+{% endif %}
+{% endmacro %}
+{% set call = endpoint.name ~ (".asyncio_detailed" if is_async else ".sync_detailed") %}
+{% if iterable %}
+
+    def {{ name }}(
+        {{ signature(False) | indent(8) }}
+    ) -> {{ "AsyncIterator" if is_async else "Iterator" }}[{{ item_types[0] }}]:
+        {{ docstring(summary ~ ": every result, page after page.", False, ("An async iterator" if is_async else "An iterator") ~ " over " ~ item_types[0] ~ ", which requests each page as it is reached.") | indent(8) }}
+{{ arguments() }}
+        return _{{ "async_" if is_async }}pages({{ call }}, kwargs)
+{% endif %}
+{% if paged %}
+
+    {{ "async " if is_async }}def {{ name }}_page(
+        {{ signature(True) | indent(8) }}
+    ) -> {{ returns }}:
+        {{ docstring(summary ~ ": one page.", True, returns) | indent(8) }}
+{{ arguments() }}
+        if page is not None:
+            kwargs["page"] = page
+        response = {{ "await " if is_async }}{{ call }}(**kwargs)
+        return cast({{ returns }}, response.parsed)
+{% else %}
+
+    {{ "async " if is_async }}def {{ name }}(
+        {{ signature(False) | indent(8) }}
+    ) -> {{ returns }}:
+        {{ docstring(summary, False, returns) | indent(8) }}
+{{ arguments() }}
+        {{ "response = " if returns != "None" }}{{ "await " if is_async }}{{ call }}(**kwargs)
+{% if returns != "None" %}
+        return cast({{ returns }}, response.parsed)
+{% endif %}
+{% endif %}
+{% endmacro %}
 {% macro resource(item, is_async) %}
 {% set prefix = "Async" if is_async else "" %}
 class {{ prefix }}{{ item.name }}:
@@ -41,35 +245,66 @@ class {{ prefix }}{{ item.name }}:
 {% for attribute, child in item.children %}
         self.{{ attribute }} = {{ prefix }}{{ child }}(client)
 {% endfor %}
-{% for method, operation in item.methods %}
-{% set endpoint = endpoints[python_identifier(operation) | string] %}
-{% set module = endpoint.name %}
-{% set returns = success_type(endpoint) | trim %}
-
-    {{ "async " if is_async }}def {{ method }}(
-        self,
-        {{ arguments(endpoint, include_client=False) | indent(8) }}
-    ) -> {{ returns }}:
-        {{ docstring(endpoint, returns, False) | indent(8) }}
-        {{ "response = " if returns != "None" }}{{ "await " if is_async }}{{ module }}.{{ "asyncio_detailed" if is_async else "sync_detailed" }}(
-            {{ keyword_arguments(endpoint, include_client=False) | indent(12) }}
-            client=self._client,
-        )
-{% if returns != "None" %}
-        return cast({{ returns }}, response.parsed)
-{% endif %}
+{% for name, operation in item.methods %}
+{{ method(name, operation, [], {}, is_async) }}
 {% endfor %}
 
 
 {% endmacro %}
-"""Resource classes for every API operation, one method per operation."""
+{% macro scope(item, is_async) %}
+class _{{ "Async" if is_async }}{{ item.name }}:
+    """{{ item.title }}"""
 
-from typing import Any, cast
+    def __init__(self, client: Client{% for b in item.binds %}, {{ b }}: str{% endfor %}) -> None:
+        self._client = client
+{% for b in item.binds %}
+        self._{{ b }} = {{ b }}
+{% endfor %}
+{% for name, operation, body_binds in item.methods %}
+{{ method(name, operation, item.binds, body_binds, is_async) }}
+{% endfor %}
+
+
+{% endmacro %}
+"""Resource classes for every API operation, one method per operation, and the scoped classes."""
+
+from __future__ import annotations
+
+import builtins
+from collections.abc import AsyncIterator, Iterator, Mapping
+from typing import Any, Literal, TypeVar, cast
 
 from ..client import Client
+from ..types import File
 {% for line in imports | unique | sort %}
 {{ line }}
 {% endfor %}
+
+_M = TypeVar("_M")
+
+
+def _model(model: type[_M], value: Any) -> _M:
+    """``value`` as ``model``: a mapping is decoded, a model is kept."""
+    return cast(Any, model).from_dict(value) if isinstance(value, Mapping) else value
+
+
+def _pages(call: Any, kwargs: dict[str, Any]) -> Iterator[Any]:
+    while True:
+        page = call(**kwargs).parsed
+        yield from page.results
+        if not page.pagination.has_next:
+            return
+        kwargs = {**kwargs, "page": page.pagination.next_page_id}
+
+
+async def _async_pages(call: Any, kwargs: dict[str, Any]) -> AsyncIterator[Any]:
+    while True:
+        page = (await call(**kwargs)).parsed
+        for item in page.results:
+            yield item
+        if not page.pagination.has_next:
+            return
+        kwargs = {**kwargs, "page": page.pagination.next_page_id}
 
 
 {% for is_async in [False, True] %}
@@ -90,4 +325,7 @@ class _Generated{{ "Async" if is_async }}Client:
 {% endfor %}
 
 
+{% for item in scopes %}
+{{ scope(item, is_async) }}
+{% endfor %}
 {% endfor %}

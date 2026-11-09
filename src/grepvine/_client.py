@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import os
 from importlib.metadata import version
 from typing import Any, Final, Self
 
 import httpx
 
+from grepvine._config import Settings, resolve
 from grepvine._generated.api.resources import _GeneratedAsyncClient, _GeneratedClient
 from grepvine._generated.client import Client as _Connection
 from grepvine._helpers import (
@@ -17,12 +19,12 @@ from grepvine._helpers import (
     Documents,
     Indexes,
 )
+from grepvine._index import AsyncIndexClient, IndexClient
 from grepvine._retry import AsyncRetryTransport, RetryPolicy, RetryTransport
 from grepvine.errors import ConfigurationError, map_error
 
-DEFAULT_ENDPOINT: Final = "https://api.grepvine.ai"
 DEFAULT_TIMEOUT: Final = 60.0
-__all__ = ["AsyncClient", "Client"]
+__all__ = ["AsyncClient", "Client", "default_client", "index", "set_default_client"]
 
 
 def _options(
@@ -41,6 +43,16 @@ def _options(
     }
 
 
+def _qualify(settings: Settings, name: str) -> str:
+    if "/" in name:
+        return name
+    if not settings.organization:
+        raise ConfigurationError(
+            f"name the index as 'organization/{name}', or set a default organization"
+        )
+    return f"{settings.organization}/{name}"
+
+
 def _session(http: httpx.Client | httpx.AsyncClient, response: httpx.Response) -> None:
     """Send the CSRF token a sign-in issued with every later request; httpx keeps the cookie."""
     if token := response.headers.get("x-csrf-token"):
@@ -50,12 +62,29 @@ def _session(http: httpx.Client | httpx.AsyncClient, response: httpx.Response) -
 class Client(_GeneratedClient):
     """A client of the Grepvine API.
 
+    ``Client()`` with no arguments is configured like ``gv``; see below.
+
+    Each of ``api_key``, ``endpoint`` and ``organization`` is taken from its
+    argument, else from its environment variable (``GREPVINE_API_KEY``,
+    ``GREPVINE_API_ENDPOINT``, ``GREPVINE_ORGANIZATION``), else from the
+    configuration file that ``gv`` writes, else from its default. Clients
+    configured differently can be used side by side.
+
     Args:
         api_key: The API key sent as a bearer token. Without one, only the
             methods that need no credentials work, such as ``account.login``
             and ``device_login.authorize``; after ``account.login`` the
             client uses the signed-in session.
-        endpoint: The service URL, with or without ``/v1``.
+        endpoint: The service URL, with or without ``/v1``. Default:
+            ``https://api.grepvine.ai``.
+        organization: The organization of an index named without one, as in
+            ``client.index("support")``.
+        config_file: The configuration file. Default: ``$GREPVINE_CONFIG``,
+            else ``~/.grepvine/config.yaml`` when it exists. A file other
+            users can read is refused.
+        use_environment: Whether to read the environment variables and the
+            default configuration file. With ``False``, the client uses only
+            its arguments and an explicit ``config_file``.
         timeout: Seconds, or an ``httpx.Timeout``, for each request.
         retry: How requests are retried; see `RetryPolicy`.
         transport: The ``httpx`` transport requests go through, for example
@@ -73,12 +102,22 @@ class Client(_GeneratedClient):
         self,
         *,
         api_key: str | None = None,
-        endpoint: str = DEFAULT_ENDPOINT,
+        endpoint: str | None = None,
+        organization: str | None = None,
+        config_file: str | os.PathLike[str] | None = None,
+        use_environment: bool = True,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.BaseTransport | None = None,
     ) -> None:
-        options = _options(api_key, endpoint, timeout)
+        self.settings = resolve(
+            endpoint=endpoint,
+            api_key=api_key,
+            organization=organization,
+            config_file=config_file,
+            use_environment=use_environment,
+        )
+        options = _options(self.settings.api_key, self.settings.endpoint, timeout)
         inner = transport or httpx.HTTPTransport()
         self.http = httpx.Client(
             **options,
@@ -90,6 +129,14 @@ class Client(_GeneratedClient):
         self.indexes = Indexes(connection)
         self.documents = Documents(connection)
         self.device_login = DeviceLogin(connection)
+        self._connection = connection
+
+    def index(self, name: str) -> IndexClient:
+        """The index ``organization/index``, or ``index`` in the default organization.
+
+        Making it sends no request.
+        """
+        return IndexClient(self._connection, _qualify(self.settings, name), self.documents)
 
     def _on_response(self, response: httpx.Response) -> None:
         _session(self.http, response)
@@ -124,12 +171,22 @@ class AsyncClient(_GeneratedAsyncClient):
         self,
         *,
         api_key: str | None = None,
-        endpoint: str = DEFAULT_ENDPOINT,
+        endpoint: str | None = None,
+        organization: str | None = None,
+        config_file: str | os.PathLike[str] | None = None,
+        use_environment: bool = True,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
-        options = _options(api_key, endpoint, timeout)
+        self.settings = resolve(
+            endpoint=endpoint,
+            api_key=api_key,
+            organization=organization,
+            config_file=config_file,
+            use_environment=use_environment,
+        )
+        options = _options(self.settings.api_key, self.settings.endpoint, timeout)
         inner = transport or httpx.AsyncHTTPTransport()
         self.http = httpx.AsyncClient(
             **options,
@@ -141,6 +198,14 @@ class AsyncClient(_GeneratedAsyncClient):
         self.indexes = AsyncIndexes(connection)
         self.documents = AsyncDocuments(connection)
         self.device_login = AsyncDeviceLogin(connection)
+        self._connection = connection
+
+    def index(self, name: str) -> AsyncIndexClient:
+        """The index ``organization/index``, or ``index`` in the default organization.
+
+        Making it sends no request.
+        """
+        return AsyncIndexClient(self._connection, _qualify(self.settings, name), self.documents)
 
     async def _on_response(self, response: httpx.Response) -> None:
         _session(self.http, response)
@@ -157,3 +222,25 @@ class AsyncClient(_GeneratedAsyncClient):
 
     async def __aexit__(self, *_: object) -> None:
         await self.aclose()
+
+
+_default: Client | None = None
+
+
+def default_client() -> Client:
+    """The client that `index` uses: ``Client()``, created on first use."""
+    global _default
+    if _default is None:
+        _default = Client()
+    return _default
+
+
+def set_default_client(client: Client | None) -> None:
+    """Make ``client`` the one `index` uses; ``None`` creates a new one on next use."""
+    global _default
+    _default = client
+
+
+def index(name: str) -> IndexClient:
+    """The index ``name`` of the default client; see `Client.index`."""
+    return default_client().index(name)
