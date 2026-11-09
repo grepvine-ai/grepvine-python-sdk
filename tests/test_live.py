@@ -14,7 +14,6 @@ from collections.abc import Iterator
 import pytest
 
 import grepvine
-from grepvine.models import CreateIndexRequest, QueryRequest, QueryRequestMode
 
 pytestmark = pytest.mark.integration
 
@@ -39,7 +38,7 @@ def client() -> Iterator[grepvine.Client]:
 @pytest.fixture(scope="module")
 def index(client: grepvine.Client) -> Iterator[str]:
     name = f"sdk-test-{uuid.uuid4().hex[:8]}"
-    client.indexes.create(ORGANIZATION, body=CreateIndexRequest(name=name))
+    client.indexes.create(ORGANIZATION, name=name)
     try:
         client.indexes.wait_until_ready(ORGANIZATION, name)
         yield name
@@ -48,7 +47,7 @@ def index(client: grepvine.Client) -> Iterator[str]:
 
 
 def test_organization_and_account(client: grepvine.Client) -> None:
-    names = [org.name for org in grepvine.paginate(client.organizations.list)]
+    names = [org.name for org in client.organizations.list()]
     assert ORGANIZATION in names
     assert client.account.me().name
 
@@ -60,10 +59,12 @@ def test_store_list_and_search(client: grepvine.Client, index: str) -> None:
     ]
     results = client.documents.put_many(ORGANIZATION, index, documents)
     assert all(result.revision for result in results)
-    listed = grepvine.paginate(client.documents.list, organization=ORGANIZATION, index=index)
-    assert sorted(document.key for document in listed) == ["docs/a.txt", "notes/b.txt"]
-    query = QueryRequest(pattern="hello", mode=QueryRequestMode.LITERAL, filter_="kind = 'guide'")
-    hits = grepvine.paginate(
-        client.search.query, organization=ORGANIZATION, index=index, body=query
+    listed = client.index(f"{ORGANIZATION}/{index}").list()
+    assert sorted(entry.key for entry in listed if not isinstance(entry, grepvine.Prefix)) == [
+        "docs/a.txt",
+        "notes/b.txt",
+    ]
+    hits = client.index(f"{ORGANIZATION}/{index}").search(
+        pattern="hello", mode="literal", filter="kind = 'guide'"
     )
     assert [hit.key for hit in hits] == ["docs/a.txt"]

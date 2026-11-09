@@ -4,19 +4,25 @@ from importlib.metadata import version
 
 from grepvine import models
 from grepvine._client import *
+from grepvine._config import Settings
 from grepvine._generated.api.resources import (
     Account,
     APIKeys,
     AsyncAccount,
     AsyncAPIKeys,
+    AsyncIndexCreation,
+    AsyncIndexDeletion,
     AsyncMembers,
     AsyncOrganizations,
     AsyncSearch,
+    IndexCreation,
+    IndexDeletion,
     Members,
     Organizations,
     Search,
 )
 from grepvine._helpers import *
+from grepvine._index import *
 from grepvine._retry import RetryPolicy
 from grepvine.errors import *
 
@@ -25,9 +31,22 @@ __all__ = [
     "__version__",
     "models",
     "paginate",
+    "index",
+    "default_client",
+    "set_default_client",
     "Client",
     "AsyncClient",
+    "IndexClient",
+    "AsyncIndexClient",
+    "IndexCreation",
+    "AsyncIndexCreation",
+    "IndexDeletion",
+    "AsyncIndexDeletion",
+    "Prefix",
+    "Content",
+    "AsyncContent",
     "RetryPolicy",
+    "Settings",
     "Organizations",
     "AsyncOrganizations",
     "Members",
@@ -62,4 +81,7 @@ __all__ = [
     "ConfigurationError",
     "TransportError",
     "PartialBatchError",
+    "WaitError",
+    "WaitTimeoutError",
+    "OperationFailedError",
 ]

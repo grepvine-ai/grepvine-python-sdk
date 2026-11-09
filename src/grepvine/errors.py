@@ -19,6 +19,7 @@ __all__ = [
     "InvalidPageError",
     "InvalidRequestError",
     "NotFoundError",
+    "OperationFailedError",
     "PartialBatchError",
     "PayloadTooLargeError",
     "PermissionDeniedError",
@@ -27,6 +28,8 @@ __all__ = [
     "RateLimitedError",
     "ServerError",
     "TransportError",
+    "WaitError",
+    "WaitTimeoutError",
 ]
 
 
@@ -36,6 +39,44 @@ class GrepvineError(Exception):
 
 class ConfigurationError(GrepvineError):
     """The client cannot be used as configured, for example with an endpoint that is not a URL."""
+
+
+class WaitError(GrepvineError):
+    """Waiting for work the service finishes in the background ended before the work was done.
+
+    ``target`` names what was waited for, such as ``"index acme/docs"``, and
+    ``state`` is the last state seen. Catch ``WaitError`` for either way a wait
+    can end without success: `WaitTimeoutError` or `OperationFailedError`.
+    """
+
+    def __init__(self, message: str, *, target: str, state: str | None) -> None:
+        super().__init__(message)
+        self.target = target
+        self.state = state
+
+
+class WaitTimeoutError(WaitError, TimeoutError):
+    """The work was not done within the wait's ``timeout``, in seconds.
+
+    The work goes on in the service; wait again to keep waiting. It is also a
+    built-in ``TimeoutError``.
+    """
+
+    def __init__(self, *, target: str, state: str | None, timeout: float) -> None:
+        super().__init__(
+            f"{target} was not done within {timeout:g}s; it is {state}", target=target, state=state
+        )
+        self.timeout = timeout
+
+
+class OperationFailedError(WaitError):
+    """The work reached a state it will not leave by itself, such as ``delete_failed``.
+
+    Waiting longer does not help; contact support if it persists.
+    """
+
+    def __init__(self, *, target: str, state: str) -> None:
+        super().__init__(f"{target} is {state}", target=target, state=state)
 
 
 class TransportError(GrepvineError):

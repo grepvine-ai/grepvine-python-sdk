@@ -1,0 +1,38 @@
+{
+  "createIndex": {
+    "class": "IndexCreation",
+    "title": "An index being created. ``result`` is the index as the service answered; ``wait()`` waits until it can be used.",
+    "summary": "Wait until the index is ready.",
+    "noun": "index",
+    "poll": "getIndex",
+    "arguments": {
+      "organization": "organization",
+      "index": "name"
+    },
+    "done": [
+      "ready"
+    ],
+    "failed": [
+      "deleting",
+      "delete_failed",
+      "recreate_required"
+    ],
+    "returns": "The index, ready to use."
+  },
+  "deleteIndex": {
+    "class": "IndexDeletion",
+    "title": "An index being deleted. ``wait()`` waits until it is gone and its name can be used again.",
+    "summary": "Wait until the index no longer exists.",
+    "noun": "index",
+    "poll": "getIndex",
+    "arguments": {
+      "organization": "organization",
+      "index": "index"
+    },
+    "done": "gone",
+    "failed": [
+      "delete_failed"
+    ],
+    "returns": "None, once the index is gone."
+  }
+}

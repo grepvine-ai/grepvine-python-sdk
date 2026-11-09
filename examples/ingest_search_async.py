@@ -1,27 +1,19 @@
 """The ingest and search example with the asynchronous client."""
 
 import asyncio
-import os
 import uuid
 
 import grepvine
-from grepvine.models import CreateIndexRequest, QueryRequest, QueryRequestMode
 
 
 async def main() -> None:
-    organization = os.environ["GREPVINE_ORGANIZATION"]
-    async with grepvine.AsyncClient(
-        api_key=os.environ["GREPVINE_API_KEY"],
-        endpoint=os.environ.get("GREPVINE_API_ENDPOINT", "https://api.grepvine.ai"),
-    ) as client:
-        name = f"example-python-async-{uuid.uuid4().hex[:8]}"
-        await client.indexes.create(organization, body=CreateIndexRequest(name=name))
-        await client.indexes.wait_until_ready(organization, name)
-        print(f"Created index {organization}/{name}")
+    async with grepvine.AsyncClient() as client:
+        index = client.index(f"example-python-async-{uuid.uuid4().hex[:8]}")
+        creation = await index.create()
+        await creation.wait()
+        print(f"Created index {index.name}")
         try:
-            await client.documents.put_many(
-                organization,
-                name,
+            await index.put_many(
                 [
                     {
                         "key": "docs/welcome.txt",
@@ -33,25 +25,16 @@ async def main() -> None:
                         "content": "hello again\n",
                         "metadata": {"kind": "note"},
                     },
-                ],
+                ]
             )
-            query = QueryRequest(
-                pattern="hello", mode=QueryRequestMode.LITERAL, filter_="kind = 'guide'"
-            )
-            async for hit in grepvine.paginate(
-                client.search.query, organization=organization, index=name, body=query
-            ):
+            hits = index.search(pattern="hello", mode="literal", filter="kind = 'guide'")
+            async for hit in hits:
                 print(f"  {hit.key}:{hit.line_number}: {hit.text.rstrip()}")
-            listed = [
-                document.key
-                async for document in grepvine.paginate(
-                    client.documents.list, organization=organization, index=name, prefix="docs/"
-                )
-            ]
-            print(f"Documents under docs/: {listed}")
+            listed = [entry async for entry in index.list(prefix="docs/")]
+            print(f"Under docs/: {listed}")
         finally:
-            await client.indexes.delete(organization, name)
-            print(f"Deletion requested for {organization}/{name}")
+            await index.delete_index()
+            print(f"Deletion requested for {index.name}")
 
 
 if __name__ == "__main__":

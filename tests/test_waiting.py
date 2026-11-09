@@ -27,13 +27,13 @@ async def test_waits_while_creating(fx: Flavor, service: Service, clock: Clock) 
 
 async def test_an_index_being_deleted_never_becomes_ready(fx: Flavor, service: Service) -> None:
     service.reply(httpx.Response(200, json=index_json(state="deleting")))
-    with pytest.raises(grepvine.GrepvineError, match="deleting"):
+    with pytest.raises(grepvine.OperationFailedError, match="deleting"):
         await fx.run(fx.client.indexes.wait_until_ready("acme", "docs"))
 
 
 async def test_times_out(fx: Flavor, service: Service, clock: Clock) -> None:
     service.route = lambda request: httpx.Response(200, json=index_json(state="creating"))
-    with pytest.raises(TimeoutError):
+    with pytest.raises(grepvine.WaitTimeoutError):
         await fx.run(fx.client.indexes.wait_until_ready("acme", "docs", timeout=5, interval=1))
     assert sum(clock.sleeps) == 5
 

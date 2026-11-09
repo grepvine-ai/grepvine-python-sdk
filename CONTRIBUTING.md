@@ -48,6 +48,35 @@ generator cannot know.
   Each method reuses the generator's own `arguments` and `docstring` macros,
   delegates to the operation's `sync_detailed` or `asyncio_detailed`, and
   returns the decoded model of a successful answer.
+- Every method, on the resources and on the scoped classes, follows one
+  convention, rendered by the template's `method` macro: path parameters by
+  position, and the request body's fields, query parameters and headers by
+  name. An optional argument defaults to `None`, which leaves it out of the
+  request. An enum takes its string value (typed as a `Literal`), a key/value
+  model such as `IndexTags` takes a mapping, and a list of models takes
+  models or mappings. A listing (an operation with a `page` parameter) gets a
+  `_page` method that returns one page, and, when its page holds only
+  `results` and `pagination`, an iterator method over every result. Docstrings
+  carry the contract's descriptions, enum values and defaults.
+  `generate.py` fails when a body field has the name of a parameter of the
+  same operation, since both would be keyword arguments.
+- `sdk-scopes.json` (Python only, for now) defines the scoped classes:
+  `IndexClient` holds an index's organization and name, so its methods take
+  neither. Each entry maps an operation to a method name; a name starting
+  with `_` is generated private, and an entry `[name, {"field": "bound"}]`
+  fills a body field from a bound parameter (`createIndex` takes the index
+  name from the client). `tests/test_coverage.py` checks that every
+  operation on an index's path is on `IndexClient`.
+- `sdk-waiters.json` names the operations whose work the service finishes in
+  the background: creating an index and deleting one. Each such method
+  returns a pending object (`IndexCreation`, `IndexDeletion` and their `Async`
+  twins), whose `result` is the answer and whose `wait(timeout)` reads the
+  `poll` operation, with the `arguments` taken from the original call, until
+  the state is one of `done` (or the resource is gone, for `"gone"`). A state
+  in `failed` raises `OperationFailedError`, and running out of time raises
+  `WaitTimeoutError`; both are `WaitError`s. `indexes.wait_until_ready` and
+  `device_login.authorize` raise the same errors. Deleting an organization is not listed:
+  the organization reads as not found as soon as the call returns.
 - The adapter in `generate.py` makes these changes before generating: the
   `If-None-Match` constant becomes a singleton enum; the NDJSON batch body
   becomes a binary `File` whose bytes the template buffers so both HTTPX
@@ -63,20 +92,39 @@ generator cannot know.
 
 | Path | Contents |
 | --- | --- |
-| `src/grepvine/_client.py` | `Client` and `AsyncClient`, built on the root classes: options, bearer authentication, the session after `account.login`, the hook that raises errors, closing. |
+| `src/grepvine/_client.py` | `Client` and `AsyncClient`, built on the root classes: options, bearer authentication, the session after `account.login`, the hook that raises errors, closing, `client.index`, and the default client behind `grepvine.index`. |
+| `src/grepvine/_config.py` | Settings resolved like `gv`: argument, environment variable, configuration file, default. |
+| `src/grepvine/_index.py` | `IndexClient` and `AsyncIndexClient` on the scoped classes: `put` (text, bytes, a path, a file, or chunks and async chunks streamed with a form it writes itself), `put_many`, `list` with prefixes, `wait_until_ready`. |
 | `src/grepvine/errors.py` | The exceptions, and `map_error`, the one function every error answer goes through. |
 | `src/grepvine/_retry.py` | `RetryPolicy` and the retrying HTTPX transports, which also add the `Idempotency-Key` of every write. |
-| `src/grepvine/_helpers.py` | `paginate`, and subclasses of three resource classes adding `indexes.wait_until_ready`, `documents.put_many` and `device_login.authorize`. |
+| `src/grepvine/_helpers.py` | `paginate`, `Prefix`, and subclasses of three resource classes adding `indexes.wait_until_ready`, `documents.put_many`, `documents.list` (which also yields prefixes) and `device_login.authorize`. |
 | `src/grepvine/models.py` | Exports the models under their API names. |
 
 Retries live in the HTTPX transport, so a retried request is the same
-request, idempotency key included. The client's response hook maps every
+request, idempotency key included. Content read from a stream cannot be read
+twice, so `put` sends it inside `_retry.one_way()`: the transport then makes
+one attempt and returns its answer or raises its failure. The client's response hook maps every
 error answer before the operation decodes it, so methods return only
 successful answers. The helpers keep the names the TypeScript SDK uses
 (`paginate`, `waitUntilReady`, `authorize`, `putMany`).
 
-Loading the endpoint and API key from the environment or from `gv`'s
-configuration file is deferred: the client uses only its arguments.
+A client reads `GREPVINE_API_KEY`, `GREPVINE_API_ENDPOINT`,
+`GREPVINE_ORGANIZATION` and `gv`'s configuration file unless created with
+`trust_env=False`; `Client.from_env()` and `Client.from_config(path)` read one
+of those sources alone (`_config.environment` and `_config.read_file`). The
+tests' autouse `no_configuration` fixture clears those variables and points
+`HOME` at a temporary directory, so a developer's own configuration never
+reaches a test.
+
+The client hands httpx its own retrying transports, so httpx does not apply
+the proxy variables by itself: `_network` in `_client.py` builds a retrying
+transport per proxy pattern from httpx's own reading of `HTTP_PROXY`,
+`HTTPS_PROXY`, `ALL_PROXY` and `NO_PROXY` (`httpx._utils.get_environment_proxies`,
+pinned with httpx below 0.29). The transports keep httpx's default reading of
+`SSL_CERT_FILE` and `SSL_CERT_DIR`. `trust_env` concerns only the Grepvine
+settings, never the network; a proxy chosen in code is an
+`httpx.HTTPTransport(proxy=...)` passed as `transport`. The tests clear the
+proxy variables too; `tests/test_proxy.py` runs a local server as the proxy.
 
 `tests/test_coverage.py` checks that `sdk-operations.json` names exactly the
 operations of the contract and of `spec/source.json`, and that each one is a

@@ -56,7 +56,7 @@ async def test_denied(fx: Flavor, service: Service) -> None:
 async def test_times_out(fx: Flavor, service: Service, clock: Clock) -> None:
     service.reply(httpx.Response(200, json=AUTHORIZATION))
     service.route = lambda request: error(400, "authorization_pending")
-    with pytest.raises(TimeoutError):
+    with pytest.raises(grepvine.WaitTimeoutError):
         await fx.run(
             fx.client.device_login.authorize("laptop", on_code=lambda code: None, timeout=12)
         )
@@ -66,6 +66,6 @@ async def test_times_out(fx: Flavor, service: Service, clock: Clock) -> None:
 async def test_stops_when_the_code_expires(fx: Flavor, service: Service, clock: Clock) -> None:
     service.reply(httpx.Response(200, json={**AUTHORIZATION, "expires_in": 7}))
     service.route = lambda request: error(400, "authorization_pending")
-    with pytest.raises(TimeoutError):
+    with pytest.raises(grepvine.WaitTimeoutError):
         await fx.run(fx.client.device_login.authorize("laptop", on_code=lambda code: None))
     assert clock.sleeps == [5]

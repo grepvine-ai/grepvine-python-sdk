@@ -1,4 +1,4 @@
-"""paginate follows next_page_id while has_next, through empty pages, for any list or search."""
+"""Listings and searches follow next_page_id while has_next, through empty pages."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 import grepvine
-from grepvine.models import IndexSummary, QueryRequest, QueryResult
+from grepvine.models import IndexSummary, QueryResult
 from tests.conftest import Flavor, Service, index_json, page_json
 
 pytestmark = pytest.mark.anyio
@@ -22,9 +22,7 @@ async def test_follows_pages_including_empty_ones(fx: Flavor, service: Service) 
         httpx.Response(200, json=page_json([], "p3")),
         httpx.Response(200, json=page_json([summary("c")])),
     )
-    items = await fx.collect(
-        grepvine.paginate(fx.client.indexes.list, organization="acme", prefix="x", amount=2)
-    )
+    items = await fx.collect(fx.client.indexes.list("acme", prefix="x", amount=2))
     assert all(isinstance(item, IndexSummary) for item in items)
     assert [item.name for item in items] == ["a", "b", "c"]
     params = [dict(request.url.params) for request in service.requests]
@@ -37,7 +35,7 @@ async def test_follows_pages_including_empty_ones(fx: Flavor, service: Service) 
 
 async def test_single_page(fx: Flavor, service: Service) -> None:
     service.reply(httpx.Response(200, json=page_json([])))
-    assert await fx.collect(grepvine.paginate(fx.client.organizations.list)) == []
+    assert await fx.collect(fx.client.organizations.list()) == []
     assert len(service.requests) == 1
 
 
@@ -60,14 +58,7 @@ async def test_search_pages_resend_the_query(fx: Flavor, service: Service) -> No
         httpx.Response(200, json=page_json([], "q2")),
         httpx.Response(200, json=page_json([hit])),
     )
-    hits = await fx.collect(
-        grepvine.paginate(
-            fx.client.search.query,
-            organization="acme",
-            index="docs",
-            body=QueryRequest(pattern="hel+o"),
-        )
-    )
+    hits = await fx.collect(fx.client.search.query("acme", "docs", pattern="hel+o"))
     assert [type(hit) for hit in hits] == [QueryResult]
     assert hits[0].text == "hello"
     assert [service.json(n)["pattern"] for n in range(2)] == ["hel+o", "hel+o"]
@@ -77,7 +68,24 @@ async def test_search_pages_resend_the_query(fx: Flavor, service: Service) -> No
 def test_sync_iterator_is_lazy(service: Service) -> None:
     service.route = lambda request: httpx.Response(200, json=page_json([summary("a")], "more"))
     with grepvine.Client(transport=httpx.MockTransport(service.handle)) as client:
-        pages = grepvine.paginate(client.indexes.list, organization="acme")
+        pages = client.indexes.list("acme")
         assert service.requests == []
         assert [next(pages).name, next(pages).name] == ["a", "a"]
     assert len(service.requests) == 2
+
+
+async def test_paginate_walks_a_page_method(fx: Flavor, service: Service) -> None:
+    service.reply(
+        httpx.Response(200, json=page_json([summary("a")], "p2")),
+        httpx.Response(200, json=page_json([summary("b")])),
+    )
+    pages = grepvine.paginate(fx.client.indexes.list_page, organization="acme")
+    assert [item.name for item in await fx.collect(pages)] == ["a", "b"]
+
+
+async def test_one_page(fx: Flavor, service: Service) -> None:
+    service.reply(httpx.Response(200, json=page_json([summary("a")], "p2")))
+    page = await fx.run(fx.client.indexes.list_page("acme", amount=1, page="p1"))
+    assert [item.name for item in page.results] == ["a"]
+    assert page.pagination.next_page_id == "p2"
+    assert dict(service.requests[0].url.params) == {"amount": "1", "page": "p1"}
