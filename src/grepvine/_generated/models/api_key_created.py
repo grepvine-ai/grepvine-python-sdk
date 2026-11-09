@@ -25,8 +25,8 @@ class APIKeyCreated:
         prefix (str): The first characters of the key, shown to tell keys apart.
         created_at (datetime.datetime): When the key was created.
         key (str): The secret API key. It is shown only in this response; send it as `Authorization: Bearer <key>`.
-        last_used_at (datetime.datetime | Unset): When the key last authenticated a request. Omitted if it never has.
-        revoked_at (datetime.datetime | Unset): When the key was revoked. Omitted while the key is active.
+        last_used_at (datetime.datetime): When the key last authenticated a request. Omitted if it never has.
+        revoked_at (datetime.datetime): When the key was revoked. Omitted while the key is active.
     """
 
     id: UUID
@@ -34,28 +34,24 @@ class APIKeyCreated:
     prefix: str
     created_at: datetime.datetime
     key: str
-    last_used_at: datetime.datetime | Unset = UNSET
-    revoked_at: datetime.datetime | Unset = UNSET
+    last_used_at: datetime.datetime | None = None
+    revoked_at: datetime.datetime | None = None
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
-
         name = self.name
-
         prefix = self.prefix
-
         created_at = self.created_at.isoformat()
-
         key = self.key
-
+        _last_used_at_value = UNSET if self.last_used_at is None else self.last_used_at
         last_used_at: str | Unset = UNSET
-        if not isinstance(self.last_used_at, Unset):
-            last_used_at = self.last_used_at.isoformat()
-
+        if not isinstance(_last_used_at_value, Unset):
+            last_used_at = _last_used_at_value.isoformat()
+        _revoked_at_value = UNSET if self.revoked_at is None else self.revoked_at
         revoked_at: str | Unset = UNSET
-        if not isinstance(self.revoked_at, Unset):
-            revoked_at = self.revoked_at.isoformat()
+        if not isinstance(_revoked_at_value, Unset):
+            revoked_at = _revoked_at_value.isoformat()
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -108,8 +104,8 @@ class APIKeyCreated:
             prefix=prefix,
             created_at=created_at,
             key=key,
-            last_used_at=last_used_at,
-            revoked_at=revoked_at,
+            last_used_at=(None if isinstance(last_used_at, Unset) else last_used_at),
+            revoked_at=(None if isinstance(revoked_at, Unset) else revoked_at),
         )
 
         api_key_created.additional_properties = d

@@ -27,25 +27,23 @@ class Member:
             and transferring ownership; `admin` also manages members and indexes; `developer` reads, writes and searches
             documents; `reader` reads and searches them.
         created_at (datetime.datetime): When the account became a member.
-        expires_at (datetime.datetime | Unset): When the membership ends, for time-limited access granted by Grepvine
-            support. Omitted for an ordinary membership.
+        expires_at (datetime.datetime): When the membership ends, for time-limited access granted by Grepvine support.
+            Omitted for an ordinary membership.
     """
 
     user: User
     role: Role
     created_at: datetime.datetime
-    expires_at: datetime.datetime | Unset = UNSET
+    expires_at: datetime.datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         user = self.user.to_dict()
-
         role = self.role.value
-
         created_at = self.created_at.isoformat()
-
+        _expires_at_value = UNSET if self.expires_at is None else self.expires_at
         expires_at: str | Unset = UNSET
-        if not isinstance(self.expires_at, Unset):
-            expires_at = self.expires_at.isoformat()
+        if not isinstance(_expires_at_value, Unset):
+            expires_at = _expires_at_value.isoformat()
 
         field_dict: dict[str, Any] = {}
 
@@ -83,7 +81,7 @@ class Member:
             user=user,
             role=role,
             created_at=created_at,
-            expires_at=expires_at,
+            expires_at=(None if isinstance(expires_at, Unset) else expires_at),
         )
 
         return member

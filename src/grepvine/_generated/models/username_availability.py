@@ -25,7 +25,6 @@ class UsernameAvailability:
 
     def to_dict(self) -> dict[str, Any]:
         name = self.name
-
         available = self.available
 
         field_dict: dict[str, Any] = {}

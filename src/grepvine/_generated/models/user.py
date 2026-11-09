@@ -26,28 +26,25 @@ class User:
             organization can take such a spelling.
         email (str): The account's email address.
         created_at (datetime.datetime): When the account was created.
-        staff_role (StaffRole | Unset): The account's role on the Grepvine team, when it has one. Omitted for every
-            other account.
+        staff_role (StaffRole): The account's role on the Grepvine team, when it has one. Omitted for every other
+            account.
     """
 
     id: UUID
     name: str
     email: str
     created_at: datetime.datetime
-    staff_role: StaffRole | Unset = UNSET
+    staff_role: StaffRole | None = None
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
-
         name = self.name
-
         email = self.email
-
         created_at = self.created_at.isoformat()
-
+        _staff_role_value = UNSET if self.staff_role is None else self.staff_role
         staff_role: str | Unset = UNSET
-        if not isinstance(self.staff_role, Unset):
-            staff_role = self.staff_role.value
+        if not isinstance(_staff_role_value, Unset):
+            staff_role = _staff_role_value.value
 
         field_dict: dict[str, Any] = {}
 
@@ -87,7 +84,7 @@ class User:
             name=name,
             email=email,
             created_at=created_at,
-            staff_role=staff_role,
+            staff_role=(None if isinstance(staff_role, Unset) else staff_role),
         )
 
         return user

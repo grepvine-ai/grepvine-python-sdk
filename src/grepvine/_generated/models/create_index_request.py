@@ -22,25 +22,25 @@ class CreateIndexRequest:
     Attributes:
         name (str): An index name, unique in its organization. A name keeps the case it was created with, and any
             spelling that differs only in case refers to it; no other index in the organization can take such a spelling.
-        description (str | Unset): What the index holds, in Markdown. Empty when no description was set. Clients render
-            it without raw HTML.
-        tags (IndexTags | Unset): Key/value labels on the index, for example the commit it was synced from. At most 64
-            tags. A key is 1 to 128 characters without whitespace or control characters; a value is at most 1,024 characters
-            without control characters. Empty when none was set.
+        description (str): What the index holds, in Markdown. Empty when no description was set. Clients render it
+            without raw HTML.
+        tags (IndexTags): Key/value labels on the index, for example the commit it was synced from. At most 64 tags. A
+            key is 1 to 128 characters without whitespace or control characters; a value is at most 1,024 characters without
+            control characters. Empty when none was set.
     """
 
     name: str
-    description: str | Unset = UNSET
-    tags: IndexTags | Unset = UNSET
+    description: str | None = None
+    tags: IndexTags | None = None
 
     def to_dict(self) -> dict[str, Any]:
         name = self.name
-
-        description = self.description
-
+        _description_value = UNSET if self.description is None else self.description
+        description = _description_value
+        _tags_value = UNSET if self.tags is None else self.tags
         tags: dict[str, Any] | Unset = UNSET
-        if not isinstance(self.tags, Unset):
-            tags = self.tags.to_dict()
+        if not isinstance(_tags_value, Unset):
+            tags = _tags_value.to_dict()
 
         field_dict: dict[str, Any] = {}
 
@@ -74,8 +74,8 @@ class CreateIndexRequest:
 
         create_index_request = cls(
             name=name,
-            description=description,
-            tags=tags,
+            description=(None if isinstance(description, Unset) else description),
+            tags=(None if isinstance(tags, Unset) else tags),
         )
 
         return create_index_request

@@ -28,7 +28,6 @@ class TaggedTimestampMetadataValue:
 
     def to_dict(self) -> dict[str, Any]:
         type_ = self.type_
-
         value = self.value.isoformat()
 
         field_dict: dict[str, Any] = {}

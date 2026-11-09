@@ -21,23 +21,21 @@ class RegisterRequest:
             organization can take such a spelling.
         email (str): The account's email address, at most 320 characters. No other account can use it.
         password (str): The password, 12 to 1,024 characters.
-        invitation (str | Unset): The token of the invitation link the account was invited with. Required when
-            registration is by invitation.
+        invitation (str): The token of the invitation link the account was invited with. Required when registration is
+            by invitation.
     """
 
     name: str
     email: str
     password: str
-    invitation: str | Unset = UNSET
+    invitation: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         name = self.name
-
         email = self.email
-
         password = self.password
-
-        invitation = self.invitation
+        _invitation_value = UNSET if self.invitation is None else self.invitation
+        invitation = _invitation_value
 
         field_dict: dict[str, Any] = {}
 
@@ -68,7 +66,7 @@ class RegisterRequest:
             name=name,
             email=email,
             password=password,
-            invitation=invitation,
+            invitation=(None if isinstance(invitation, Unset) else invitation),
         )
 
         return register_request

@@ -39,15 +39,10 @@ class DocumentSummary:
 
     def to_dict(self) -> dict[str, Any]:
         key = self.key
-
         revision = self.revision
-
         content_bytes = self.content_bytes
-
         metadata = self.metadata.to_dict()
-
         updated_at = self.updated_at.isoformat()
-
         searchable = self.searchable
 
         field_dict: dict[str, Any] = {}

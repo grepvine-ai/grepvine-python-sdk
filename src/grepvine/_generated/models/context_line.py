@@ -26,9 +26,7 @@ class ContextLine:
 
     def to_dict(self) -> dict[str, Any]:
         line_number = self.line_number
-
         text = self.text
-
         text_truncated = self.text_truncated
 
         field_dict: dict[str, Any] = {}

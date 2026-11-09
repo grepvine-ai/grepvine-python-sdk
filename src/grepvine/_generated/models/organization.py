@@ -39,13 +39,9 @@ class Organization:
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
-
         name = self.name
-
         role = self.role.value
-
         suspended = self.suspended
-
         created_at = self.created_at.isoformat()
 
         field_dict: dict[str, Any] = {}

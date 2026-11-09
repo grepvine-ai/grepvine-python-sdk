@@ -24,7 +24,6 @@ class Match:
 
     def to_dict(self) -> dict[str, Any]:
         offset = self.offset
-
         length = self.length
 
         field_dict: dict[str, Any] = {}

@@ -25,9 +25,7 @@ class Error:
 
     def to_dict(self) -> dict[str, Any]:
         code = self.code
-
         reason = self.reason
-
         error = self.error
 
         field_dict: dict[str, Any] = {}

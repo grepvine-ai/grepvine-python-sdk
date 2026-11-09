@@ -23,7 +23,6 @@ class LoginRequest:
 
     def to_dict(self) -> dict[str, Any]:
         identifier = self.identifier
-
         password = self.password
 
         field_dict: dict[str, Any] = {}

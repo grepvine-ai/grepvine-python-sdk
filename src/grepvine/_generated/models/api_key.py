@@ -23,33 +23,30 @@ class APIKey:
         name (str): The name the key was given.
         prefix (str): The first characters of the key, shown to tell keys apart.
         created_at (datetime.datetime): When the key was created.
-        last_used_at (datetime.datetime | Unset): When the key last authenticated a request. Omitted if it never has.
-        revoked_at (datetime.datetime | Unset): When the key was revoked. Omitted while the key is active.
+        last_used_at (datetime.datetime): When the key last authenticated a request. Omitted if it never has.
+        revoked_at (datetime.datetime): When the key was revoked. Omitted while the key is active.
     """
 
     id: UUID
     name: str
     prefix: str
     created_at: datetime.datetime
-    last_used_at: datetime.datetime | Unset = UNSET
-    revoked_at: datetime.datetime | Unset = UNSET
+    last_used_at: datetime.datetime | None = None
+    revoked_at: datetime.datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
-
         name = self.name
-
         prefix = self.prefix
-
         created_at = self.created_at.isoformat()
-
+        _last_used_at_value = UNSET if self.last_used_at is None else self.last_used_at
         last_used_at: str | Unset = UNSET
-        if not isinstance(self.last_used_at, Unset):
-            last_used_at = self.last_used_at.isoformat()
-
+        if not isinstance(_last_used_at_value, Unset):
+            last_used_at = _last_used_at_value.isoformat()
+        _revoked_at_value = UNSET if self.revoked_at is None else self.revoked_at
         revoked_at: str | Unset = UNSET
-        if not isinstance(self.revoked_at, Unset):
-            revoked_at = self.revoked_at.isoformat()
+        if not isinstance(_revoked_at_value, Unset):
+            revoked_at = _revoked_at_value.isoformat()
 
         field_dict: dict[str, Any] = {}
 
@@ -98,8 +95,8 @@ class APIKey:
             name=name,
             prefix=prefix,
             created_at=created_at,
-            last_used_at=last_used_at,
-            revoked_at=revoked_at,
+            last_used_at=(None if isinstance(last_used_at, Unset) else last_used_at),
+            revoked_at=(None if isinstance(revoked_at, Unset) else revoked_at),
         )
 
         return api_key

@@ -42,10 +42,10 @@ class Index:
         document_count (int): The number of documents in the index.
         content_bytes (int): The total size of the documents' content, in bytes.
         created_at (datetime.datetime): When the index was created.
-        last_updated_at (datetime.datetime | Unset): When a document was last stored or deleted. Omitted when that is
-            not known, such as before the first write.
-        optimization_progress_percent (int | Unset): How far the background optimization of this index has progressed,
-            as a percentage. Omitted when no optimization is running.
+        last_updated_at (datetime.datetime): When a document was last stored or deleted. Omitted when that is not known,
+            such as before the first write.
+        optimization_progress_percent (int): How far the background optimization of this index has progressed, as a
+            percentage. Omitted when no optimization is running.
     """
 
     id: UUID
@@ -58,36 +58,31 @@ class Index:
     document_count: int
     content_bytes: int
     created_at: datetime.datetime
-    last_updated_at: datetime.datetime | Unset = UNSET
-    optimization_progress_percent: int | Unset = UNSET
+    last_updated_at: datetime.datetime | None = None
+    optimization_progress_percent: int | None = None
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
-
         organization = self.organization
-
         name = self.name
-
         canonical_id = self.canonical_id
-
         description = self.description
-
         tags = self.tags.to_dict()
-
         state = self.state.value
-
         document_count = self.document_count
-
         content_bytes = self.content_bytes
-
         created_at = self.created_at.isoformat()
-
+        _last_updated_at_value = UNSET if self.last_updated_at is None else self.last_updated_at
         last_updated_at: str | Unset = UNSET
-        if not isinstance(self.last_updated_at, Unset):
-            last_updated_at = self.last_updated_at.isoformat()
-
-        optimization_progress_percent = self.optimization_progress_percent
+        if not isinstance(_last_updated_at_value, Unset):
+            last_updated_at = _last_updated_at_value.isoformat()
+        _optimization_progress_percent_value = (
+            UNSET
+            if self.optimization_progress_percent is None
+            else self.optimization_progress_percent
+        )
+        optimization_progress_percent = _optimization_progress_percent_value
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -157,8 +152,12 @@ class Index:
             document_count=document_count,
             content_bytes=content_bytes,
             created_at=created_at,
-            last_updated_at=last_updated_at,
-            optimization_progress_percent=optimization_progress_percent,
+            last_updated_at=(None if isinstance(last_updated_at, Unset) else last_updated_at),
+            optimization_progress_percent=(
+                None
+                if isinstance(optimization_progress_percent, Unset)
+                else optimization_progress_percent
+            ),
         )
 
         index.additional_properties = d

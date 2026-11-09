@@ -109,6 +109,83 @@ def flattened_collisions(spec: dict) -> list[str]:
     return found
 
 
+# Model fields the service left out read as None (an empty list for a list), never as the
+# generator's Unset sentinel, and a field set to None is left out of a request. No field of the
+# contract is nullable, so None never has to be sent.
+NONE_DECLARATION = """{% macro declaration(property) -%}
+{%- set type_ = property.get_type_string(no_optional=True) | as_unembedded_code -%}
+{%- if property.required -%}
+{{ property.to_string() | as_unembedded_code }}
+{%- elif property.default is not none -%}
+{{ property.python_name }}: {{ type_ }} = {{ property.default.python_code | as_unembedded_code }}
+{%- elif property.template == "list_property.py.jinja" -%}
+{{ property.python_name }}: {{ type_ }} = _attrs_field(factory=list)
+{%- else -%}
+{{ property.python_name }}: {{ type_ }} | None = None
+{%- endif -%}
+{%- endmacro %}
+
+{% macro declare_property(property) %}"""
+
+
+def absent_fields_as_none() -> str:
+    """The generator's model template, with absent optional fields as None or []."""
+    template = files("openapi_python_client").joinpath("templates/model.py.jinja").read_text()
+    replacements = [
+        # Declarations: `x: T | None = None`, `x: list[T] = []`, or `x: T = <default>`.
+        ("{{ property.to_string() | as_unembedded_code }}", "{{ declaration(property) }}", 2),
+        ("{% macro declare_property(property) %}", NONE_DECLARATION, 1),
+        (
+            "{{ property.to_docstring() | wordwrap(112) | indent(12) }}",
+            '{{ property.to_docstring() | replace(" | Unset)", ")")'
+            " | wordwrap(112) | indent(12) }}",
+            1,
+        ),
+        # Requests: None is encoded as the sentinel, so the field is left out.
+        (
+            '{{ _transform_property(property, "self." + property.python_name) }}',
+            "{% if property.required %}"
+            '{{ _transform_property(property, "self." + property.python_name) }}'
+            "{% else %}"
+            "_{{ property.python_name }}_value = UNSET if self.{{ property.python_name }} is None"
+            " else self.{{ property.python_name }}\n"
+            '{{ _transform_property(property, "_" + property.python_name + "_value") }}'
+            "{% endif %}",
+            1,
+        ),
+        (
+            "if not isinstance({{source}}, Unset):",
+            "if {{source}} is not None and not isinstance({{source}}, Unset):",
+            1,
+        ),
+        # Responses: a field the answer left out takes the declared value.
+        (
+            "            {{ property.python_name }}={{ property.python_name }},",
+            "            {% if property.required %}"
+            "{{ property.python_name }}={{ property.python_name }}"
+            "{% else %}{{ property.python_name }}=({{ absent(property) }} if isinstance("
+            "{{ property.python_name }}, Unset) else {{ property.python_name }}){% endif %},",
+            1,
+        ),
+        (
+            "{% macro declare_property(property) %}",
+            """{% macro absent(property) -%}
+{%- if property.default is not none -%}{{ property.default.python_code | as_unembedded_code }}
+{%- elif property.template == "list_property.py.jinja" -%}[]
+{%- else -%}None{%- endif -%}
+{%- endmacro %}
+
+{% macro declare_property(property) %}""",
+            1,
+        ),
+    ]
+    for old, new, count in replacements:
+        if template.count(old) != count:
+            sys.exit("Review the model adapter after changing the generator version")
+        template = template.replace(old, new)
+    return template
+
+
 def main() -> None:
     yaml = YAML()
     provenance = json.loads((PACKAGE / "spec/source.json").read_text())
@@ -179,6 +256,7 @@ def main() -> None:
         )
         templates = temporary / "templates"
         shutil.copytree(TEMPLATES, templates)
+        (templates / "model.py.jinja").write_text(absent_fields_as_none())
         (templates / "endpoint_macros.py.jinja").write_text(
             template.replace(statement, statement + ".read()")
         )

@@ -28,21 +28,21 @@ class PutDocumentForm:
             components. Storing a key that exists replaces that document.
         content (File): The document bytes, at most 1 GiB. Valid UTF-8 of at most 100 MiB is searchable; other content
             is stored without being searchable.
-        metadata (Metadata | Unset): Document metadata as a request sends it. Values are plain or tagged.
+        metadata (Metadata): Document metadata as a request sends it. Values are plain or tagged.
     """
 
     key: str
     content: File
-    metadata: Metadata | Unset = UNSET
+    metadata: Metadata | None = None
 
     def to_dict(self) -> dict[str, Any]:
         key = self.key
-
         content = self.content.to_tuple()
 
+        _metadata_value = UNSET if self.metadata is None else self.metadata
         metadata: dict[str, Any] | Unset = UNSET
-        if not isinstance(self.metadata, Unset):
-            metadata = self.metadata.to_dict()
+        if not isinstance(_metadata_value, Unset):
+            metadata = _metadata_value.to_dict()
 
         field_dict: dict[str, Any] = {}
 
@@ -64,7 +64,7 @@ class PutDocumentForm:
 
         files.append(("content", self.content.to_tuple()))
 
-        if not isinstance(self.metadata, Unset):
+        if self.metadata is not None and not isinstance(self.metadata, Unset):
             files.append(
                 (
                     "metadata",
@@ -93,7 +93,7 @@ class PutDocumentForm:
         put_document_form = cls(
             key=key,
             content=content,
-            metadata=metadata,
+            metadata=(None if isinstance(metadata, Unset) else metadata),
         )
 
         return put_document_form

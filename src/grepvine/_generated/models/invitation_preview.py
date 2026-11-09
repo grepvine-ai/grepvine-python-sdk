@@ -21,27 +21,26 @@ class InvitationPreview:
     Attributes:
         email (str): The address the invitation was sent to, to prefill the registration form.
         expires_at (datetime.datetime): When the invitation expires.
-        organization (str | Unset): An account or organization name. Accounts and organizations share one namespace. A
-            name keeps the case it was created with, and any spelling that differs only in case refers to it; no other
-            account or organization can take such a spelling.
-        role (InvitationRole | Unset): The role an invitation grants in its organization.
+        organization (str): An account or organization name. Accounts and organizations share one namespace. A name
+            keeps the case it was created with, and any spelling that differs only in case refers to it; no other account or
+            organization can take such a spelling.
+        role (InvitationRole): The role an invitation grants in its organization.
     """
 
     email: str
     expires_at: datetime.datetime
-    organization: str | Unset = UNSET
-    role: InvitationRole | Unset = UNSET
+    organization: str | None = None
+    role: InvitationRole | None = None
 
     def to_dict(self) -> dict[str, Any]:
         email = self.email
-
         expires_at = self.expires_at.isoformat()
-
-        organization = self.organization
-
+        _organization_value = UNSET if self.organization is None else self.organization
+        organization = _organization_value
+        _role_value = UNSET if self.role is None else self.role
         role: str | Unset = UNSET
-        if not isinstance(self.role, Unset):
-            role = self.role.value
+        if not isinstance(_role_value, Unset):
+            role = _role_value.value
 
         field_dict: dict[str, Any] = {}
 
@@ -77,8 +76,8 @@ class InvitationPreview:
         invitation_preview = cls(
             email=email,
             expires_at=expires_at,
-            organization=organization,
-            role=role,
+            organization=(None if isinstance(organization, Unset) else organization),
+            role=(None if isinstance(role, Unset) else role),
         )
 
         return invitation_preview

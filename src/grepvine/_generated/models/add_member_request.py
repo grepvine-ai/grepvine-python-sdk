@@ -28,7 +28,6 @@ class AddMemberRequest:
 
     def to_dict(self) -> dict[str, Any]:
         user = self.user
-
         role = self.role.value
 
         field_dict: dict[str, Any] = {}

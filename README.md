@@ -390,22 +390,26 @@ Every operation is also a method of the client's resources:
 `IndexClient` does.
 
 ```python
+client.organizations.create(name="my-org")  # you become its owner
+print(client.organizations.get("my-org").role)  # owner
+
 for org in client.organizations.list():
     print(org.name, org.role, org.suspended)
 
-org = client.organizations.get("my-org")
-client.organizations.create(name="my-org")  # you become its owner
-
 members = client.organizations.members
 members.add("my-org", user="bob", role="developer")
+members.add("my-org", user="carol", role="reader")
 members.update("my-org", "bob", role="admin")
 for member in members.list("my-org"):
     print(member.user.name, member.role)
-members.remove("my-org", "bob")
+members.remove("my-org", "carol")
 
-client.organizations.transfer_ownership("my-org", user="carol")  # the old owner becomes an admin
-client.organizations.delete("my-org")  # the organization is gone at once; its data is removed in the background
+client.organizations.transfer_ownership("my-org", user="bob")  # to a member; you become an admin
 ```
+
+Only the owner deletes an organization, with
+`client.organizations.delete("my-org")`. It reads as not found as soon as the
+call returns; its data is removed in the background.
 
 Organizations and user accounts share one namespace, so an organization name
 must not be taken by a user either. Adding, changing and removing members
@@ -485,9 +489,11 @@ def show(authorization: DeviceAuthorization) -> None:
     print(f"and check that it shows {authorization.user_code}")
 
 
-with grepvine.Client(trust_env=False) as anonymous:  # starting needs no API key
+endpoint = "https://api.grepvine.ai"  # or your Grepvine service
+# trust_env=False: no API key from the environment or gv's file; starting needs none.
+with grepvine.Client(endpoint=endpoint, trust_env=False) as anonymous:
     key = anonymous.device_login.authorize("my laptop", on_code=show, timeout=600)
-client = grepvine.Client(api_key=key.key)
+client = grepvine.Client(api_key=key.key, endpoint=endpoint)
 ```
 
 A denied login raises `InvalidRequestError` with code `"access_denied"`, and
