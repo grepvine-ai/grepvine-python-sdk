@@ -7,7 +7,15 @@ import inspect
 import io
 import json
 import math
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Mapping
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Final, Protocol, Required, TypeAlias, TypedDict, TypeVar, overload
@@ -161,34 +169,71 @@ def _tag(value: MetadataValue) -> dict[str, Any]:
     raise TypeError(f"metadata values must be str, int, float, bool or datetime, not {value!r}")
 
 
-def _batches(documents: Iterable[DocumentInput]) -> list[tuple[list[str], bytes]]:
-    """Group documents into NDJSON bodies of at most 2,048 documents and 16 MiB of content."""
-    batches: list[tuple[list[str], bytes]] = []
-    keys: list[str] = []
-    lines: list[bytes] = []
-    size = 0
-    for document in documents:
-        key, content = document["key"], document["content"]
-        text = content.decode("utf-8") if isinstance(content, bytes) else content
-        length = len(text.encode("utf-8"))
-        if length > MAX_BATCH_BYTES:
-            raise ValueError(f"{key!r} is larger than 16 MiB; store it with documents.put")
-        if keys and (len(keys) == MAX_BATCH_DOCUMENTS or size + length > MAX_BATCH_BYTES):
-            batches.append((keys, b"".join(lines)))
-            keys, lines, size = [], [], 0
-        metadata = {"path": _tag(key), "size": _tag(length)}
-        metadata.update((name, _tag(value)) for name, value in document.get("metadata", {}).items())
-        record: dict[str, Any] = {"key": key, "content": text, "metadata": metadata}
-        if "if_match" in document:
-            record["if_match"] = document["if_match"]
-        if document.get("if_none_match"):
-            record["if_none_match"] = "*"
-        keys.append(key)
-        lines.append(json.dumps(record, ensure_ascii=False).encode("utf-8") + b"\n")
-        size += length
-    if keys:
-        batches.append((keys, b"".join(lines)))
-    return batches
+def _encode(document: DocumentInput) -> tuple[str, bytes, int]:
+    """One document as an NDJSON line, with its key and its content's length in bytes."""
+    key, content = document["key"], document["content"]
+    if isinstance(content, bytes):
+        try:
+            text = content.decode("utf-8")
+        except UnicodeDecodeError:
+            raise ValueError(f"{key!r} is not UTF-8 text; store binary content with put") from None
+    elif isinstance(content, str):
+        text = content
+    else:
+        raise TypeError(f"{key!r}: content must be str or bytes, not {type(content).__name__}")
+    length = len(text.encode("utf-8"))
+    if length > MAX_BATCH_BYTES:
+        raise ValueError(f"{key!r} is larger than 16 MiB; store it with put")
+    metadata = {"path": _tag(key), "size": _tag(length)}
+    metadata.update((name, _tag(value)) for name, value in document.get("metadata", {}).items())
+    record: dict[str, Any] = {"key": key, "content": text, "metadata": metadata}
+    if "if_match" in document:
+        record["if_match"] = document["if_match"]
+    if document.get("if_none_match"):
+        record["if_none_match"] = "*"
+    return key, json.dumps(record, ensure_ascii=False).encode("utf-8") + b"\n", length
+
+
+class _Batches:
+    """Reads documents into NDJSON bodies of at most 2,048 documents and 16 MiB of content.
+
+    Documents are read one batch at a time, so a generator is never held in memory whole.
+    """
+
+    def __init__(self, documents: Iterable[DocumentInput]) -> None:
+        self._sequence = documents if isinstance(documents, Sequence) else None
+        self._documents = iter(documents)
+        self._read = 0
+        self._ahead: tuple[str, bytes, int] | None = None
+
+    def __iter__(self) -> Iterator[tuple[list[str], bytes]]:
+        keys: list[str] = []
+        lines: list[bytes] = []
+        size = 0
+        while True:
+            if self._ahead is None:
+                document = next(self._documents, None)
+                if document is None:
+                    break
+                self._read += 1
+                self._ahead = _encode(document)
+            key, line, length = self._ahead
+            if keys and (len(keys) == MAX_BATCH_DOCUMENTS or size + length > MAX_BATCH_BYTES):
+                yield keys, b"".join(lines)
+                keys, lines, size = [], [], 0
+            self._ahead = None
+            keys.append(key)
+            lines.append(line)
+            size += length
+        if keys:
+            yield keys, b"".join(lines)
+
+    def pending(self) -> list[str]:
+        """Keys not sent: the document read ahead, and the rest of a list or tuple."""
+        keys = [self._ahead[0]] if self._ahead else []
+        if self._sequence is not None:
+            keys.extend(document["key"] for document in self._sequence[self._read :])
+        return keys
 
 
 def _batch_arguments(body: bytes, idempotency_key: str | None, position: int) -> dict[str, Any]:
@@ -199,16 +244,12 @@ def _batch_arguments(body: bytes, idempotency_key: str | None, position: int) ->
 
 
 def _partial(
-    results: list[MutationResult],
-    batches: list[tuple[list[str], bytes]],
-    position: int,
-    cause: GrepvineError,
+    results: list[MutationResult], keys: list[str], batches: _Batches, cause: GrepvineError
 ) -> GrepvineError:
     if not results:
         return cause
-    pending = [key for keys, _ in batches[position + 1 :] for key in keys]
     return PartialBatchError(
-        committed=results, failed_keys=batches[position][0], pending_keys=pending, cause=cause
+        committed=results, failed_keys=keys, pending_keys=batches.pending(), cause=cause
     )
 
 
@@ -300,24 +341,29 @@ class Documents(resources.Documents):
     ) -> builtins.list[MutationResult]:
         """Store text documents in as few requests as the batch limits allow.
 
-        Each document gets ``path`` (its key) and ``size`` metadata, overlaid
-        with its own ``metadata``. Returns one result per document, in input
-        order; a document the service left unchanged has an ``error`` there.
-        With ``idempotency_key`` (16 characters or more), repeating a failed
-        call with the same documents applies none of them twice.
+        ``documents`` may be a list or any iterable, such as a generator: it is
+        read one batch at a time, so at most about 16 MiB of content is held in
+        memory. Each document gets ``path`` (its key) and ``size`` metadata,
+        overlaid with its own ``metadata``. Returns one result per document, in
+        input order; a document the service left unchanged has an ``error``
+        there. With ``idempotency_key`` (16 characters or more), repeating a
+        failed call with the same documents applies none of them twice.
 
         Raises:
             grepvine.PartialBatchError: A request failed after earlier ones succeeded.
+            ValueError: A document is not UTF-8 text or is over 16 MiB; store it with
+                ``put``. Documents are checked as they are read, so earlier batches may
+                already be stored.
         """
-        batches = _batches(documents)
+        batches = _Batches(documents)
         results: builtins.list[MutationResult] = []
-        for position, (_, body) in enumerate(batches):
+        for position, (keys, body) in enumerate(batches):
             try:
                 answer = self.put_batch(
                     organization, index, **_batch_arguments(body, idempotency_key, position)
                 )
             except GrepvineError as exc:
-                raise _partial(results, batches, position, exc) from exc
+                raise _partial(results, keys, batches, exc) from exc
             results.extend(answer.results)
         return results
 
@@ -347,15 +393,15 @@ class AsyncDocuments(resources.AsyncDocuments):
         idempotency_key: str | None = None,
     ) -> builtins.list[MutationResult]:
         """Store text documents in batches; see ``Documents.put_many``."""
-        batches = _batches(documents)
+        batches = _Batches(documents)
         results: builtins.list[MutationResult] = []
-        for position, (_, body) in enumerate(batches):
+        for position, (keys, body) in enumerate(batches):
             try:
                 answer = await self.put_batch(
                     organization, index, **_batch_arguments(body, idempotency_key, position)
                 )
             except GrepvineError as exc:
-                raise _partial(results, batches, position, exc) from exc
+                raise _partial(results, keys, batches, exc) from exc
             results.extend(answer.results)
         return results
 

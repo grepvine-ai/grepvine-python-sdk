@@ -6,6 +6,9 @@ import asyncio
 import random
 import time
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 
 import httpx
@@ -18,6 +21,22 @@ async_sleep = asyncio.sleep
 monotonic = time.monotonic
 
 _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+# Set while a request sends content read from a stream that cannot be read again.
+_one_way: ContextVar[bool] = ContextVar("grepvine_one_way", default=False)
+ONE_WAY_FAILED = (
+    "the content was read from a stream and cannot be sent again; call put again, or pass "
+    "bytes, a Path or a seekable file so that a failed attempt can be retried"
+)
+
+
+@contextmanager
+def one_way() -> Iterator[None]:
+    """Send the requests made inside once: their content cannot be read a second time."""
+    token = _one_way.set(True)
+    try:
+        yield
+    finally:
+        _one_way.reset(token)
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,11 +83,14 @@ class _Attempts:
         self.policy = policy
         self.attempt = 1
         self.throttled = 0.0
+        self.one_way = _one_way.get()
         # Every write carries an idempotency key, and every attempt carries the same one.
         if request.method not in _SAFE_METHODS and "idempotency-key" not in request.headers:
             request.headers["Idempotency-Key"] = uuid.uuid4().hex
 
     def after_failure(self, exc: httpx.TransportError) -> float:
+        if self.one_way:
+            raise TransportError(f"the request failed: {exc}; {ONE_WAY_FAILED}", cause=exc) from exc
         if self.attempt >= self.policy.max_attempts:
             raise TransportError(
                 f"the request failed after {self.attempt} attempt(s): {exc}", cause=exc
@@ -77,6 +99,8 @@ class _Attempts:
         return self.policy._backoff(self.attempt - 1)
 
     def after_response(self, response: httpx.Response) -> float | None:
+        if self.one_way:
+            return None
         if response.status_code == 429:
             delay = self.policy._retry_after(response)
             if self.throttled + delay > self.policy.max_throttled_wait:

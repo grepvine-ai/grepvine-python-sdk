@@ -159,6 +159,9 @@ filters on those fields work without extra effort.
 ## Documents
 
 ```python
+from datetime import UTC, datetime
+from pathlib import Path
+
 results = index.put_many(
     [
         {"key": "a.txt", "content": "alpha", "metadata": {"lang": "en"}},
@@ -171,8 +174,7 @@ for result in results:
     if result.error:
         print(f"{result.key} was not stored: {result.error.error}")
 
-with open("report.pdf", "rb") as content:
-    index.put("report.pdf", content, metadata={"pages": 12, "score": 0.5, "reviewed": datetime.now(UTC)})
+index.put("report.pdf", Path("out/report.pdf"), metadata={"pages": 12, "reviewed": datetime.now(UTC)})
 
 for entry in index.list(prefix="notes/"):
     print(entry.key, entry.content_bytes, entry.searchable)
@@ -187,12 +189,50 @@ index.delete_batch(objects=[{"key": "b.txt"}, {"key": "c.txt"}])
 `put_many` stores text documents in as few requests as possible, at most
 2,048 documents and 16 MiB of text per request, and returns one
 `MutationResult` per document in input order. Content is a `str` or UTF-8
-`bytes`. It adds `path` (the key) and `size` metadata fields, which your own
-fields override. A document may carry up to 64 metadata fields.
+`bytes`; binary content goes through `put`. `documents` may be a list or any
+iterable, such as a generator: it is read one batch at a time, so about 16 MiB
+of content is held in memory however many documents there are. It adds `path`
+(the key) and `size` metadata fields, which your own fields override. A
+document may carry up to 64 metadata fields.
 
-`put` stores one document of up to 1 GiB, text or binary, from `str`, `bytes`
-or a binary file. Content that is valid UTF-8 and at most 100 MiB is
-searchable; anything else is stored and served but never matched by a search.
+`put` stores one document of up to 1 GiB, text or binary. Content that is
+valid UTF-8 and at most 100 MiB is searchable; anything else is stored and
+served but never matched by a search. `content` is any of:
+
+| `content` | Sent |
+|---|---|
+| `str` or `bytes` | as is; a `str` is always content, never a path |
+| a `pathlib.Path` | the file at that path, streamed |
+| a binary file object, such as `open(path, "rb")` or `io.BytesIO` | streamed from where it is |
+| an iterable of `bytes`, such as a generator | streamed as it is produced |
+| an async iterable of `bytes` (`AsyncIndexClient` only) | streamed as it is produced |
+
+```python
+import json
+import urllib.request
+
+
+def rows(records):  # content made by your program, never held in memory whole
+    for record in records:
+        yield (json.dumps(record) + "\n").encode()
+
+
+index.put("exports/records.ndjson", rows({"n": n} for n in range(100_000)))
+
+with urllib.request.urlopen("https://example.com/data.csv") as response:  # length known
+    index.put("mirror/data.csv", response, size=int(response.headers["Content-Length"]))
+```
+
+Pass `size`, the content's length in bytes, when you stream content whose
+length you know: without it, an upload must finish within 35 seconds; with it,
+the service allows longer in proportion to the size. Content of another length
+raises `ValueError`.
+
+Content in memory, paths and files that can seek are sent again when an attempt
+fails and is retried. Content read from a stream (chunks, or a file that cannot
+seek, such as a pipe) is sent once: a failed attempt raises its error, such as
+`ServerError` or `TransportError`, and the content must be given to `put`
+again.
 `if_match` stores it only over that revision, and `if_none_match=True` only
 when the key is new; a failed condition raises `PreconditionFailedError`, as
 it does for `delete` with `if_match`.

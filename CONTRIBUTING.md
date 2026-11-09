@@ -94,14 +94,16 @@ generator cannot know.
 | --- | --- |
 | `src/grepvine/_client.py` | `Client` and `AsyncClient`, built on the root classes: options, bearer authentication, the session after `account.login`, the hook that raises errors, closing, `client.index`, and the default client behind `grepvine.index`. |
 | `src/grepvine/_config.py` | Settings resolved like `gv`: argument, environment variable, configuration file, default. |
-| `src/grepvine/_index.py` | `IndexClient` and `AsyncIndexClient` on the scoped classes: `put` (text, bytes or a file, plain metadata), `put_many`, `list` with prefixes, `wait_until_ready`. |
+| `src/grepvine/_index.py` | `IndexClient` and `AsyncIndexClient` on the scoped classes: `put` (text, bytes, a path, a file, or chunks and async chunks streamed with a form it writes itself), `put_many`, `list` with prefixes, `wait_until_ready`. |
 | `src/grepvine/errors.py` | The exceptions, and `map_error`, the one function every error answer goes through. |
 | `src/grepvine/_retry.py` | `RetryPolicy` and the retrying HTTPX transports, which also add the `Idempotency-Key` of every write. |
 | `src/grepvine/_helpers.py` | `paginate`, `Prefix`, and subclasses of three resource classes adding `indexes.wait_until_ready`, `documents.put_many`, `documents.list` (which also yields prefixes) and `device_login.authorize`. |
 | `src/grepvine/models.py` | Exports the models under their API names. |
 
 Retries live in the HTTPX transport, so a retried request is the same
-request, idempotency key included. The client's response hook maps every
+request, idempotency key included. Content read from a stream cannot be read
+twice, so `put` sends it inside `_retry.one_way()`: the transport then makes
+one attempt and returns its answer or raises its failure. The client's response hook maps every
 error answer before the operation decodes it, so methods return only
 successful answers. The helpers keep the names the TypeScript SDK uses
 (`paginate`, `waitUntilReady`, `authorize`, `putMany`).

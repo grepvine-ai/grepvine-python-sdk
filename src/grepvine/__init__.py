@@ -43,6 +43,8 @@ __all__ = [
     "IndexDeletion",
     "AsyncIndexDeletion",
     "Prefix",
+    "Content",
+    "AsyncContent",
     "RetryPolicy",
     "Settings",
     "Organizations",

@@ -98,7 +98,7 @@ async def test_rejects_a_document_over_16_mib(fx: Flavor) -> None:
     documents: list[grepvine.DocumentInput] = [
         {"key": "big", "content": "x" * (16 * 1024 * 1024 + 1)}
     ]
-    with pytest.raises(ValueError, match="documents.put"):
+    with pytest.raises(ValueError, match="store it with put"):
         await fx.run(fx.client.documents.put_many("acme", "docs", documents))
 
 

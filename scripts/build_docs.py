@@ -55,6 +55,8 @@ REFERENCE_GROUPS = {
         "IndexDeletion",
         "AsyncIndexDeletion",
         "Prefix",
+        "Content",
+        "AsyncContent",
     ],
     "Organizations": ["Organizations", "AsyncOrganizations", "Members", "AsyncMembers"],
     "Indexes": ["Indexes", "AsyncIndexes"],
