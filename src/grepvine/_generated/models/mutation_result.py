@@ -22,23 +22,22 @@ class MutationResult:
 
         Attributes:
             key (str): The document's key.
-            revision (str | Unset): The document's revision after the write. Omitted when the document was not changed.
-            error (Error | Unset): A failed request. `code` says what went wrong and is stable; branch on it, not on the
-                message.
+            revision (str): The document's revision after the write. Omitted when the document was not changed.
+            error (Error): A failed request. `code` says what went wrong and is stable; branch on it, not on the message.
     """
 
     key: str
-    revision: str | Unset = UNSET
-    error: Error | Unset = UNSET
+    revision: str | None = None
+    error: Error | None = None
 
     def to_dict(self) -> dict[str, Any]:
         key = self.key
-
-        revision = self.revision
-
+        _revision_value = UNSET if self.revision is None else self.revision
+        revision = _revision_value
+        _error_value = UNSET if self.error is None else self.error
         error: dict[str, Any] | Unset = UNSET
-        if not isinstance(self.error, Unset):
-            error = self.error.to_dict()
+        if not isinstance(_error_value, Unset):
+            error = _error_value.to_dict()
 
         field_dict: dict[str, Any] = {}
 
@@ -72,8 +71,8 @@ class MutationResult:
 
         mutation_result = cls(
             key=key,
-            revision=revision,
-            error=error,
+            revision=(None if isinstance(revision, Unset) else revision),
+            error=(None if isinstance(error, Unset) else error),
         )
 
         return mutation_result

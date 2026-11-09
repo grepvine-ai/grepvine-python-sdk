@@ -77,6 +77,12 @@ generator cannot know.
   `WaitTimeoutError`; both are `WaitError`s. `indexes.wait_until_ready` and
   `device_login.authorize` raise the same errors. Deleting an organization is not listed:
   the organization reads as not found as soon as the call returns.
+- Models read a field the service left out as `None`, or `[]` for a list,
+  never as the generator's internal "not set" value, and leave a field set
+  to `None` out of a request. `absent_fields_as_none` in `generate.py`
+  adapts the generator's model template for this, and fails generation when
+  a new generator version no longer matches it. No field of the contract is
+  nullable, so `None` never has to be sent.
 - The adapter in `generate.py` makes these changes before generating: the
   `If-None-Match` constant becomes a singleton enum; the NDJSON batch body
   becomes a binary `File` whose bytes the template buffers so both HTTPX
@@ -125,6 +131,12 @@ pinned with httpx below 0.29). The transports keep httpx's default reading of
 settings, never the network; a proxy chosen in code is an
 `httpx.HTTPTransport(proxy=...)` passed as `transport`. The tests clear the
 proxy variables too; `tests/test_proxy.py` runs a local server as the proxy.
+
+`tests/test_samples.py` runs every Python block of the README and every
+program in `examples/` against `tests/fake_service.py`, an in-memory service
+that keeps state and enforces the rules a sample can get wrong (names that
+must exist, ownership going to a member, index states, conditional writes).
+Change a README block or an example, and this test runs it.
 
 `tests/test_coverage.py` checks that `sdk-operations.json` names exactly the
 operations of the contract and of `spec/source.json`, and that each one is a

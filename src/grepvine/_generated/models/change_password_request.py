@@ -23,7 +23,6 @@ class ChangePasswordRequest:
 
     def to_dict(self) -> dict[str, Any]:
         current_password = self.current_password
-
         new_password = self.new_password
 
         field_dict: dict[str, Any] = {}

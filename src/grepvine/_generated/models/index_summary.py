@@ -41,8 +41,8 @@ class IndexSummary:
         document_count (int): The number of documents in the index.
         content_bytes (int): The total size of the documents' content, in bytes.
         created_at (datetime.datetime): When the index was created.
-        last_updated_at (datetime.datetime | Unset): When a document was last stored or deleted. Omitted when that is
-            not known, such as before the first write.
+        last_updated_at (datetime.datetime): When a document was last stored or deleted. Omitted when that is not known,
+            such as before the first write.
     """
 
     id: UUID
@@ -55,32 +55,23 @@ class IndexSummary:
     document_count: int
     content_bytes: int
     created_at: datetime.datetime
-    last_updated_at: datetime.datetime | Unset = UNSET
+    last_updated_at: datetime.datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
-
         organization = self.organization
-
         name = self.name
-
         canonical_id = self.canonical_id
-
         description = self.description
-
         tags = self.tags.to_dict()
-
         state = self.state.value
-
         document_count = self.document_count
-
         content_bytes = self.content_bytes
-
         created_at = self.created_at.isoformat()
-
+        _last_updated_at_value = UNSET if self.last_updated_at is None else self.last_updated_at
         last_updated_at: str | Unset = UNSET
-        if not isinstance(self.last_updated_at, Unset):
-            last_updated_at = self.last_updated_at.isoformat()
+        if not isinstance(_last_updated_at_value, Unset):
+            last_updated_at = _last_updated_at_value.isoformat()
 
         field_dict: dict[str, Any] = {}
 
@@ -146,7 +137,7 @@ class IndexSummary:
             document_count=document_count,
             content_bytes=content_bytes,
             created_at=created_at,
-            last_updated_at=last_updated_at,
+            last_updated_at=(None if isinstance(last_updated_at, Unset) else last_updated_at),
         )
 
         return index_summary

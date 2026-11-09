@@ -20,21 +20,22 @@ class UpdateIndexRequest:
     """The fields to change. A field that is absent is left as it is; at least one must be present.
 
     Attributes:
-        description (str | Unset): What the index holds, in Markdown. Empty when no description was set. Clients render
-            it without raw HTML.
-        tags (IndexTagChanges | Unset): Tags to set, by key, and tags to remove, given as null. A key absent from the
-            map is unchanged.
+        description (str): What the index holds, in Markdown. Empty when no description was set. Clients render it
+            without raw HTML.
+        tags (IndexTagChanges): Tags to set, by key, and tags to remove, given as null. A key absent from the map is
+            unchanged.
     """
 
-    description: str | Unset = UNSET
-    tags: IndexTagChanges | Unset = UNSET
+    description: str | None = None
+    tags: IndexTagChanges | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        description = self.description
-
+        _description_value = UNSET if self.description is None else self.description
+        description = _description_value
+        _tags_value = UNSET if self.tags is None else self.tags
         tags: dict[str, Any] | Unset = UNSET
-        if not isinstance(self.tags, Unset):
-            tags = self.tags.to_dict()
+        if not isinstance(_tags_value, Unset):
+            tags = _tags_value.to_dict()
 
         field_dict: dict[str, Any] = {}
 
@@ -61,8 +62,8 @@ class UpdateIndexRequest:
             tags = IndexTagChanges.from_dict(_tags)
 
         update_index_request = cls(
-            description=description,
-            tags=tags,
+            description=(None if isinstance(description, Unset) else description),
+            tags=(None if isinstance(tags, Unset) else tags),
         )
 
         return update_index_request

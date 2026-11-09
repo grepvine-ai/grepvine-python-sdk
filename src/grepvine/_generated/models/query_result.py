@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import Any, TypeVar, TYPE_CHECKING
 
 from attrs import define as _attrs_define
+from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
 
@@ -39,12 +40,12 @@ class QueryResult:
             text_truncated (bool): Whether text was cut at either end.
             matches_truncated (bool): Whether matches were left out, because there were more than 4096 or because they lie
                 outside text.
-            lines_before (list[ContextLine] | Unset): The requested lines before the result, in document order, ending at
-                the line just above its first line. Fewer are returned at the start of the document, and the field is omitted
-                when there are none.
-            lines_after (list[ContextLine] | Unset): The requested lines after the result, in document order, starting at
-                the line just below its last line. Fewer are returned at the end of the document, and the field is omitted when
-                there are none.
+            lines_before (list[ContextLine]): The requested lines before the result, in document order, ending at the line
+                just above its first line. Fewer are returned at the start of the document, and the field is omitted when there
+                are none.
+            lines_after (list[ContextLine]): The requested lines after the result, in document order, starting at the line
+                just below its last line. Fewer are returned at the end of the document, and the field is omitted when there are
+                none.
     """
 
     key: str
@@ -59,48 +60,39 @@ class QueryResult:
     matches: list[Match]
     text_truncated: bool
     matches_truncated: bool
-    lines_before: list[ContextLine] | Unset = UNSET
-    lines_after: list[ContextLine] | Unset = UNSET
+    lines_before: list[ContextLine] = _attrs_field(factory=list)
+    lines_after: list[ContextLine] = _attrs_field(factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         key = self.key
-
         revision = self.revision
-
         line_number = self.line_number
-
         last_line_number = self.last_line_number
-
         line_start_offset = self.line_start_offset
-
         line_end_offset = self.line_end_offset
-
         text_start_offset = self.text_start_offset
-
         text_line_number = self.text_line_number
-
         text = self.text
-
         matches = []
         for matches_item_data in self.matches:
             matches_item = matches_item_data.to_dict()
             matches.append(matches_item)
 
         text_truncated = self.text_truncated
-
         matches_truncated = self.matches_truncated
-
+        _lines_before_value = UNSET if self.lines_before is None else self.lines_before
         lines_before: list[dict[str, Any]] | Unset = UNSET
-        if not isinstance(self.lines_before, Unset):
+        if not isinstance(_lines_before_value, Unset):
             lines_before = []
-            for lines_before_item_data in self.lines_before:
+            for lines_before_item_data in _lines_before_value:
                 lines_before_item = lines_before_item_data.to_dict()
                 lines_before.append(lines_before_item)
 
+        _lines_after_value = UNSET if self.lines_after is None else self.lines_after
         lines_after: list[dict[str, Any]] | Unset = UNSET
-        if not isinstance(self.lines_after, Unset):
+        if not isinstance(_lines_after_value, Unset):
             lines_after = []
-            for lines_after_item_data in self.lines_after:
+            for lines_after_item_data in _lines_after_value:
                 lines_after_item = lines_after_item_data.to_dict()
                 lines_after.append(lines_after_item)
 
@@ -195,8 +187,8 @@ class QueryResult:
             matches=matches,
             text_truncated=text_truncated,
             matches_truncated=matches_truncated,
-            lines_before=lines_before,
-            lines_after=lines_after,
+            lines_before=([] if isinstance(lines_before, Unset) else lines_before),
+            lines_after=([] if isinstance(lines_after, Unset) else lines_after),
         )
 
         return query_result

@@ -31,15 +31,10 @@ class DeviceAuthorization:
 
     def to_dict(self) -> dict[str, Any]:
         device_code = self.device_code
-
         user_code = self.user_code
-
         verification_uri = self.verification_uri
-
         verification_uri_complete = self.verification_uri_complete
-
         expires_in = self.expires_in
-
         interval = self.interval
 
         field_dict: dict[str, Any] = {}

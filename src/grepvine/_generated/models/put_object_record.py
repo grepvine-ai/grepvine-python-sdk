@@ -25,31 +25,30 @@ class PutObjectRecord:
         key (str): The document's key: a UTF-8, POSIX-style path of at most 1,024 bytes, with no empty, `.` or `..`
             components. Storing a key that exists replaces that document.
         content (str): The document text. A batch carries text only, so every document it stores is searchable.
-        metadata (Metadata | Unset): Document metadata as a request sends it. Values are plain or tagged.
-        if_match (str | Unset): A revision. The document is stored only if it still has this revision; otherwise its
-            result has the error `precondition_failed`.
-        if_none_match (Literal['*'] | Unset): Set to `*` to store the document only if no document has this key yet;
-            otherwise its result has the error `precondition_failed`.
+        metadata (Metadata): Document metadata as a request sends it. Values are plain or tagged.
+        if_match (str): A revision. The document is stored only if it still has this revision; otherwise its result has
+            the error `precondition_failed`.
+        if_none_match (Literal['*']): Set to `*` to store the document only if no document has this key yet; otherwise
+            its result has the error `precondition_failed`.
     """
 
     key: str
     content: str
-    metadata: Metadata | Unset = UNSET
-    if_match: str | Unset = UNSET
-    if_none_match: Literal["*"] | Unset = UNSET
+    metadata: Metadata | None = None
+    if_match: str | None = None
+    if_none_match: Literal["*"] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         key = self.key
-
         content = self.content
-
+        _metadata_value = UNSET if self.metadata is None else self.metadata
         metadata: dict[str, Any] | Unset = UNSET
-        if not isinstance(self.metadata, Unset):
-            metadata = self.metadata.to_dict()
-
-        if_match = self.if_match
-
-        if_none_match = self.if_none_match
+        if not isinstance(_metadata_value, Unset):
+            metadata = _metadata_value.to_dict()
+        _if_match_value = UNSET if self.if_match is None else self.if_match
+        if_match = _if_match_value
+        _if_none_match_value = UNSET if self.if_none_match is None else self.if_none_match
+        if_none_match = _if_none_match_value
 
         field_dict: dict[str, Any] = {}
 
@@ -93,9 +92,9 @@ class PutObjectRecord:
         put_object_record = cls(
             key=key,
             content=content,
-            metadata=metadata,
-            if_match=if_match,
-            if_none_match=if_none_match,
+            metadata=(None if isinstance(metadata, Unset) else metadata),
+            if_match=(None if isinstance(if_match, Unset) else if_match),
+            if_none_match=(None if isinstance(if_none_match, Unset) else if_none_match),
         )
 
         return put_object_record

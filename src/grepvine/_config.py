@@ -24,11 +24,18 @@ ENVIRONMENT: Final = {
 
 @dataclass(frozen=True)
 class Settings:
-    """The settings a client uses."""
+    """The settings a client uses. Its printed form shows the API key only in part."""
 
     endpoint: str
     api_key: str | None
     organization: str | None
+
+    def __repr__(self) -> str:
+        key = self.api_key and f"{self.api_key[:8] if len(self.api_key) >= 16 else ''}****"
+        return (
+            f"Settings(endpoint={self.endpoint!r}, api_key={key!r}, "
+            f"organization={self.organization!r})"
+        )
 
 
 def environment() -> dict[str, str]:

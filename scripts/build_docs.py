@@ -184,7 +184,6 @@ def relocate() -> None:
                 item.__init__.__doc__ = f"Create a `{name}`."  # type: ignore[misc]
             elif not issubclass(item, Exception) and "client" in inspect.signature(item).parameters:
                 item.__init__.__doc__ = "@private"  # type: ignore[misc]
-    models.Unset.__repr__ = lambda self: "UNSET"  # type: ignore[method-assign]
 
     def bases(self: pdoc.doc.Class) -> list[tuple[str, str, str]]:
         own = (self.modulename, self.qualname)

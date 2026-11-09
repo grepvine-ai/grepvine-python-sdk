@@ -25,7 +25,6 @@ class Pagination:
 
     def to_dict(self) -> dict[str, Any]:
         next_page_id = self.next_page_id
-
         has_next = self.has_next
 
         field_dict: dict[str, Any] = {}

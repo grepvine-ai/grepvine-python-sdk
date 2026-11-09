@@ -26,7 +26,6 @@ class TaggedBooleanMetadataValue:
 
     def to_dict(self) -> dict[str, Any]:
         type_ = self.type_
-
         value = self.value
 
         field_dict: dict[str, Any] = {}

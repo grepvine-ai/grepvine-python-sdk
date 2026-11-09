@@ -17,17 +17,17 @@ class DeleteObjectRecord:
 
     Attributes:
         key (str): The key of the document to delete.
-        if_match (str | Unset): A revision. The document is deleted only if it still has this revision; otherwise its
-            result has the error `precondition_failed`.
+        if_match (str): A revision. The document is deleted only if it still has this revision; otherwise its result has
+            the error `precondition_failed`.
     """
 
     key: str
-    if_match: str | Unset = UNSET
+    if_match: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         key = self.key
-
-        if_match = self.if_match
+        _if_match_value = UNSET if self.if_match is None else self.if_match
+        if_match = _if_match_value
 
         field_dict: dict[str, Any] = {}
 
@@ -50,7 +50,7 @@ class DeleteObjectRecord:
 
         delete_object_record = cls(
             key=key,
-            if_match=if_match,
+            if_match=(None if isinstance(if_match, Unset) else if_match),
         )
 
         return delete_object_record
