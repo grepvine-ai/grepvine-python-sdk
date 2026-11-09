@@ -116,6 +116,14 @@ tests' autouse `no_configuration` fixture clears those variables and points
 `HOME` at a temporary directory, so a developer's own configuration never
 reaches a test.
 
+The client hands httpx its own retrying transports, so httpx does not apply
+the proxy variables by itself: `_network` in `_client.py` builds a retrying
+transport per proxy pattern from httpx's own reading of `HTTP_PROXY`,
+`HTTPS_PROXY`, `ALL_PROXY` and `NO_PROXY` (`httpx._utils.get_environment_proxies`,
+pinned with httpx below 0.29), and passes `trust_env` to every transport for
+`SSL_CERT_FILE` and `SSL_CERT_DIR`. The tests clear the proxy variables too;
+`tests/test_proxy.py` runs a local server as the proxy.
+
 `tests/test_coverage.py` checks that `sdk-operations.json` names exactly the
 operations of the contract and of `spec/source.json`, and that each one is a
 method on both clients that calls that operation. When the API gains an

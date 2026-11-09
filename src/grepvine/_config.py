@@ -64,7 +64,11 @@ def default_file() -> dict[str, str]:
 
 
 def resolve(
-    *, endpoint: str | None, api_key: str | None, organization: str | None, trust_env: bool
+    *,
+    endpoint: str | None = None,
+    api_key: str | None = None,
+    organization: str | None = None,
+    trust_env: bool,
 ) -> Settings:
     """Each setting from its argument, else, with ``trust_env``, its environment variable, else
     the configuration file, else its default."""

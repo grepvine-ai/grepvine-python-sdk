@@ -16,6 +16,11 @@ from grepvine import AsyncClient, Client, RetryPolicy, _retry
 
 Handler = Callable[[httpx.Request], httpx.Response]
 API_KEY = "gvk_test"
+PROXY_VARIABLES = [
+    name
+    for base in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY")
+    for name in (base, base.lower())
+]
 NO_JITTER = RetryPolicy(retry_after_jitter=0.0)
 
 
@@ -86,12 +91,13 @@ class Clock:
 
 @pytest.fixture(autouse=True)
 def no_configuration(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
-    """Tests see neither the developer's environment nor their configuration file."""
+    """Tests see neither the developer's settings and proxies nor their configuration file."""
     for variable in (
         "GREPVINE_API_KEY",
         "GREPVINE_API_ENDPOINT",
         "GREPVINE_ORGANIZATION",
         "GREPVINE_CONFIG",
+        *PROXY_VARIABLES,
     ):
         monkeypatch.delenv(variable, raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))

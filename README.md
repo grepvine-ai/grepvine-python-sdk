@@ -54,11 +54,30 @@ staging = grepvine.Client.from_config("~/.grepvine/staging.yaml")  # one file on
 isolated = grepvine.Client(api_key="gvk_...", trust_env=False)   # arguments only
 ```
 
-`Client.from_env()` reads only the three environment variables, and
-`Client.from_config(path)` reads only that file; a setting either leaves out
-takes its default. `trust_env=False` makes a client that reads neither and uses
-only its arguments. `AsyncClient` has the same three forms. All of them take
-`timeout`, `retry` and `transport`.
+`Client.from_env()` takes its settings only from the three environment
+variables, and `Client.from_config(path)` only from that file; a setting either
+leaves out takes its default. `AsyncClient` has the same forms, and all of them
+take `proxy`, `timeout`, `retry` and `transport`.
+
+### Proxies and certificates
+
+Like httpx and requests, a client sends its requests through the proxy that
+`HTTPS_PROXY` (or `HTTP_PROXY`, or `ALL_PROXY`) names, connects directly to the
+hosts that `NO_PROXY` lists, and trusts the certificate authorities in
+`SSL_CERT_FILE` or `SSL_CERT_DIR`. `proxy=` names a proxy in code instead:
+
+```python
+client = grepvine.Client(proxy="http://proxy.internal:3128")
+```
+
+A `socks5://` proxy needs `pip install "httpx[socks]"`. Through a proxy, an
+`https` endpoint is reached through a tunnel, so the proxy sees the host name
+but not the API key or the content.
+
+`trust_env=False` ignores the whole environment, as in httpx: the `GREPVINE_*`
+variables, the configuration file, and the proxy and certificate variables. The
+client then uses only its arguments and connects directly, or through its
+`proxy`.
 
 Clients configured differently can be used side by side. The configuration
 file is refused if other users can read it, as `gv` refuses it. An endpoint

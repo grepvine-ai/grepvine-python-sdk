@@ -7,6 +7,7 @@ from importlib.metadata import version
 from typing import Any, Final, Self
 
 import httpx
+from httpx._utils import get_environment_proxies
 
 from grepvine._config import Settings, environment, read_file, resolve
 from grepvine._generated.api.resources import _GeneratedAsyncClient, _GeneratedClient
@@ -40,6 +41,35 @@ def _options(
         "base_url": url if url.endswith("/v1") else f"{url}/v1",
         "headers": headers,
         "timeout": timeout,
+    }
+
+
+def _network(
+    sync: bool,
+    transport: Any,
+    proxy: str | httpx.Proxy | None,
+    trust_env: bool,
+    retry: RetryPolicy | None,
+) -> dict[str, Any]:
+    """The httpx client's transports: each one retries, and goes direct or through a proxy."""
+    policy = retry or RetryPolicy()
+    wrap: Any = RetryTransport if sync else AsyncRetryTransport
+    if transport is not None:
+        if proxy is not None:
+            raise ConfigurationError("pass a proxy or a transport, not both")
+        return {"transport": wrap(transport, policy)}
+    make: Any = httpx.HTTPTransport if sync else httpx.AsyncHTTPTransport
+    mounts: dict[str, Any] = {}
+    if proxy is None and trust_env:
+        # httpx reads HTTP_PROXY, HTTPS_PROXY, ALL_PROXY and NO_PROXY only for transports it
+        # builds itself; the client builds its own so that it can retry, so it applies them.
+        # A pattern without a proxy (from NO_PROXY) uses the direct transport.
+        for pattern, url in get_environment_proxies().items():
+            mounts[pattern] = url and wrap(make(proxy=url, trust_env=True), policy)
+    return {
+        "transport": wrap(make(proxy=proxy, trust_env=trust_env), policy),
+        "mounts": mounts,
+        "trust_env": trust_env,
     }
 
 
@@ -80,9 +110,15 @@ class Client(_GeneratedClient):
             ``https://api.grepvine.ai``.
         organization: The organization of an index named without one, as in
             ``client.index("support")``.
-        trust_env: Whether to read the environment variables and the
-            configuration file. With ``False``, the client uses only its
-            arguments and the defaults.
+        trust_env: Whether to read the environment, as httpx and requests
+            do: the ``GREPVINE_*`` variables and the configuration file, the
+            proxy variables ``HTTPS_PROXY``, ``HTTP_PROXY``, ``ALL_PROXY`` and
+            ``NO_PROXY``, and the certificate variables ``SSL_CERT_FILE`` and
+            ``SSL_CERT_DIR``. With ``False``, the client uses only its
+            arguments and the defaults, and connects directly.
+        proxy: The URL of a proxy for every request, such as
+            ``"http://proxy.internal:3128"``, instead of the proxy variables.
+            A ``socks5://`` proxy needs ``pip install "httpx[socks]"``.
         timeout: Seconds, or an ``httpx.Timeout``, for each request.
         retry: How requests are retried; see `RetryPolicy`.
         transport: The ``httpx`` transport requests go through, for example
@@ -103,21 +139,30 @@ class Client(_GeneratedClient):
         endpoint: str | None = None,
         organization: str | None = None,
         trust_env: bool = True,
+        proxy: str | httpx.Proxy | None = None,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.BaseTransport | None = None,
     ) -> None:
-        self.settings = resolve(
-            endpoint=endpoint,
-            api_key=api_key,
-            organization=organization,
-            trust_env=trust_env,
+        settings = resolve(
+            endpoint=endpoint, api_key=api_key, organization=organization, trust_env=trust_env
         )
-        options = _options(self.settings.api_key, self.settings.endpoint, timeout)
-        inner = transport or httpx.HTTPTransport()
+        self._setup(settings, trust_env, proxy, timeout, retry, transport)
+
+    def _setup(
+        self,
+        settings: Settings,
+        trust_env: bool,
+        proxy: str | httpx.Proxy | None,
+        timeout: float | httpx.Timeout | None,
+        retry: RetryPolicy | None,
+        transport: httpx.BaseTransport | None,
+    ) -> None:
+        self.settings = settings
+        options = _options(settings.api_key, settings.endpoint, timeout)
         self.http = httpx.Client(
             **options,
-            transport=RetryTransport(inner, retry or RetryPolicy()),
+            **_network(True, transport, proxy, trust_env, retry),
             event_hooks={"response": [self._on_response]},
         )
         connection = _Connection(base_url=options["base_url"]).set_httpx_client(self.http)
@@ -131,36 +176,42 @@ class Client(_GeneratedClient):
     def from_env(
         cls,
         *,
+        proxy: str | httpx.Proxy | None = None,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.BaseTransport | None = None,
     ) -> Self:
-        """A client configured only from ``GREPVINE_API_KEY``, ``GREPVINE_API_ENDPOINT`` and
-        ``GREPVINE_ORGANIZATION``; no configuration file is read. A variable that is not set
-        leaves its setting at its default."""
-        return cls(
-            **environment(), trust_env=False, timeout=timeout, retry=retry, transport=transport
-        )
+        """A client whose settings come only from ``GREPVINE_API_KEY``,
+        ``GREPVINE_API_ENDPOINT`` and ``GREPVINE_ORGANIZATION``; no configuration file is read.
+        A variable that is not set leaves its setting at its default. Proxy and certificate
+        variables apply as for `Client`."""
+        client = cls.__new__(cls)
+        settings = resolve(**environment(), trust_env=False)
+        client._setup(settings, True, proxy, timeout, retry, transport)
+        return client
 
     @classmethod
     def from_config(
         cls,
         path: str | os.PathLike[str],
         *,
+        proxy: str | httpx.Proxy | None = None,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.BaseTransport | None = None,
     ) -> Self:
-        """A client configured only from the configuration file at ``path``, in the format
-        ``gv`` writes (``~`` is expanded); no environment variable is read.
+        """A client whose settings come only from the configuration file at ``path``, in the
+        format ``gv`` writes (``~`` is expanded); no ``GREPVINE_*`` variable is read. Proxy and
+        certificate variables apply as for `Client`.
 
         Raises:
             grepvine.ConfigurationError: The file does not exist, other users can read it, or
                 it is not a mapping of settings.
         """
-        return cls(
-            **read_file(path), trust_env=False, timeout=timeout, retry=retry, transport=transport
-        )
+        client = cls.__new__(cls)
+        settings = resolve(**read_file(path), trust_env=False)
+        client._setup(settings, True, proxy, timeout, retry, transport)
+        return client
 
     def index(self, name: str) -> IndexClient:
         """The index ``organization/index``, or ``index`` in the default organization.
@@ -205,21 +256,30 @@ class AsyncClient(_GeneratedAsyncClient):
         endpoint: str | None = None,
         organization: str | None = None,
         trust_env: bool = True,
+        proxy: str | httpx.Proxy | None = None,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
-        self.settings = resolve(
-            endpoint=endpoint,
-            api_key=api_key,
-            organization=organization,
-            trust_env=trust_env,
+        settings = resolve(
+            endpoint=endpoint, api_key=api_key, organization=organization, trust_env=trust_env
         )
-        options = _options(self.settings.api_key, self.settings.endpoint, timeout)
-        inner = transport or httpx.AsyncHTTPTransport()
+        self._setup(settings, trust_env, proxy, timeout, retry, transport)
+
+    def _setup(
+        self,
+        settings: Settings,
+        trust_env: bool,
+        proxy: str | httpx.Proxy | None,
+        timeout: float | httpx.Timeout | None,
+        retry: RetryPolicy | None,
+        transport: httpx.AsyncBaseTransport | None,
+    ) -> None:
+        self.settings = settings
+        options = _options(settings.api_key, settings.endpoint, timeout)
         self.http = httpx.AsyncClient(
             **options,
-            transport=AsyncRetryTransport(inner, retry or RetryPolicy()),
+            **_network(False, transport, proxy, trust_env, retry),
             event_hooks={"response": [self._on_response]},
         )
         connection = _Connection(base_url=options["base_url"]).set_async_httpx_client(self.http)
@@ -233,36 +293,42 @@ class AsyncClient(_GeneratedAsyncClient):
     def from_env(
         cls,
         *,
+        proxy: str | httpx.Proxy | None = None,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> Self:
-        """A client configured only from ``GREPVINE_API_KEY``, ``GREPVINE_API_ENDPOINT`` and
-        ``GREPVINE_ORGANIZATION``; no configuration file is read. A variable that is not set
-        leaves its setting at its default."""
-        return cls(
-            **environment(), trust_env=False, timeout=timeout, retry=retry, transport=transport
-        )
+        """A client whose settings come only from ``GREPVINE_API_KEY``,
+        ``GREPVINE_API_ENDPOINT`` and ``GREPVINE_ORGANIZATION``; no configuration file is read.
+        A variable that is not set leaves its setting at its default. Proxy and certificate
+        variables apply as for `AsyncClient`."""
+        client = cls.__new__(cls)
+        settings = resolve(**environment(), trust_env=False)
+        client._setup(settings, True, proxy, timeout, retry, transport)
+        return client
 
     @classmethod
     def from_config(
         cls,
         path: str | os.PathLike[str],
         *,
+        proxy: str | httpx.Proxy | None = None,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> Self:
-        """A client configured only from the configuration file at ``path``, in the format
-        ``gv`` writes (``~`` is expanded); no environment variable is read.
+        """A client whose settings come only from the configuration file at ``path``, in the
+        format ``gv`` writes (``~`` is expanded); no ``GREPVINE_*`` variable is read. Proxy and
+        certificate variables apply as for `AsyncClient`.
 
         Raises:
             grepvine.ConfigurationError: The file does not exist, other users can read it, or
                 it is not a mapping of settings.
         """
-        return cls(
-            **read_file(path), trust_env=False, timeout=timeout, retry=retry, transport=transport
-        )
+        client = cls.__new__(cls)
+        settings = resolve(**read_file(path), trust_env=False)
+        client._setup(settings, True, proxy, timeout, retry, transport)
+        return client
 
     def index(self, name: str) -> AsyncIndexClient:
         """The index ``organization/index``, or ``index`` in the default organization.
