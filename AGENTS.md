@@ -8,7 +8,8 @@
   public mentions `_generated`, and the docs build fails when a page does.
 - `sdk-operations.json` names every method and is identical in
   `grepvine-ai/grepvine-typescript-sdk`; change both together. Python names
-  are the snake_case form of each segment.
+  are the snake_case form of each segment. `null` keeps an operation out of
+  the SDK, as for the sign-in page's own OAuth requests.
 - `sdk-scopes.json` is Python-only for now: it names the methods of the
   scoped classes, such as `IndexClient`, which hold path parameters (an
   index's organization and name). A name starting with `_` is generated
