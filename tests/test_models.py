@@ -27,6 +27,7 @@ def test_absent_fields_are_none() -> None:
             "id": "00000000-0000-0000-0000-000000000001",
             "name": "ci",
             "prefix": "gvk_1234",
+            "permissions": ["search"],
             "created_at": "2026-01-01T00:00:00Z",
         }
     )

@@ -66,10 +66,18 @@ sdk-waiters.json, whose work finishes in the background, returns a pending objec
 {% macro is_model_list(prop) -%}
 {{ "yes" if prop.template == "list_property.py.jinja" and prop.inner_property.template == "model_property.py.jinja" }}
 {%- endmacro %}
+{% macro is_enum_list(prop) -%}
+{{ "yes" if prop.template == "list_property.py.jinja" and prop.inner_property.template == "enum_property.py.jinja" }}
+{%- endmacro %}
+{% macro literal(prop) -%}
+Literal[{% for value in prop.values.values() %}{{ value | tojson }}{{ ", " if not loop.last }}{% endfor %}]
+{%- endmacro %}
 {# The type an argument accepts. #}
 {% macro accepts(prop) -%}
 {% if prop.template == "enum_property.py.jinja" -%}
-Literal[{% for value in prop.values.values() %}{{ value | tojson }}{{ ", " if not loop.last }}{% endfor %}]
+{{ literal(prop) }}
+{%- elif is_enum_list(prop) -%}
+builtins.list[{{ literal(prop.inner_property) }}]
 {%- elif is_mapping_model(prop) -%}
 {{ prop.class_info.name }} | Mapping[str, {{ models[prop.class_info.name | string].additional_properties.get_type_string() | as_unembedded_code }}]
 {%- elif is_model_list(prop) -%}
@@ -82,6 +90,8 @@ builtins.list[{{ prop.inner_property.class_info.name }} | Mapping[str, Any]]
 {% macro convert(prop) -%}
 {% if prop.template == "enum_property.py.jinja" -%}
 {{ prop.class_info.name }}({{ arg(prop) }})
+{%- elif is_enum_list(prop) -%}
+[{{ prop.inner_property.class_info.name }}(item) for item in {{ arg(prop) }}]
 {%- elif is_mapping_model(prop) -%}
 _model({{ prop.class_info.name }}, {{ arg(prop) }})
 {%- elif is_model_list(prop) -%}
@@ -96,7 +106,8 @@ _model({{ prop.class_info.name }}, {{ arg(prop) }})
 {% macro describe(prop) -%}
 {% set parts = [] %}
 {%- if prop.description %}{% set _ = parts.append(prop.description | safe_for_docstring) %}{% endif %}
-{%- if prop.template == "enum_property.py.jinja" %}{% set choices = [] %}{% for value in prop.values.values() %}{% set _ = choices.append("``" ~ (value | tojson) ~ "``") %}{% endfor %}{% set _ = parts.append("One of " ~ choices | join(", ") ~ ".") %}{% endif %}
+{%- set choice_prop = prop.inner_property if is_enum_list(prop) else prop %}
+{%- if choice_prop.template == "enum_property.py.jinja" %}{% set choices = [] %}{% for value in choice_prop.values.values() %}{% set _ = choices.append("``" ~ (value | tojson) ~ "``") %}{% endfor %}{% set _ = parts.append(("Each one of " if is_enum_list(prop) else "One of ") ~ choices | join(", ") ~ ".") %}{% endif %}
 {%- if prop.default is not none and not prop.required and "default" not in (prop.description | safe_for_docstring | lower) %}{% set _ = parts.append("Default: " ~ ((prop.default.raw_value | tojson) if prop.default.raw_value is string else (prop.default.python_code | as_unembedded_code)) ~ ".") %}{% endif %}
 {{- arg(prop) }}:{{ (" " ~ parts | join(" ")) if parts }}
 {%- endmacro %}

@@ -4,6 +4,13 @@ from collections.abc import Mapping
 from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+
+from ..types import UNSET, Unset
+
+from ..models.permission import Permission
+from typing import cast
+import datetime
 
 
 T = TypeVar("T", bound="CreateAPIKeyRequest")
@@ -11,24 +18,60 @@ T = TypeVar("T", bound="CreateAPIKeyRequest")
 
 @_attrs_define
 class CreateAPIKeyRequest:
-    """A new API key.
+    """Creates an API key. A scope field left out sets no limit.
 
     Attributes:
         name (str): A name to tell the key apart, 1 to 128 characters.
+        permissions (list[Permission]): The permissions a key carries, each named once.
+        organization (str): An account or organization name. Accounts and organizations share one namespace. A name
+            keeps the case it was created with, and any spelling that differs only in case refers to it; no other account or
+            organization can take such a spelling.
+        indexes (list[str]): The indexes a key reaches, by name, in the key's one organization. Omitted for every index
+            of its organizations, including indexes created later. A request names at least one; a key's list is empty once
+            every index it named is deleted.
+        expires_at (datetime.datetime): When the key stops working, at most one year ahead. Omitted for a key that never
+            expires.
     """
 
     name: str
+    permissions: list[Permission]
+    organization: str | None = None
+    indexes: list[str] = _attrs_field(factory=list)
+    expires_at: datetime.datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         name = self.name
+        permissions = []
+        for componentsschemas_permissions_item_data in self.permissions:
+            componentsschemas_permissions_item = componentsschemas_permissions_item_data.value
+            permissions.append(componentsschemas_permissions_item)
+
+        _organization_value = UNSET if self.organization is None else self.organization
+        organization = _organization_value
+        _indexes_value = UNSET if self.indexes is None else self.indexes
+        indexes: list[str] | Unset = UNSET
+        if not isinstance(_indexes_value, Unset):
+            indexes = _indexes_value
+
+        _expires_at_value = UNSET if self.expires_at is None else self.expires_at
+        expires_at: str | Unset = UNSET
+        if not isinstance(_expires_at_value, Unset):
+            expires_at = _expires_at_value.isoformat()
 
         field_dict: dict[str, Any] = {}
 
         field_dict.update(
             {
                 "name": name,
+                "permissions": permissions,
             }
         )
+        if organization is not UNSET:
+            field_dict["organization"] = organization
+        if indexes is not UNSET:
+            field_dict["indexes"] = indexes
+        if expires_at is not UNSET:
+            field_dict["expires_at"] = expires_at
 
         return field_dict
 
@@ -37,8 +80,30 @@ class CreateAPIKeyRequest:
         d = dict(src_dict)
         name = d.pop("name")
 
+        permissions = []
+        _permissions = d.pop("permissions")
+        for componentsschemas_permissions_item_data in _permissions:
+            componentsschemas_permissions_item = Permission(componentsschemas_permissions_item_data)
+
+            permissions.append(componentsschemas_permissions_item)
+
+        organization = d.pop("organization", UNSET)
+
+        indexes = cast(list[str], d.pop("indexes", UNSET))
+
+        _expires_at = d.pop("expires_at", UNSET)
+        expires_at: datetime.datetime | Unset
+        if isinstance(_expires_at, Unset):
+            expires_at = UNSET
+        else:
+            expires_at = datetime.datetime.fromisoformat(_expires_at)
+
         create_api_key_request = cls(
             name=name,
+            permissions=permissions,
+            organization=(None if isinstance(organization, Unset) else organization),
+            indexes=([] if isinstance(indexes, Unset) else indexes),
+            expires_at=(None if isinstance(expires_at, Unset) else expires_at),
         )
 
         return create_api_key_request

@@ -28,6 +28,7 @@ TITLES = {
     "documents": "The documents of an index.",
     "search": "Search over the documents of an index.",
     "apiKeys": "The API keys of the signed-in user.",
+    "connections": "Apps the signed-in user connected through OAuth sign-in, such as MCP clients.",
     "account": "User accounts: registration, sign-in and the current user.",
     "deviceLogin": "Device login: obtain an API key by approving a code in the browser.",
 }

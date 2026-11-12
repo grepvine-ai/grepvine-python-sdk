@@ -35,6 +35,7 @@ def index_json(name: str = "docs", state: str = "ready") -> dict[str, Any]:
         "state": state,
         "document_count": 0,
         "content_bytes": 0,
+        "permissions": ["search", "read"],
         "created_at": "2026-01-01T00:00:00Z",
     }
 

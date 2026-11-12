@@ -20,6 +20,7 @@ from urllib.parse import unquote
 
 import httpx
 
+SCOPE = ("permissions", "organization", "indexes", "expires_at")
 NOW = "2026-01-01T00:00:00Z"
 PASSWORD = "a long passphrase"
 
@@ -69,6 +70,7 @@ class Index:
             "state": self.state,
             "document_count": len(self.documents),
             "content_bytes": sum(len(d.content) for d in self.documents.values()),
+            "permissions": ["search", "read", "write", "manage_index"],
             "created_at": NOW,
         }
 
@@ -158,17 +160,20 @@ class FakeGrepvine:
         self.devices: dict[str, dict[str, Any]] = {}
         self.orgs: dict[str, Organization] = {}
         self.requests: list[httpx.Request] = []
-        self.api_key = self.issue_key("alice", "test")["key"]
+        self.api_key = self.issue_key(
+            "alice", "test", {"permissions": ["search", "read", "write"]}
+        )["key"]
         self.orgs["acme"] = Organization("acme", {"alice": "owner"})
 
     # Setup helpers for tests.
 
-    def issue_key(self, user: str, name: str) -> dict[str, Any]:
+    def issue_key(self, user: str, name: str, scope: dict[str, Any]) -> dict[str, Any]:
         secret = f"gvk_{uuid.uuid4().hex}"
         record = {
             "id": str(uuid.uuid4()),
             "name": name,
             "prefix": secret[:8],
+            **{k: v for k, v in scope.items() if k in SCOPE},
             "created_at": NOW,
             "user": user,
             "key": secret,
@@ -302,6 +307,7 @@ class FakeGrepvine:
                 user_code = code[:4].upper() + "-" + code[4:8].upper()
                 self.devices[code] = {
                     "name": body["api_key_name"],
+                    "scope": body,
                     "user_code": user_code,
                     "polls": 0,
                 }
@@ -328,16 +334,16 @@ class FakeGrepvine:
                     raise Refused(400, "authorization_pending", "not approved yet")
                 if device.get("decision") == "deny":
                     raise Refused(400, "access_denied", "the login was denied")
-                record = self.issue_key("alice", device["name"])
+                record = self.issue_key("alice", device["name"], device["scope"])
                 return 200, {k: v for k, v in record.items() if k != "user"}
         raise Refused(404, "not_found", "no such route")
 
     def api_keys(
         self, method: str, parts: list[str], body: Any, request: httpx.Request, user: str
     ) -> tuple[int, Any]:
-        public = ("id", "name", "prefix", "created_at", "last_used_at", "revoked_at")
+        public = ("id", "name", "prefix", *SCOPE, "created_at", "last_used_at", "revoked_at")
         if method == "POST":
-            record = self.issue_key(user, body["name"])
+            record = self.issue_key(user, body["name"], body)
             return 201, {k: v for k, v in record.items() if k != "user"}
         if method == "GET":
             mine = [

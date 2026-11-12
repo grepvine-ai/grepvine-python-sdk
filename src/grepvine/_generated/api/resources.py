@@ -17,11 +17,14 @@ from ..models.api_key_created import APIKeyCreated
 from ..models.api_key_page import APIKeyPage
 from ..models.auth_options import AuthOptions
 from ..models.change_password_request import ChangePasswordRequest
+from ..models.connection_page import ConnectionPage
+from ..models.connection_scope import ConnectionScope
 from ..models.create_api_key_request import CreateAPIKeyRequest
 from ..models.create_index_request import CreateIndexRequest
 from ..models.create_organization_request import CreateOrganizationRequest
 from ..models.delete_object_record import DeleteObjectRecord
 from ..models.delete_objects_request import DeleteObjectsRequest
+from ..models.device_approval_request import DeviceApprovalRequest
 from ..models.device_authorization import DeviceAuthorization
 from ..models.device_authorization_request import DeviceAuthorizationRequest
 from ..models.device_decision_request import DeviceDecisionRequest
@@ -34,14 +37,22 @@ from ..models.index_tag_changes import IndexTagChanges
 from ..models.index_tags import IndexTags
 from ..models.invitation_check_request import InvitationCheckRequest
 from ..models.invitation_preview import InvitationPreview
+from ..models.key_scope import KeyScope
 from ..models.login_request import LoginRequest
 from ..models.member import Member
 from ..models.member_page import MemberPage
 from ..models.metadata import Metadata
 from ..models.mutation_batch_result import MutationBatchResult
 from ..models.mutation_result import MutationResult
+from ..models.o_auth_approval_request import OAuthApprovalRequest
+from ..models.o_auth_authorization_request import OAuthAuthorizationRequest
+from ..models.o_auth_denial_request import OAuthDenialRequest
+from ..models.o_auth_redirect import OAuthRedirect
 from ..models.organization import Organization
 from ..models.organization_page import OrganizationPage
+from ..models.pending_device_authorization import PendingDeviceAuthorization
+from ..models.pending_o_auth_authorization import PendingOAuthAuthorization
+from ..models.permission import Permission
 from ..models.put_document_form import PutDocumentForm
 from ..models.put_document_if_none_match import PutDocumentIfNoneMatch
 from ..models.query_page import QueryPage
@@ -71,8 +82,14 @@ from .authentication import get_username_availability
 from .authentication import login
 from .authentication import logout
 from .authentication import register_user
+from .connections import approve_o_auth_authorization
+from .connections import deny_o_auth_authorization
+from .connections import list_connections
+from .connections import lookup_o_auth_authorization
+from .connections import revoke_connection
 from .device_login import approve_device_authorization
 from .device_login import deny_device_authorization
+from .device_login import get_device_authorization
 from .device_login import poll_device_token
 from .device_login import start_device_authorization
 from .indexes import create_index
@@ -97,6 +114,7 @@ from .organizations import transfer_organization_ownership
 from .organizations import update_organization_member
 from .search import query_index
 from uuid import UUID
+import datetime
 
 _M = TypeVar("_M")
 
@@ -1477,14 +1495,42 @@ class APIKeys:
         self,
         *,
         name: str,
+        permissions: builtins.list[
+            Literal[
+                "search",
+                "read",
+                "write",
+                "create_index",
+                "manage_index",
+                "manage_members",
+                "manage_organization",
+            ]
+        ],
+        organization: str | None = None,
+        indexes: builtins.list[str] | None = None,
+        expires_at: datetime.datetime | None = None,
     ) -> APIKeyCreated:
         """Create an API key
 
-        Creates an API key for the authenticated account. The response is the only time the secret key
-        is shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+        Creates a key that reaches one organization or all of the account's, a list of indexes or all of
+        them, with a set of permissions, until it expires. A 404 means the organization or an index
+        named does not exist or is not visible. Only a signed-in session can create, list or revoke
+        keys. The response is the only time the secret key is shown, so store it securely. Send it as a
+        bearer token: `Authorization: Bearer <key>`.
 
         Args:
             name: A name to tell the key apart, 1 to 128 characters.
+            permissions: The permissions a key carries, each named once. Each one of ``"search"``,
+                ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
+                ``"manage_organization"``.
+            organization: An account or organization name. Accounts and organizations share one
+                namespace. A name keeps the case it was created with, and any spelling that differs only in
+                case refers to it; no other account or organization can take such a spelling.
+            indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
+                every index of its organizations, including indexes created later. A request names at least
+                one; a key's list is empty once every index it named is deleted.
+            expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
+                expires.
 
         Returns:
             APIKeyCreated
@@ -1496,6 +1542,13 @@ class APIKeys:
         kwargs: dict[str, Any] = {"client": self._client}
         fields: dict[str, Any] = {}
         fields["name"] = name
+        fields["permissions"] = [Permission(item) for item in permissions]
+        if organization is not None:
+            fields["organization"] = organization
+        if indexes is not None:
+            fields["indexes"] = indexes
+        if expires_at is not None:
+            fields["expires_at"] = expires_at
         kwargs["body"] = CreateAPIKeyRequest(**fields)
 
         response = create_api_key.sync_detailed(**kwargs)
@@ -1768,6 +1821,20 @@ class DeviceLogin:
         self,
         *,
         api_key_name: str,
+        permissions: builtins.list[
+            Literal[
+                "search",
+                "read",
+                "write",
+                "create_index",
+                "manage_index",
+                "manage_members",
+                "manage_organization",
+            ]
+        ],
+        organization: str | None = None,
+        indexes: builtins.list[str] | None = None,
+        expires_at: datetime.datetime | None = None,
     ) -> DeviceAuthorization:
         """Start device authorization
 
@@ -1778,6 +1845,17 @@ class DeviceLogin:
 
         Args:
             api_key_name: The name to give the API key the device receives, 1 to 128 characters.
+            permissions: The permissions a key carries, each named once. Each one of ``"search"``,
+                ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
+                ``"manage_organization"``.
+            organization: An account or organization name. Accounts and organizations share one
+                namespace. A name keeps the case it was created with, and any spelling that differs only in
+                case refers to it; no other account or organization can take such a spelling.
+            indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
+                every index of its organizations, including indexes created later. A request names at least
+                one; a key's list is empty once every index it named is deleted.
+            expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
+                expires.
 
         Returns:
             DeviceAuthorization
@@ -1789,6 +1867,13 @@ class DeviceLogin:
         kwargs: dict[str, Any] = {"client": self._client}
         fields: dict[str, Any] = {}
         fields["api_key_name"] = api_key_name
+        fields["permissions"] = [Permission(item) for item in permissions]
+        if organization is not None:
+            fields["organization"] = organization
+        if indexes is not None:
+            fields["indexes"] = indexes
+        if expires_at is not None:
+            fields["expires_at"] = expires_at
         kwargs["body"] = DeviceAuthorizationRequest(**fields)
 
         response = start_device_authorization.sync_detailed(**kwargs)
@@ -1798,15 +1883,19 @@ class DeviceLogin:
         self,
         *,
         user_code: str,
+        scope: KeyScope | None = None,
     ) -> None:
         """Approve device authorization
 
-        Approves a pending device authorization for the signed-in account, identified by the code the
-        device shows. The device's next poll receives a new API key with the name it asked for. A code
-        that is unknown, already decided or expired is not found.
+        Approves a pending device authorization, identified by the code the device shows. The device's
+        next poll receives a new API key with the name it asked for. Without a scope it grants what the
+        device asked for; a scope replaces that as a whole, narrower or wider. The key never does more
+        than the approving account can. A code that is unknown, already decided or expired is not found.
+        Only a signed-in session can approve.
 
         Args:
             user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
+            scope: What a key reaches and may do. A field left out sets no limit.
 
         Returns:
             None
@@ -1818,7 +1907,9 @@ class DeviceLogin:
         kwargs: dict[str, Any] = {"client": self._client}
         fields: dict[str, Any] = {}
         fields["user_code"] = user_code
-        kwargs["body"] = DeviceDecisionRequest(**fields)
+        if scope is not None:
+            fields["scope"] = scope
+        kwargs["body"] = DeviceApprovalRequest(**fields)
 
         approve_device_authorization.sync_detailed(**kwargs)
 
@@ -1880,6 +1971,205 @@ class DeviceLogin:
         response = poll_device_token.sync_detailed(**kwargs)
         return cast(APIKeyCreated, response.parsed)
 
+    def get(
+        self,
+        *,
+        user_code: str,
+    ) -> PendingDeviceAuthorization:
+        """Read a pending device authorization
+
+        Returns the scope a pending device authorization asks for. Only a signed-in session can read
+        one.
+
+        Args:
+            user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
+
+        Returns:
+            PendingDeviceAuthorization
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        fields: dict[str, Any] = {}
+        fields["user_code"] = user_code
+        kwargs["body"] = DeviceDecisionRequest(**fields)
+
+        response = get_device_authorization.sync_detailed(**kwargs)
+        return cast(PendingDeviceAuthorization, response.parsed)
+
+
+class Connections:
+    """Apps the signed-in user connected through OAuth sign-in, such as MCP clients."""
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+
+    def list(
+        self,
+    ) -> ConnectionPage:
+        """List connections
+
+        Lists the apps you have connected that are still in use: revoked and ended connections are left
+        out. Newest first. Only a signed-in session can list them.
+
+        Returns:
+            ConnectionPage
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+
+        response = list_connections.sync_detailed(**kwargs)
+        return cast(ConnectionPage, response.parsed)
+
+    def revoke(
+        self,
+        connection_id: UUID,
+    ) -> None:
+        """Revoke a connection
+
+        Revokes one of the authenticated account's connections. The app's requests are refused from then
+        on, and it must sign in again. A connection that doesn't exist, is already revoked or belongs to
+        another account is not found. Only a signed-in session can revoke one.
+
+        Args:
+            connection_id:
+
+        Returns:
+            None
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["connection_id"] = connection_id
+
+        revoke_connection.sync_detailed(**kwargs)
+
+    def lookup_request(
+        self,
+        *,
+        response_type: str,
+        client_id: str,
+        redirect_uri: str,
+        code_challenge: str,
+        code_challenge_method: str,
+        resource: str,
+        state: str | None = None,
+        scope: str | None = None,
+    ) -> PendingOAuthAuthorization:
+        """Read an app's sign-in request
+
+        Returns who an app signing in through OAuth is and what it asks to do, for a signed-in session
+        to show before approving it. The permissions are those the request's `scope` names that an app
+        can be granted; without any, `search` and `read`. A request that cannot be approved fails with
+        400, and its app is not sent back an answer. Only a signed-in session can read one.
+
+        Args:
+            response_type: Must be `code`.
+            client_id: The app's client ID: the HTTPS address of its client metadata document.
+            redirect_uri: Where the app receives the answer; one of the addresses its metadata document
+                lists.
+            code_challenge: The PKCE code challenge, 43 to 128 characters.
+            code_challenge_method: Must be `S256`.
+            resource: The MCP server the app signs in to.
+            state: A value the app sent, returned to it unchanged, at most 1,024 characters.
+            scope: The space-separated scopes the app asked for.
+
+        Returns:
+            PendingOAuthAuthorization
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        fields: dict[str, Any] = {}
+        fields["response_type"] = response_type
+        fields["client_id"] = client_id
+        fields["redirect_uri"] = redirect_uri
+        fields["code_challenge"] = code_challenge
+        fields["code_challenge_method"] = code_challenge_method
+        fields["resource"] = resource
+        if state is not None:
+            fields["state"] = state
+        if scope is not None:
+            fields["scope"] = scope
+        kwargs["body"] = OAuthAuthorizationRequest(**fields)
+
+        response = lookup_o_auth_authorization.sync_detailed(**kwargs)
+        return cast(PendingOAuthAuthorization, response.parsed)
+
+    def approve_request(
+        self,
+        *,
+        request: OAuthAuthorizationRequest,
+        scope: ConnectionScope,
+    ) -> OAuthRedirect:
+        """Approve an app's sign-in request
+
+        Approves an app's sign-in request with the scope the signed-in account chose, creating a
+        connection, and returns the address to send the browser to, which hands the app a single-use
+        code. The connection never does more than the approving account can, and expires after 90 days
+        unless the app keeps using it. `manage_members` and `manage_organization` cannot be granted to
+        an app. A 404 means the organization or an index named does not exist or is not visible. Only a
+        signed-in session can approve.
+
+        Args:
+            request: An app's OAuth sign-in request, with the parameters it sent to the authorization
+                endpoint.
+            scope: What a connection reaches and may do. A field left out sets no limit.
+
+        Returns:
+            OAuthRedirect
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        fields: dict[str, Any] = {}
+        fields["request"] = request
+        fields["scope"] = scope
+        kwargs["body"] = OAuthApprovalRequest(**fields)
+
+        response = approve_o_auth_authorization.sync_detailed(**kwargs)
+        return cast(OAuthRedirect, response.parsed)
+
+    def deny_request(
+        self,
+        *,
+        request: OAuthAuthorizationRequest,
+    ) -> OAuthRedirect:
+        """Deny an app's sign-in request
+
+        Denies an app's sign-in request and returns the address to send the browser to, which tells the
+        app it was refused with `access_denied`. Only a signed-in session can deny.
+
+        Args:
+            request: An app's OAuth sign-in request, with the parameters it sent to the authorization
+                endpoint.
+
+        Returns:
+            OAuthRedirect
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        fields: dict[str, Any] = {}
+        fields["request"] = request
+        kwargs["body"] = OAuthDenialRequest(**fields)
+
+        response = deny_o_auth_authorization.sync_detailed(**kwargs)
+        return cast(OAuthRedirect, response.parsed)
+
 
 class _GeneratedClient:
     """The API's resources."""
@@ -1891,6 +2181,7 @@ class _GeneratedClient:
     api_keys: APIKeys
     account: Account
     device_login: DeviceLogin
+    connections: Connections
 
     def __init__(self, client: Client) -> None:
         self._client = client
@@ -1901,6 +2192,7 @@ class _GeneratedClient:
         self.api_keys = APIKeys(client)
         self.account = Account(client)
         self.device_login = DeviceLogin(client)
+        self.connections = Connections(client)
 
 
 class _IndexClient:
@@ -3649,14 +3941,42 @@ class AsyncAPIKeys:
         self,
         *,
         name: str,
+        permissions: builtins.list[
+            Literal[
+                "search",
+                "read",
+                "write",
+                "create_index",
+                "manage_index",
+                "manage_members",
+                "manage_organization",
+            ]
+        ],
+        organization: str | None = None,
+        indexes: builtins.list[str] | None = None,
+        expires_at: datetime.datetime | None = None,
     ) -> APIKeyCreated:
         """Create an API key
 
-        Creates an API key for the authenticated account. The response is the only time the secret key
-        is shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+        Creates a key that reaches one organization or all of the account's, a list of indexes or all of
+        them, with a set of permissions, until it expires. A 404 means the organization or an index
+        named does not exist or is not visible. Only a signed-in session can create, list or revoke
+        keys. The response is the only time the secret key is shown, so store it securely. Send it as a
+        bearer token: `Authorization: Bearer <key>`.
 
         Args:
             name: A name to tell the key apart, 1 to 128 characters.
+            permissions: The permissions a key carries, each named once. Each one of ``"search"``,
+                ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
+                ``"manage_organization"``.
+            organization: An account or organization name. Accounts and organizations share one
+                namespace. A name keeps the case it was created with, and any spelling that differs only in
+                case refers to it; no other account or organization can take such a spelling.
+            indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
+                every index of its organizations, including indexes created later. A request names at least
+                one; a key's list is empty once every index it named is deleted.
+            expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
+                expires.
 
         Returns:
             APIKeyCreated
@@ -3668,6 +3988,13 @@ class AsyncAPIKeys:
         kwargs: dict[str, Any] = {"client": self._client}
         fields: dict[str, Any] = {}
         fields["name"] = name
+        fields["permissions"] = [Permission(item) for item in permissions]
+        if organization is not None:
+            fields["organization"] = organization
+        if indexes is not None:
+            fields["indexes"] = indexes
+        if expires_at is not None:
+            fields["expires_at"] = expires_at
         kwargs["body"] = CreateAPIKeyRequest(**fields)
 
         response = await create_api_key.asyncio_detailed(**kwargs)
@@ -3940,6 +4267,20 @@ class AsyncDeviceLogin:
         self,
         *,
         api_key_name: str,
+        permissions: builtins.list[
+            Literal[
+                "search",
+                "read",
+                "write",
+                "create_index",
+                "manage_index",
+                "manage_members",
+                "manage_organization",
+            ]
+        ],
+        organization: str | None = None,
+        indexes: builtins.list[str] | None = None,
+        expires_at: datetime.datetime | None = None,
     ) -> DeviceAuthorization:
         """Start device authorization
 
@@ -3950,6 +4291,17 @@ class AsyncDeviceLogin:
 
         Args:
             api_key_name: The name to give the API key the device receives, 1 to 128 characters.
+            permissions: The permissions a key carries, each named once. Each one of ``"search"``,
+                ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
+                ``"manage_organization"``.
+            organization: An account or organization name. Accounts and organizations share one
+                namespace. A name keeps the case it was created with, and any spelling that differs only in
+                case refers to it; no other account or organization can take such a spelling.
+            indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
+                every index of its organizations, including indexes created later. A request names at least
+                one; a key's list is empty once every index it named is deleted.
+            expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
+                expires.
 
         Returns:
             DeviceAuthorization
@@ -3961,6 +4313,13 @@ class AsyncDeviceLogin:
         kwargs: dict[str, Any] = {"client": self._client}
         fields: dict[str, Any] = {}
         fields["api_key_name"] = api_key_name
+        fields["permissions"] = [Permission(item) for item in permissions]
+        if organization is not None:
+            fields["organization"] = organization
+        if indexes is not None:
+            fields["indexes"] = indexes
+        if expires_at is not None:
+            fields["expires_at"] = expires_at
         kwargs["body"] = DeviceAuthorizationRequest(**fields)
 
         response = await start_device_authorization.asyncio_detailed(**kwargs)
@@ -3970,15 +4329,19 @@ class AsyncDeviceLogin:
         self,
         *,
         user_code: str,
+        scope: KeyScope | None = None,
     ) -> None:
         """Approve device authorization
 
-        Approves a pending device authorization for the signed-in account, identified by the code the
-        device shows. The device's next poll receives a new API key with the name it asked for. A code
-        that is unknown, already decided or expired is not found.
+        Approves a pending device authorization, identified by the code the device shows. The device's
+        next poll receives a new API key with the name it asked for. Without a scope it grants what the
+        device asked for; a scope replaces that as a whole, narrower or wider. The key never does more
+        than the approving account can. A code that is unknown, already decided or expired is not found.
+        Only a signed-in session can approve.
 
         Args:
             user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
+            scope: What a key reaches and may do. A field left out sets no limit.
 
         Returns:
             None
@@ -3990,7 +4353,9 @@ class AsyncDeviceLogin:
         kwargs: dict[str, Any] = {"client": self._client}
         fields: dict[str, Any] = {}
         fields["user_code"] = user_code
-        kwargs["body"] = DeviceDecisionRequest(**fields)
+        if scope is not None:
+            fields["scope"] = scope
+        kwargs["body"] = DeviceApprovalRequest(**fields)
 
         await approve_device_authorization.asyncio_detailed(**kwargs)
 
@@ -4052,6 +4417,205 @@ class AsyncDeviceLogin:
         response = await poll_device_token.asyncio_detailed(**kwargs)
         return cast(APIKeyCreated, response.parsed)
 
+    async def get(
+        self,
+        *,
+        user_code: str,
+    ) -> PendingDeviceAuthorization:
+        """Read a pending device authorization
+
+        Returns the scope a pending device authorization asks for. Only a signed-in session can read
+        one.
+
+        Args:
+            user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
+
+        Returns:
+            PendingDeviceAuthorization
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        fields: dict[str, Any] = {}
+        fields["user_code"] = user_code
+        kwargs["body"] = DeviceDecisionRequest(**fields)
+
+        response = await get_device_authorization.asyncio_detailed(**kwargs)
+        return cast(PendingDeviceAuthorization, response.parsed)
+
+
+class AsyncConnections:
+    """Apps the signed-in user connected through OAuth sign-in, such as MCP clients."""
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+
+    async def list(
+        self,
+    ) -> ConnectionPage:
+        """List connections
+
+        Lists the apps you have connected that are still in use: revoked and ended connections are left
+        out. Newest first. Only a signed-in session can list them.
+
+        Returns:
+            ConnectionPage
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+
+        response = await list_connections.asyncio_detailed(**kwargs)
+        return cast(ConnectionPage, response.parsed)
+
+    async def revoke(
+        self,
+        connection_id: UUID,
+    ) -> None:
+        """Revoke a connection
+
+        Revokes one of the authenticated account's connections. The app's requests are refused from then
+        on, and it must sign in again. A connection that doesn't exist, is already revoked or belongs to
+        another account is not found. Only a signed-in session can revoke one.
+
+        Args:
+            connection_id:
+
+        Returns:
+            None
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["connection_id"] = connection_id
+
+        await revoke_connection.asyncio_detailed(**kwargs)
+
+    async def lookup_request(
+        self,
+        *,
+        response_type: str,
+        client_id: str,
+        redirect_uri: str,
+        code_challenge: str,
+        code_challenge_method: str,
+        resource: str,
+        state: str | None = None,
+        scope: str | None = None,
+    ) -> PendingOAuthAuthorization:
+        """Read an app's sign-in request
+
+        Returns who an app signing in through OAuth is and what it asks to do, for a signed-in session
+        to show before approving it. The permissions are those the request's `scope` names that an app
+        can be granted; without any, `search` and `read`. A request that cannot be approved fails with
+        400, and its app is not sent back an answer. Only a signed-in session can read one.
+
+        Args:
+            response_type: Must be `code`.
+            client_id: The app's client ID: the HTTPS address of its client metadata document.
+            redirect_uri: Where the app receives the answer; one of the addresses its metadata document
+                lists.
+            code_challenge: The PKCE code challenge, 43 to 128 characters.
+            code_challenge_method: Must be `S256`.
+            resource: The MCP server the app signs in to.
+            state: A value the app sent, returned to it unchanged, at most 1,024 characters.
+            scope: The space-separated scopes the app asked for.
+
+        Returns:
+            PendingOAuthAuthorization
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        fields: dict[str, Any] = {}
+        fields["response_type"] = response_type
+        fields["client_id"] = client_id
+        fields["redirect_uri"] = redirect_uri
+        fields["code_challenge"] = code_challenge
+        fields["code_challenge_method"] = code_challenge_method
+        fields["resource"] = resource
+        if state is not None:
+            fields["state"] = state
+        if scope is not None:
+            fields["scope"] = scope
+        kwargs["body"] = OAuthAuthorizationRequest(**fields)
+
+        response = await lookup_o_auth_authorization.asyncio_detailed(**kwargs)
+        return cast(PendingOAuthAuthorization, response.parsed)
+
+    async def approve_request(
+        self,
+        *,
+        request: OAuthAuthorizationRequest,
+        scope: ConnectionScope,
+    ) -> OAuthRedirect:
+        """Approve an app's sign-in request
+
+        Approves an app's sign-in request with the scope the signed-in account chose, creating a
+        connection, and returns the address to send the browser to, which hands the app a single-use
+        code. The connection never does more than the approving account can, and expires after 90 days
+        unless the app keeps using it. `manage_members` and `manage_organization` cannot be granted to
+        an app. A 404 means the organization or an index named does not exist or is not visible. Only a
+        signed-in session can approve.
+
+        Args:
+            request: An app's OAuth sign-in request, with the parameters it sent to the authorization
+                endpoint.
+            scope: What a connection reaches and may do. A field left out sets no limit.
+
+        Returns:
+            OAuthRedirect
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        fields: dict[str, Any] = {}
+        fields["request"] = request
+        fields["scope"] = scope
+        kwargs["body"] = OAuthApprovalRequest(**fields)
+
+        response = await approve_o_auth_authorization.asyncio_detailed(**kwargs)
+        return cast(OAuthRedirect, response.parsed)
+
+    async def deny_request(
+        self,
+        *,
+        request: OAuthAuthorizationRequest,
+    ) -> OAuthRedirect:
+        """Deny an app's sign-in request
+
+        Denies an app's sign-in request and returns the address to send the browser to, which tells the
+        app it was refused with `access_denied`. Only a signed-in session can deny.
+
+        Args:
+            request: An app's OAuth sign-in request, with the parameters it sent to the authorization
+                endpoint.
+
+        Returns:
+            OAuthRedirect
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        fields: dict[str, Any] = {}
+        fields["request"] = request
+        kwargs["body"] = OAuthDenialRequest(**fields)
+
+        response = await deny_o_auth_authorization.asyncio_detailed(**kwargs)
+        return cast(OAuthRedirect, response.parsed)
+
 
 class _GeneratedAsyncClient:
     """The API's resources."""
@@ -4063,6 +4627,7 @@ class _GeneratedAsyncClient:
     api_keys: AsyncAPIKeys
     account: AsyncAccount
     device_login: AsyncDeviceLogin
+    connections: AsyncConnections
 
     def __init__(self, client: Client) -> None:
         self._client = client
@@ -4073,6 +4638,7 @@ class _GeneratedAsyncClient:
         self.api_keys = AsyncAPIKeys(client)
         self.account = AsyncAccount(client)
         self.device_login = AsyncDeviceLogin(client)
+        self.connections = AsyncConnections(client)
 
 
 class _AsyncIndexClient:

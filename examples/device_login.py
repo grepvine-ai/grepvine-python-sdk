@@ -17,9 +17,14 @@ def main() -> None:
     # Starting a device login needs no credentials.
     with grepvine.Client(endpoint=endpoint) as client:
         key = client.device_login.authorize(
-            f"python-sdk on {socket.gethostname()}", on_code=show, timeout=600
+            f"python-sdk on {socket.gethostname()}",
+            permissions=["search", "read"],
+            on_code=show,
+            timeout=600,
         )
-    print(f"Issued API key {key.prefix}... named {key.name!r}")
+    print(
+        f"Issued API key {key.prefix}... named {key.name!r} that may {', '.join(key.permissions)}"
+    )
     with grepvine.Client(api_key=key.key, endpoint=endpoint) as client:
         print(f"Signed in as {client.account.me().name}")
 
