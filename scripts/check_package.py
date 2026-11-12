@@ -55,7 +55,8 @@ assert not hasattr(grepvine, 'AuthenticatedClient')
 INDEX = {
     'id': '00000000-0000-0000-0000-000000000001', 'organization': 'acme', 'name': 'docs',
     'canonical_id': 'c', 'description': '', 'tags': {}, 'state': 'ready',
-    'document_count': 0, 'content_bytes': 0, 'created_at': '2026-01-01T00:00:00Z',
+    'document_count': 0, 'content_bytes': 0, 'permissions': ['search'],
+    'created_at': '2026-01-01T00:00:00Z',
 }
 def handler(request):
     assert request.headers['Authorization'] == 'Bearer gvk'
