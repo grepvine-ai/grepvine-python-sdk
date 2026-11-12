@@ -13,7 +13,9 @@ import pytest
 import grepvine
 
 ROOT = Path(__file__).resolve().parents[1]
-OPERATIONS: dict[str, list[str]] = json.loads((ROOT / "sdk-operations.json").read_text())
+MAP: dict[str, list[str] | None] = json.loads((ROOT / "sdk-operations.json").read_text())
+# null keeps an operation out of the SDK.
+OPERATIONS = {operation: path for operation, path in MAP.items() if path}
 SPEC = json.loads((ROOT / "spec/openapi.json").read_text())
 SPEC_OPERATIONS = {
     operation["operationId"]
@@ -29,7 +31,7 @@ def snake(name: str) -> str:
 
 
 def test_map_covers_exactly_the_api() -> None:
-    assert set(OPERATIONS) == SPEC_OPERATIONS
+    assert set(MAP) == SPEC_OPERATIONS
     assert set(json.loads((ROOT / "spec/source.json").read_text())["operations"]) == SPEC_OPERATIONS
 
 

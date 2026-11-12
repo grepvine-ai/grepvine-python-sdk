@@ -46,6 +46,15 @@ async def test_status_maps_to_error(
     assert isinstance(exc, grepvine.GrepvineError)
 
 
+async def test_missing_permission_detail(fx: Flavor, service: Service) -> None:
+    detail = {"type": "missing_permission", "metadata": {"permission": "write"}}
+    body = {"code": "permission_denied", "reason": "test", "error": "no", "details": [detail]}
+    service.route = lambda request: httpx.Response(403, json=body)
+    with pytest.raises(grepvine.PermissionDeniedError) as raised:
+        await fx.run(fx.client.indexes.create("acme", name="docs"))
+    assert raised.value.details == [detail]
+
+
 async def test_rate_limit_after_waiting_carries_retry_after(kind: str, service: Service) -> None:
     service.reply(error(429, "rate_limited", **{"Retry-After": "7"}))
     async with connect(kind, service, retry=grepvine.RetryPolicy(max_throttled_wait=0)) as fx:

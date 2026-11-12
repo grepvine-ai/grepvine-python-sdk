@@ -320,14 +320,14 @@ results the same way.
 ## Errors
 
 Every error is a `GrepvineError`. Errors from the service are `APIError`
-subclasses with `status_code`, `code`, `reason`, `message`, `request_id` and,
-when the service sent one, `retry_after`:
+subclasses with `status_code`, `code`, `reason`, `message`, `request_id`,
+`details` and, when the service sent one, `retry_after`:
 
 | Exception | When |
 |---|---|
 | `InvalidRequestError` | The request was rejected; fix the input. `InvalidPageError` for a bad page token. |
 | `AuthenticationError` | The API key is missing or not valid. |
-| `PermissionDeniedError` | The key may not perform the action. Code `"organization_suspended"` when the organization is suspended. |
+| `PermissionDeniedError` | The key may not perform the action. Code `"organization_suspended"` when the organization is suspended. When the key lacks a permission, `details` has `{"type": "missing_permission", "metadata": {"permission": ...}}`; get a key with it. |
 | `NotFoundError` | The resource does not exist or is not visible. |
 | `ConflictError` | The request conflicts with the current state, such as creating an index that exists. |
 | `PreconditionFailedError` | An `if_match` or `if_none_match` condition failed on a single-document write. |
@@ -423,19 +423,38 @@ members, indexes, documents and searches with `PermissionDeniedError` and code
 
 ## API keys
 
-A signed-in user manages their API keys through `client.api_keys`:
+A signed-in user manages their API keys through `client.api_keys`; only a
+session (see [Account](#account)) can create, list or revoke keys, not an API
+key. A key reaches one organization or every one of the account's, a list of
+indexes or all of them, with a set of permissions, until it expires. A field
+left out sets no limit, and a key never does more than its account's role
+allows:
 
 ```python
-key = client.api_keys.create(name="ci")  # 1 to 128 characters
+from datetime import UTC, datetime, timedelta
+
+key = client.api_keys.create(
+    name="ci",  # 1 to 128 characters
+    permissions=["search", "read", "write"],
+    organization="acme",
+    indexes=["logs"],
+    expires_at=datetime.now(UTC) + timedelta(days=90),  # at most one year ahead
+)
 print(key.key)  # the secret, shown only now
 
 for listed in client.api_keys.list():
-    print(listed.id, listed.name, listed.prefix, listed.last_used_at, listed.revoked_at)
+    print(listed.id, listed.name, listed.permissions, listed.last_used_at, listed.revoked_at)
 
 client.api_keys.revoke(key.id)
 ```
 
-A listing shows each key's `prefix`, never its secret. A revoked key stays in
+The permissions are `search`, `read`, `write`, `create_index` (needs every
+index in scope), `manage_index`, and `manage_members` and
+`manage_organization` (both need one organization). A listing shows each
+key's `prefix` and scope, never its secret.
+
+`client.connections` lists and revokes the apps a signed-in user connected
+through OAuth sign-in, such as MCP clients, with a session too. A revoked key stays in
 the listing with its `revoked_at` time, and requests that use it fail with
 `AuthenticationError`.
 
@@ -492,16 +511,24 @@ def show(authorization: DeviceAuthorization) -> None:
 endpoint = "https://api.grepvine.ai"  # or your Grepvine service
 # trust_env=False: no API key from the environment or gv's file; starting needs none.
 with grepvine.Client(endpoint=endpoint, trust_env=False) as anonymous:
-    key = anonymous.device_login.authorize("my laptop", on_code=show, timeout=600)
+    key = anonymous.device_login.authorize(
+        "my laptop", permissions=["search", "read"], on_code=show, timeout=600
+    )
+print(key.permissions, key.organization, key.indexes, key.expires_at)
 client = grepvine.Client(api_key=key.key, endpoint=endpoint)
 ```
+
+`permissions`, and optionally `organization`, `indexes` and `expires_at`, are
+what the key asks for, as in `api_keys.create`. The person approving sees them
+and may grant a narrower or wider scope, so check what the returned key
+reaches.
 
 A denied login raises `InvalidRequestError` with code `"access_denied"`, and
 an expired one with `"expired_token"`. A login that is not approved within
 `timeout` seconds, or before it expires, raises `WaitTimeoutError`.
 
 The steps are also available one at a time: the program calls
-`device_login.start(api_key_name=...)` and `device_login.poll(device_code=...)`,
+`device_login.start(api_key_name=..., permissions=...)` and `device_login.poll(device_code=...)`,
 and the person, or a tool acting for them, calls `device_login.approve` or
 `device_login.deny` with the `user_code`. `poll` raises `InvalidRequestError`
 with code `"authorization_pending"` while the person has not decided, and

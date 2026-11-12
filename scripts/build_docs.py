@@ -84,7 +84,7 @@ REFERENCE_GROUPS = {
         "WaitTimeoutError",
         "OperationFailedError",
     ],
-    "API keys": ["APIKeys", "AsyncAPIKeys"],
+    "API keys": ["APIKeys", "AsyncAPIKeys", "Connections", "AsyncConnections"],
     "Account": ["Account", "AsyncAccount"],
     "Device login": ["DeviceLogin", "AsyncDeviceLogin"],
 }

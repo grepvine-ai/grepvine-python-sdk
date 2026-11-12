@@ -61,11 +61,14 @@ def sync_detailed(
 ) -> Response[APIKeyCreated | Error]:
     """Create an API key
 
-     Creates an API key for the authenticated account. The response is the only time the secret key is
-    shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+     Creates a key that reaches one organization or all of the account's, a list of indexes or all of
+    them, with a set of permissions, until it expires. A 404 means the organization or an index named
+    does not exist or is not visible. Only a signed-in session can create, list or revoke keys. The
+    response is the only time the secret key is shown, so store it securely. Send it as a bearer token:
+    `Authorization: Bearer <key>`.
 
     Args:
-        body (CreateAPIKeyRequest): A new API key.
+        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -93,11 +96,14 @@ def sync(
 ) -> APIKeyCreated | Error | None:
     """Create an API key
 
-     Creates an API key for the authenticated account. The response is the only time the secret key is
-    shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+     Creates a key that reaches one organization or all of the account's, a list of indexes or all of
+    them, with a set of permissions, until it expires. A 404 means the organization or an index named
+    does not exist or is not visible. Only a signed-in session can create, list or revoke keys. The
+    response is the only time the secret key is shown, so store it securely. Send it as a bearer token:
+    `Authorization: Bearer <key>`.
 
     Args:
-        body (CreateAPIKeyRequest): A new API key.
+        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -120,11 +126,14 @@ async def asyncio_detailed(
 ) -> Response[APIKeyCreated | Error]:
     """Create an API key
 
-     Creates an API key for the authenticated account. The response is the only time the secret key is
-    shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+     Creates a key that reaches one organization or all of the account's, a list of indexes or all of
+    them, with a set of permissions, until it expires. A 404 means the organization or an index named
+    does not exist or is not visible. Only a signed-in session can create, list or revoke keys. The
+    response is the only time the secret key is shown, so store it securely. Send it as a bearer token:
+    `Authorization: Bearer <key>`.
 
     Args:
-        body (CreateAPIKeyRequest): A new API key.
+        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -150,11 +159,14 @@ async def asyncio(
 ) -> APIKeyCreated | Error | None:
     """Create an API key
 
-     Creates an API key for the authenticated account. The response is the only time the secret key is
-    shown, so store it securely. Send it as a bearer token: `Authorization: Bearer <key>`.
+     Creates a key that reaches one organization or all of the account's, a list of indexes or all of
+    them, with a set of permissions, until it expires. A 404 means the organization or an index named
+    does not exist or is not visible. Only a signed-in session can create, list or revoke keys. The
+    response is the only time the secret key is shown, so store it securely. Send it as a bearer token:
+    `Authorization: Bearer <key>`.
 
     Args:
-        body (CreateAPIKeyRequest): A new API key.
+        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit.
 
     Raises:
         grepvine.APIError: The service answered with an error.

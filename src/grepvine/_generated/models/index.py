@@ -9,6 +9,7 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 from ..models.index_state import IndexState
+from ..models.permission import Permission
 from uuid import UUID
 import datetime
 
@@ -42,6 +43,8 @@ class Index:
         document_count (int): The number of documents in the index.
         content_bytes (int): The total size of the documents' content, in bytes.
         created_at (datetime.datetime): When the index was created.
+        permissions (list[Permission]): What the caller may do with this index, among `search`, `read`, `write` and
+            `manage_index`.
         last_updated_at (datetime.datetime): When a document was last stored or deleted. Omitted when that is not known,
             such as before the first write.
         optimization_progress_percent (int): How far the background optimization of this index has progressed, as a
@@ -58,6 +61,7 @@ class Index:
     document_count: int
     content_bytes: int
     created_at: datetime.datetime
+    permissions: list[Permission]
     last_updated_at: datetime.datetime | None = None
     optimization_progress_percent: int | None = None
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -73,6 +77,11 @@ class Index:
         document_count = self.document_count
         content_bytes = self.content_bytes
         created_at = self.created_at.isoformat()
+        permissions = []
+        for permissions_item_data in self.permissions:
+            permissions_item = permissions_item_data.value
+            permissions.append(permissions_item)
+
         _last_updated_at_value = UNSET if self.last_updated_at is None else self.last_updated_at
         last_updated_at: str | Unset = UNSET
         if not isinstance(_last_updated_at_value, Unset):
@@ -98,6 +107,7 @@ class Index:
                 "document_count": document_count,
                 "content_bytes": content_bytes,
                 "created_at": created_at,
+                "permissions": permissions,
             }
         )
         if last_updated_at is not UNSET:
@@ -132,6 +142,13 @@ class Index:
 
         created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
+        permissions = []
+        _permissions = d.pop("permissions")
+        for permissions_item_data in _permissions:
+            permissions_item = Permission(permissions_item_data)
+
+            permissions.append(permissions_item)
+
         _last_updated_at = d.pop("last_updated_at", UNSET)
         last_updated_at: datetime.datetime | Unset
         if isinstance(_last_updated_at, Unset):
@@ -152,6 +169,7 @@ class Index:
             document_count=document_count,
             content_bytes=content_bytes,
             created_at=created_at,
+            permissions=permissions,
             last_updated_at=(None if isinstance(last_updated_at, Unset) else last_updated_at),
             optimization_progress_percent=(
                 None

@@ -92,7 +92,10 @@ class APIError(GrepvineError):
 
     ``code`` says what went wrong in machine-readable form, ``message`` is the
     service's sentence about it, and ``request_id`` identifies the request for
-    support.
+    support. ``details`` holds structured information about the error, each a
+    mapping with ``type`` and ``metadata``; ignore types you do not know. A
+    ``"missing_permission"`` detail names in ``metadata["permission"]`` the
+    permission the API key lacks.
     """
 
     def __init__(
@@ -104,6 +107,7 @@ class APIError(GrepvineError):
         message: str,
         request_id: str | None = None,
         retry_after: int | None = None,
+        details: list[dict[str, Any]] | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
@@ -112,6 +116,7 @@ class APIError(GrepvineError):
         self.message = message
         self.request_id = request_id
         self.retry_after = retry_after
+        self.details = details or []
 
     def __str__(self) -> str:
         if self.request_id:
@@ -244,4 +249,5 @@ def map_error(response: httpx.Response) -> APIError:
         message=str(body.get("error") or f"HTTP {status}"),
         request_id=response.headers.get("x-request-id") or None,
         retry_after=int(retry_after) if retry_after.isdigit() else None,
+        details=[dict(d) for d in body.get("details") or [] if isinstance(d, Mapping)],
     )

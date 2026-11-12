@@ -67,7 +67,9 @@ def sync_detailed(
     after `expires_in` seconds.
 
     Args:
-        body (DeviceAuthorizationRequest): A request to sign in a device.
+        body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
+            what the device asks for; the person approving it sees them and may change them. A scope
+            field left out sets no limit.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -101,7 +103,9 @@ def sync(
     after `expires_in` seconds.
 
     Args:
-        body (DeviceAuthorizationRequest): A request to sign in a device.
+        body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
+            what the device asks for; the person approving it sees them and may change them. A scope
+            field left out sets no limit.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -130,7 +134,9 @@ async def asyncio_detailed(
     after `expires_in` seconds.
 
     Args:
-        body (DeviceAuthorizationRequest): A request to sign in a device.
+        body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
+            what the device asks for; the person approving it sees them and may change them. A scope
+            field left out sets no limit.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -162,7 +168,9 @@ async def asyncio(
     after `expires_in` seconds.
 
     Args:
-        body (DeviceAuthorizationRequest): A request to sign in a device.
+        body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
+            what the device asks for; the person approving it sees them and may change them. A scope
+            field left out sets no limit.
 
     Raises:
         grepvine.APIError: The service answered with an error.

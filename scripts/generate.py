@@ -28,6 +28,7 @@ TITLES = {
     "documents": "The documents of an index.",
     "search": "Search over the documents of an index.",
     "apiKeys": "The API keys of the signed-in user.",
+    "connections": "Apps the signed-in user connected through OAuth sign-in, such as MCP clients.",
     "account": "User accounts: registration, sign-in and the current user.",
     "deviceLogin": "Device login: obtain an API key by approving a code in the browser.",
 }
@@ -203,6 +204,21 @@ def main() -> None:
         sys.exit(f"Add these operations to {OPERATIONS.name}: {unmapped}")
     if stale := sorted(set(operations) - operation_ids):
         sys.exit(f"{OPERATIONS.name} names operations the API does not have: {stale}")
+    # An operation mapped to null stays out of the SDK, such as the sign-in page's own requests.
+    for item in spec["paths"].values():
+        for method in [
+            m
+            for m, op in item.items()
+            if isinstance(op, dict) and not operations.get(op.get("operationId"), True)
+        ]:
+            del item[method]
+    spec["paths"] = {
+        path: item
+        for path, item in spec["paths"].items()
+        if any(isinstance(op, dict) for op in item.values())
+    }
+    operations = {operation: path for operation, path in operations.items() if path}
+    operation_ids = set(operations)
     # Methods take body fields and parameters as keyword arguments, so their names must differ.
     if collisions := flattened_collisions(spec):
         sys.exit(f"Body fields collide with parameters: {collisions}")
