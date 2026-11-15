@@ -1,7 +1,6 @@
 """Check an installed wheel independently of the source-tree editable package."""
 
 import subprocess
-from importlib.metadata import version
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -9,7 +8,9 @@ PACKAGE = Path(__file__).resolve().parents[1]
 
 
 def main() -> None:
-    wheel = PACKAGE / "dist" / f"grepvine-{version('grepvine')}-py3-none-any.whl"
+    # The newest wheel is the one just built; its version can differ from the
+    # installed metadata when the tree changed after `uv sync`.
+    wheel = max((PACKAGE / "dist").glob("grepvine-*.whl"), key=lambda path: path.stat().st_mtime)
     with TemporaryDirectory(prefix="grepvine-wheel-") as directory:
         environment = Path(directory) / "venv"
         requirements = Path(directory) / "requirements.txt"
