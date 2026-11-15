@@ -39,6 +39,7 @@ needs no setup. Each setting comes from the first of:
 | Argument | Environment variable | Default |
 |---|---|---|
 | `api_key` | `GREPVINE_API_KEY` | None. |
+| `agent_secret` | `GREPVINE_AGENT_SECRET` | None; see [Agents](#agents). |
 | `endpoint` | `GREPVINE_API_ENDPOINT` | `https://api.grepvine.ai` |
 | `organization` | `GREPVINE_ORGANIZATION` | None. |
 
@@ -54,7 +55,10 @@ staging = grepvine.Client.from_config("~/.grepvine/staging.yaml")  # one file on
 isolated = grepvine.Client(api_key="gvk_...", trust_env=False)   # arguments only
 ```
 
-`Client.from_env()` takes its settings only from the three environment
+The API key and the agent secret are one credential: both come from the first
+of those places that sets either, and a place that sets both is an error.
+
+`Client.from_env()` takes its settings only from the four environment
 variables, and `Client.from_config(path)` only from that file; a setting either
 leaves out takes its default. `trust_env=False` makes a client whose settings
 come only from its arguments. `AsyncClient` has the same forms, and all of them
@@ -518,8 +522,10 @@ print(key.permissions, key.organization, key.indexes, key.expires_at)
 client = grepvine.Client(api_key=key.key, endpoint=endpoint)
 ```
 
-`permissions`, and optionally `organization`, `indexes` and `expires_at`, are
-what the key asks for, as in `api_keys.create`. The person approving sees them
+`permissions`, and optionally `agent`, `organization`, `indexes` and
+`expires_at`, are what the key asks for, as in `api_keys.create`; with
+`agent`, the key acts as that agent of `organization` for the person who
+approves it. The person approving sees them
 and may grant a narrower or wider scope, so check what the returned key
 reaches.
 
@@ -533,6 +539,41 @@ and the person, or a tool acting for them, calls `device_login.approve` or
 `device_login.deny` with the `user_code`. `poll` raises `InvalidRequestError`
 with code `"authorization_pending"` while the person has not decided, and
 `"slow_down"` when polled more often than the authorization's `interval`.
+
+## Agents
+
+A job that runs without a person, such as CI, can work as an agent of an
+organization with an agent secret (`gvs_...`). Create the secret in the
+agent's **Secrets** section in the console, or with `gv agent secret create`;
+it is shown once. Pass it as `agent_secret`, or set `GREPVINE_AGENT_SECRET`,
+instead of an API key:
+
+```python
+import os
+
+import grepvine
+
+agent = grepvine.Client(agent_secret=os.environ["CI_AGENT_SECRET"], organization="acme")
+for hit in agent.index("support").search(pattern="TODO"):
+    print(f"{hit.key}:{hit.line_number}: {hit.text}")
+```
+
+The client exchanges the secret for a short-lived token, exchanges it again
+shortly before the token expires or after the service refuses it, and sends
+only the token with requests. Threads sharing a client wait for one exchange.
+A secret that is not valid, revoked or expired, or that belongs to a disabled
+agent, raises `AuthenticationError` with code `"invalid_client"`.
+
+The agent does what its permissions allow, in its own organization only. A
+request it lacks a permission for raises `PermissionDeniedError` with an
+`"agent_missing_permission"` detail naming the permission; ask one of the
+agent's managers to grant it.
+
+`client.agents` lists, creates, changes and deletes agents,
+`client.agents.managers` adds and removes their managers, and
+`client.agents.secrets` lists and revokes their secrets. They take a
+signed-in session, or an API key of one organization with the `manage_agents`
+permission. Creating a secret takes a signed-in session.
 
 ## Other requests
 

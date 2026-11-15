@@ -23,8 +23,8 @@ from typing import Any, Final, Literal, Protocol, Required, TypeAlias, TypedDict
 from grepvine import _retry
 from grepvine._generated.api import resources
 from grepvine._generated.models import (
-    APIKeyCreated,
     DeviceAuthorization,
+    DeviceToken,
     DocumentPage,
     DocumentSummary,
     Index,
@@ -420,19 +420,23 @@ class DeviceLogin(resources.DeviceLogin):
                 "manage_index",
                 "manage_members",
                 "manage_organization",
+                "manage_agents",
             ]
         ],
         on_code: Callable[[DeviceAuthorization], object],
+        agent: str | None = None,
         organization: str | None = None,
         indexes: builtins.list[str] | None = None,
         expires_at: datetime | None = None,
         timeout: float | None = None,
-    ) -> APIKeyCreated:
+    ) -> DeviceToken:
         """Start a device login, report its code, and poll until the API key is issued.
 
-        ``permissions``, ``organization``, ``indexes`` and ``expires_at`` are what
-        the key asks for; the person approving sees them and may change them, so
-        check what the returned key reaches. A field left out sets no limit.
+        ``permissions``, ``agent``, ``organization``, ``indexes`` and ``expires_at``
+        are what the key asks for; ``agent`` names an agent of ``organization``
+        for the key to act as. The person approving sees them and may change
+        them, so check what the returned key reaches. A field left out sets no
+        limit.
 
         ``on_code`` receives the authorization to show the user: its
         ``verification_uri_complete`` and ``user_code``. Polling follows the
@@ -447,6 +451,7 @@ class DeviceLogin(resources.DeviceLogin):
         authorization = self.start(
             api_key_name=api_key_name,
             permissions=permissions,
+            agent=agent,
             organization=organization,
             indexes=indexes,
             expires_at=expires_at,
@@ -480,18 +485,21 @@ class AsyncDeviceLogin(resources.AsyncDeviceLogin):
                 "manage_index",
                 "manage_members",
                 "manage_organization",
+                "manage_agents",
             ]
         ],
         on_code: Callable[[DeviceAuthorization], object],
+        agent: str | None = None,
         organization: str | None = None,
         indexes: builtins.list[str] | None = None,
         expires_at: datetime | None = None,
         timeout: float | None = None,
-    ) -> APIKeyCreated:
+    ) -> DeviceToken:
         """Start a device login and poll until the key is issued; see ``DeviceLogin.authorize``."""
         authorization = await self.start(
             api_key_name=api_key_name,
             permissions=permissions,
+            agent=agent,
             organization=organization,
             indexes=indexes,
             expires_at=expires_at,

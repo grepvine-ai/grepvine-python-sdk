@@ -97,6 +97,7 @@ def no_configuration(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
         "GREPVINE_API_KEY",
         "GREPVINE_API_ENDPOINT",
         "GREPVINE_ORGANIZATION",
+        "GREPVINE_AGENT_SECRET",
         "GREPVINE_CONFIG",
         *PROXY_VARIABLES,
     ):

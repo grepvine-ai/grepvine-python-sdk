@@ -125,9 +125,9 @@ def test_index_client_covers_its_operations() -> None:
 
 
 def test_resources_have_no_other_operation_methods() -> None:
-    expected: dict[str, set[str]] = {}
+    expected: dict[tuple[str, ...], set[str]] = {}
     for operation, path in OPERATIONS.items():
-        methods = expected.setdefault(snake(path[-2]), set())
+        methods = expected.setdefault(tuple(snake(part) for part in path[:-1]), set())
         name = snake(path[-1])
         methods.add(name)
         if operation in PAGED:
@@ -138,14 +138,16 @@ def test_resources_have_no_other_operation_methods() -> None:
         "device_login": {"authorize"},
     }
     client = grepvine.Client(trust_env=False)
-    for name, methods in expected.items():
-        resource = getattr(client, name, None) or client.organizations.members
+    for names, methods in expected.items():
+        resource: object = client
+        for name in names:
+            resource = getattr(resource, name)
         public = {
             attribute
             for attribute in dir(resource)
             if not attribute.startswith("_") and callable(getattr(resource, attribute))
         }
-        assert public == methods | helpers.get(name, set()), name
+        assert public == methods | helpers.get(name, set()), names
 
 
 def test_index_client_has_no_other_methods() -> None:

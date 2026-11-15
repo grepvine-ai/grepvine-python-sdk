@@ -17,7 +17,8 @@ T = TypeVar("T", bound="ErrorDetail")
 class ErrorDetail:
     """One piece of information about an error. `type` names what it is and which `metadata` keys it carries;
     clients ignore types they do not know. `missing_permission`: the API key lacks the permission
-    `metadata.permission` names.
+    `metadata.permission` names. `agent_missing_permission`: the agent lacks the permission
+    `metadata.permission` names; one of its managers can grant it.
 
         Attributes:
             type_ (str): What the detail is, such as `missing_permission`.

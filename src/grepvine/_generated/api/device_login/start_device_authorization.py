@@ -64,12 +64,14 @@ def sync_detailed(
      Starts signing in a device, such as the command-line client, without entering a password on it. Show
     the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
     it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
-    after `expires_in` seconds.
+    after `expires_in` seconds. A device may ask for a new secret of an agent instead of an API key,
+    with `agent_secret` and none of the key's fields.
 
     Args:
         body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
             what the device asks for; the person approving it sees them and may change them. A scope
-            field left out sets no limit.
+            field left out sets no limit. A request for an API key names it and its permissions; a
+            request for an agent secret sends `agent_secret` and none of the other fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -100,12 +102,14 @@ def sync(
      Starts signing in a device, such as the command-line client, without entering a password on it. Show
     the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
     it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
-    after `expires_in` seconds.
+    after `expires_in` seconds. A device may ask for a new secret of an agent instead of an API key,
+    with `agent_secret` and none of the key's fields.
 
     Args:
         body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
             what the device asks for; the person approving it sees them and may change them. A scope
-            field left out sets no limit.
+            field left out sets no limit. A request for an API key names it and its permissions; a
+            request for an agent secret sends `agent_secret` and none of the other fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -131,12 +135,14 @@ async def asyncio_detailed(
      Starts signing in a device, such as the command-line client, without entering a password on it. Show
     the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
     it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
-    after `expires_in` seconds.
+    after `expires_in` seconds. A device may ask for a new secret of an agent instead of an API key,
+    with `agent_secret` and none of the key's fields.
 
     Args:
         body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
             what the device asks for; the person approving it sees them and may change them. A scope
-            field left out sets no limit.
+            field left out sets no limit. A request for an API key names it and its permissions; a
+            request for an agent secret sends `agent_secret` and none of the other fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -165,12 +171,14 @@ async def asyncio(
      Starts signing in a device, such as the command-line client, without entering a password on it. Show
     the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`) to approve
     it in a signed-in browser, then poll for the API key with `device_code`. The authorization expires
-    after `expires_in` seconds.
+    after `expires_in` seconds. A device may ask for a new secret of an agent instead of an API key,
+    with `agent_secret` and none of the key's fields.
 
     Args:
         body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
             what the device asks for; the person approving it sees them and may change them. A scope
-            field left out sets no limit.
+            field left out sets no limit. A request for an API key names it and its permissions; a
+            request for an agent secret sends `agent_secret` and none of the other fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.

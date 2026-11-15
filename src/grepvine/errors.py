@@ -95,7 +95,8 @@ class APIError(GrepvineError):
     support. ``details`` holds structured information about the error, each a
     mapping with ``type`` and ``metadata``; ignore types you do not know. A
     ``"missing_permission"`` detail names in ``metadata["permission"]`` the
-    permission the API key lacks.
+    permission the API key lacks; an ``"agent_missing_permission"`` detail names
+    one the agent lacks, which one of the agent's managers can grant.
     """
 
     def __init__(
@@ -238,6 +239,8 @@ def map_error(response: httpx.Response) -> APIError:
     except ValueError:
         body = None
     body = body if isinstance(body, Mapping) else {}
+    if "error_description" in body:  # the token endpoint answers as OAuth does
+        body = {"code": body.get("error"), "error": body["error_description"]}
     status = response.status_code
     code = str(body.get("code") or "request_failed")
     cls = _BY_STATUS.get(status, ServerError if status >= 500 else APIError)

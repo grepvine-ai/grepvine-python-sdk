@@ -72,6 +72,7 @@ def fake(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[FakeGrepvi
     monkeypatch.setenv("GREPVINE_API_KEY", service.api_key)
     monkeypatch.setenv("GREPVINE_ORGANIZATION", "acme")
     monkeypatch.setenv("CI_GREPVINE_KEY", service.api_key)
+    monkeypatch.setenv("CI_AGENT_SECRET", service.agent_secret)
     monkeypatch.chdir(tmp_path)
     (tmp_path / "out").mkdir()
     (tmp_path / "out/report.pdf").write_bytes(b"%PDF-1.7\n")

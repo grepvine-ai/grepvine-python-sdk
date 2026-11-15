@@ -2,6 +2,12 @@
 
 from .add_member_request import AddMemberRequest
 from .add_member_request_role import AddMemberRequestRole
+from .agent import Agent
+from .agent_ceiling import AgentCeiling
+from .agent_page import AgentPage
+from .agent_secret import AgentSecret
+from .agent_secret_created import AgentSecretCreated
+from .agent_secret_page import AgentSecretPage
 from .api_key import APIKey
 from .api_key_created import APIKeyCreated
 from .api_key_page import APIKeyPage
@@ -11,15 +17,19 @@ from .connection import Connection
 from .connection_page import ConnectionPage
 from .connection_scope import ConnectionScope
 from .context_line import ContextLine
+from .create_agent_request import CreateAgentRequest
+from .create_agent_secret_request import CreateAgentSecretRequest
 from .create_api_key_request import CreateAPIKeyRequest
 from .create_index_request import CreateIndexRequest
 from .create_organization_request import CreateOrganizationRequest
 from .delete_object_record import DeleteObjectRecord
 from .delete_objects_request import DeleteObjectsRequest
+from .device_agent_secret import DeviceAgentSecret
 from .device_approval_request import DeviceApprovalRequest
 from .device_authorization import DeviceAuthorization
 from .device_authorization_request import DeviceAuthorizationRequest
 from .device_decision_request import DeviceDecisionRequest
+from .device_token import DeviceToken
 from .device_token_request import DeviceTokenRequest
 from .document_page import DocumentPage
 from .document_summary import DocumentSummary
@@ -71,15 +81,23 @@ from .tagged_number_metadata_value import TaggedNumberMetadataValue
 from .tagged_string_metadata_value import TaggedStringMetadataValue
 from .tagged_timestamp_metadata_value import TaggedTimestampMetadataValue
 from .transfer_ownership_request import TransferOwnershipRequest
+from .update_agent_request import UpdateAgentRequest
 from .update_index_request import UpdateIndexRequest
 from .update_member_request import UpdateMemberRequest
 from .update_member_request_role import UpdateMemberRequestRole
+from .update_organization_request import UpdateOrganizationRequest
 from .user import User
 from .username_availability import UsernameAvailability
 
 __all__ = (
     "AddMemberRequest",
     "AddMemberRequestRole",
+    "Agent",
+    "AgentCeiling",
+    "AgentPage",
+    "AgentSecret",
+    "AgentSecretCreated",
+    "AgentSecretPage",
     "APIKey",
     "APIKeyCreated",
     "APIKeyPage",
@@ -89,15 +107,19 @@ __all__ = (
     "ConnectionPage",
     "ConnectionScope",
     "ContextLine",
+    "CreateAgentRequest",
+    "CreateAgentSecretRequest",
     "CreateAPIKeyRequest",
     "CreateIndexRequest",
     "CreateOrganizationRequest",
     "DeleteObjectRecord",
     "DeleteObjectsRequest",
+    "DeviceAgentSecret",
     "DeviceApprovalRequest",
     "DeviceAuthorization",
     "DeviceAuthorizationRequest",
     "DeviceDecisionRequest",
+    "DeviceToken",
     "DeviceTokenRequest",
     "DocumentPage",
     "DocumentSummary",
@@ -149,9 +171,11 @@ __all__ = (
     "TaggedStringMetadataValue",
     "TaggedTimestampMetadataValue",
     "TransferOwnershipRequest",
+    "UpdateAgentRequest",
     "UpdateIndexRequest",
     "UpdateMemberRequest",
     "UpdateMemberRequestRole",
+    "UpdateOrganizationRequest",
     "User",
     "UsernameAvailability",
 )

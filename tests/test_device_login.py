@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 import grepvine
-from grepvine.models import APIKeyCreated, DeviceAuthorization
+from grepvine.models import DeviceAuthorization, DeviceToken
 from tests.conftest import Clock, Flavor, Service, error
 
 pytestmark = pytest.mark.anyio
@@ -48,7 +48,7 @@ async def test_polls_until_issued_and_slows_down(
             on_code=shown.append,
         )
     )
-    assert isinstance(key, APIKeyCreated) and key.key == "gvk_abcdef"
+    assert isinstance(key, DeviceToken) and key.key == "gvk_abcdef"
     assert [code.user_code for code in shown] == ["ABCD-EFGH"]
     assert clock.sleeps == [5, 5, 10, 10]
     assert service.json(0) == {

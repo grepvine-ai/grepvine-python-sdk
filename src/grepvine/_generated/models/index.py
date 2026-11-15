@@ -26,9 +26,9 @@ class Index:
 
     Attributes:
         id (UUID): The index's unique ID.
-        organization (str): An account or organization name. Accounts and organizations share one namespace. A name
-            keeps the case it was created with, and any spelling that differs only in case refers to it; no other account or
-            organization can take such a spelling.
+        organization (str): A name: of an account, an organization or an agent. Accounts and organizations share one
+            namespace; an agent's name is unique within its organization. A name keeps the case it was created with, and any
+            spelling that differs only in case refers to it; nothing else in the same namespace can take such a spelling.
         name (str): An index name, unique in its organization. A name keeps the case it was created with, and any
             spelling that differs only in case refers to it; no other index in the organization can take such a spelling.
         canonical_id (str): A stable identifier for the index, currently the same as `id`.

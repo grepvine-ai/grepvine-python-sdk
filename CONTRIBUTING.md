@@ -98,7 +98,7 @@ generator cannot know.
 
 | Path | Contents |
 | --- | --- |
-| `src/grepvine/_client.py` | `Client` and `AsyncClient`, built on the root classes: options, bearer authentication, the session after `account.login`, the hook that raises errors, closing, `client.index`, and the default client behind `grepvine.index`. |
+| `src/grepvine/_client.py` | `Client` and `AsyncClient`, built on the root classes: options, bearer authentication, the agent secret exchange (`_AgentToken`, an `httpx.Auth`), the session after `account.login`, the hook that raises errors, closing, `client.index`, and the default client behind `grepvine.index`. |
 | `src/grepvine/_config.py` | Settings resolved like `gv`: argument, environment variable, configuration file, default. |
 | `src/grepvine/_index.py` | `IndexClient` and `AsyncIndexClient` on the scoped classes: `put` (text, bytes, a path, a file, or chunks and async chunks streamed with a form it writes itself), `put_many`, `list` with prefixes, `wait_until_ready`. |
 | `src/grepvine/errors.py` | The exceptions, and `map_error`, the one function every error answer goes through. |
@@ -114,7 +114,7 @@ error answer before the operation decodes it, so methods return only
 successful answers. The helpers keep the names the TypeScript SDK uses
 (`paginate`, `waitUntilReady`, `authorize`, `putMany`).
 
-A client reads `GREPVINE_API_KEY`, `GREPVINE_API_ENDPOINT`,
+A client reads `GREPVINE_API_KEY`, `GREPVINE_AGENT_SECRET`, `GREPVINE_API_ENDPOINT`,
 `GREPVINE_ORGANIZATION` and `gv`'s configuration file unless created with
 `trust_env=False`; `Client.from_env()` and `Client.from_config(path)` read one
 of those sources alone (`_config.environment` and `_config.read_file`). The

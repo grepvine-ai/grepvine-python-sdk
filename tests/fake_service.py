@@ -16,7 +16,7 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote
 
 import httpx
 
@@ -164,6 +164,7 @@ class FakeGrepvine:
             "alice", "test", {"permissions": ["search", "read", "write"]}
         )["key"]
         self.orgs["acme"] = Organization("acme", {"alice": "owner"})
+        self.agent_secret = f"gvs_{uuid.uuid4().hex}"
 
     # Setup helpers for tests.
 
@@ -246,12 +247,23 @@ class FakeGrepvine:
             return self.auth(method, parts[1:], body, request)
         if parts[0] == "device":
             return self.device(parts[1:], body, request)
+        if parts == ["oauth", "token"]:
+            return self.token(request)
         user = self.user(request)
         if parts[0] == "api-keys":
             return self.api_keys(method, parts[1:], body, request, user)
         if parts[0] == "organizations":
             return self.organizations(method, parts[1:], body, request, user)
         raise Refused(404, "not_found", f"no route {method} {path}")
+
+    def token(self, request: httpx.Request) -> tuple[int, Any]:
+        """Exchanges the agent secret for a key; the fake has no agents, so it acts as alice."""
+        form = parse_qs(request.content.decode())
+        if form != {"grant_type": ["client_credentials"], "client_secret": [self.agent_secret]}:
+            raise Refused(401, "invalid_client", "the agent secret is not valid")
+        record = self.issue_key("alice", "agent", {"permissions": ["search", "read"]})
+        answer = {"access_token": record["key"], "token_type": "Bearer", "expires_in": 900}
+        return 200, {**answer, "scope": "search read"}
 
     def auth(
         self, method: str, parts: list[str], body: Any, request: httpx.Request
@@ -368,6 +380,7 @@ class FakeGrepvine:
                 "name": org.name,
                 "role": org.members[user],
                 "suspended": False,
+                "members_create_agents": False,
                 "created_at": NOW,
             }
 

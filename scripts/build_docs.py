@@ -87,6 +87,7 @@ REFERENCE_GROUPS = {
     "API keys": ["APIKeys", "AsyncAPIKeys", "Connections", "AsyncConnections"],
     "Account": ["Account", "AsyncAccount"],
     "Device login": ["DeviceLogin", "AsyncDeviceLogin"],
+    "Agents": ["Agents", "AsyncAgents", "Managers", "AsyncManagers", "Secrets", "AsyncSecrets"],
 }
 # Words the published site never uses: whether code is generated is not the reader's concern.
 # "raw HTML" in the API's own descriptions is not about the SDK.

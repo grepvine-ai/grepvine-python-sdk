@@ -1,0 +1,106 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any, TypeVar
+
+from attrs import define as _attrs_define
+
+from ..types import UNSET, Unset
+
+from uuid import UUID
+import datetime
+
+
+T = TypeVar("T", bound="AgentSecret")
+
+
+@_attrs_define
+class AgentSecret:
+    """A secret an agent signs in with, without the secret itself.
+
+    Attributes:
+        id (UUID):
+        prefix (str): The first characters of the secret, shown to tell secrets apart.
+        created_at (datetime.datetime):
+        created_by (str): A name: of an account, an organization or an agent. Accounts and organizations share one
+            namespace; an agent's name is unique within its organization. A name keeps the case it was created with, and any
+            spelling that differs only in case refers to it; nothing else in the same namespace can take such a spelling.
+        expires_at (datetime.datetime): When the secret stops working. Omitted when it never expires.
+        last_used_at (datetime.datetime): When the agent last signed in with it. Omitted if it never has.
+    """
+
+    id: UUID
+    prefix: str
+    created_at: datetime.datetime
+    created_by: str | None = None
+    expires_at: datetime.datetime | None = None
+    last_used_at: datetime.datetime | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        id = str(self.id)
+        prefix = self.prefix
+        created_at = self.created_at.isoformat()
+        _created_by_value = UNSET if self.created_by is None else self.created_by
+        created_by = _created_by_value
+        _expires_at_value = UNSET if self.expires_at is None else self.expires_at
+        expires_at: str | Unset = UNSET
+        if not isinstance(_expires_at_value, Unset):
+            expires_at = _expires_at_value.isoformat()
+        _last_used_at_value = UNSET if self.last_used_at is None else self.last_used_at
+        last_used_at: str | Unset = UNSET
+        if not isinstance(_last_used_at_value, Unset):
+            last_used_at = _last_used_at_value.isoformat()
+
+        field_dict: dict[str, Any] = {}
+
+        field_dict.update(
+            {
+                "id": id,
+                "prefix": prefix,
+                "created_at": created_at,
+            }
+        )
+        if created_by is not UNSET:
+            field_dict["created_by"] = created_by
+        if expires_at is not UNSET:
+            field_dict["expires_at"] = expires_at
+        if last_used_at is not UNSET:
+            field_dict["last_used_at"] = last_used_at
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
+        id = UUID(d.pop("id"))
+
+        prefix = d.pop("prefix")
+
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
+
+        created_by = d.pop("created_by", UNSET)
+
+        _expires_at = d.pop("expires_at", UNSET)
+        expires_at: datetime.datetime | Unset
+        if isinstance(_expires_at, Unset):
+            expires_at = UNSET
+        else:
+            expires_at = datetime.datetime.fromisoformat(_expires_at)
+
+        _last_used_at = d.pop("last_used_at", UNSET)
+        last_used_at: datetime.datetime | Unset
+        if isinstance(_last_used_at, Unset):
+            last_used_at = UNSET
+        else:
+            last_used_at = datetime.datetime.fromisoformat(_last_used_at)
+
+        agent_secret = cls(
+            id=id,
+            prefix=prefix,
+            created_at=created_at,
+            created_by=(None if isinstance(created_by, Unset) else created_by),
+            expires_at=(None if isinstance(expires_at, Unset) else expires_at),
+            last_used_at=(None if isinstance(last_used_at, Unset) else last_used_at),
+        )
+
+        return agent_secret

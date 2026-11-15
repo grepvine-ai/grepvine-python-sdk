@@ -19,28 +19,36 @@ ENVIRONMENT: Final = {
     "endpoint": "GREPVINE_API_ENDPOINT",
     "api_key": "GREPVINE_API_KEY",
     "organization": "GREPVINE_ORGANIZATION",
+    "agent_secret": "GREPVINE_AGENT_SECRET",
 }
+# One credential: the first source that sets either wins.
+CREDENTIALS: Final = ("api_key", "agent_secret")
+
+
+def _mask(secret: str | None) -> str | None:
+    return secret and f"{secret[:8] if len(secret) >= 16 else ''}****"
 
 
 @dataclass(frozen=True)
 class Settings:
-    """The settings a client uses. Its printed form shows the API key only in part."""
+    """The settings a client uses. Its printed form shows the API key and the agent secret
+    only in part."""
 
     endpoint: str
     api_key: str | None
     organization: str | None
+    agent_secret: str | None = None
 
     def __repr__(self) -> str:
-        key = self.api_key and f"{self.api_key[:8] if len(self.api_key) >= 16 else ''}****"
         return (
-            f"Settings(endpoint={self.endpoint!r}, api_key={key!r}, "
-            f"organization={self.organization!r})"
+            f"Settings(endpoint={self.endpoint!r}, api_key={_mask(self.api_key)!r}, "
+            f"organization={self.organization!r}, agent_secret={_mask(self.agent_secret)!r})"
         )
 
 
 def environment() -> dict[str, str]:
-    """The settings that ``GREPVINE_API_KEY``, ``GREPVINE_API_ENDPOINT`` and
-    ``GREPVINE_ORGANIZATION`` give."""
+    """The settings that ``GREPVINE_API_KEY``, ``GREPVINE_API_ENDPOINT``,
+    ``GREPVINE_ORGANIZATION`` and ``GREPVINE_AGENT_SECRET`` give."""
     return {
         name: value for name, variable in ENVIRONMENT.items() if (value := os.environ.get(variable))
     }
@@ -75,12 +83,19 @@ def resolve(
     endpoint: str | None = None,
     api_key: str | None = None,
     organization: str | None = None,
+    agent_secret: str | None = None,
     trust_env: bool,
 ) -> Settings:
     """Each setting from its argument, else, with ``trust_env``, its environment variable, else
-    the configuration file, else its default."""
+    the configuration file, else its default. The API key and the agent secret are one
+    credential: both come from the first of those sources that sets either."""
     layers: list[Mapping[str, str | None]] = [
-        {"endpoint": endpoint, "api_key": api_key, "organization": organization}
+        {
+            "endpoint": endpoint,
+            "api_key": api_key,
+            "organization": organization,
+            "agent_secret": agent_secret,
+        }
     ]
     if trust_env:
         layers += [environment(), default_file()]
@@ -88,8 +103,12 @@ def resolve(
         name: next((layer[name] for layer in layers if layer.get(name)), None)
         for name in ENVIRONMENT
     }
+    credential = next((layer for layer in layers if any(map(layer.get, CREDENTIALS))), {})
+    if all(map(credential.get, CREDENTIALS)):
+        raise ConfigurationError("set an API key or an agent secret, not both")
     return Settings(
         endpoint=values["endpoint"] or DEFAULT_ENDPOINT,
-        api_key=values["api_key"],
+        api_key=credential.get("api_key"),
         organization=values["organization"],
+        agent_secret=credential.get("agent_secret"),
     )

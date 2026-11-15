@@ -6,7 +6,7 @@ import httpx
 from ...client import AuthenticatedClient, Client
 from ...types import Response
 
-from ...models.api_key_created import APIKeyCreated
+from ...models.device_token import DeviceToken
 from ...models.device_token_request import DeviceTokenRequest
 from ...models.error import Error
 
@@ -32,9 +32,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> APIKeyCreated | Error:
+) -> DeviceToken | Error:
     if response.status_code == 200:
-        response_200 = APIKeyCreated.from_dict(response.json())
+        response_200 = DeviceToken.from_dict(response.json())
 
         return response_200
 
@@ -50,7 +50,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[APIKeyCreated | Error]:
+) -> Response[DeviceToken | Error]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -63,13 +63,14 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: DeviceTokenRequest,
-) -> Response[APIKeyCreated | Error]:
+) -> Response[DeviceToken | Error]:
     """Poll for a device API key
 
-     Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
-    400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
-    `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
-    and an unknown, expired or already used code with `expired_token`.
+     Exchanges an approved device code for an API key, or for the agent secret it asked for, once. Until
+    the user decides, a poll fails with 400 and code `authorization_pending`: poll again after
+    `interval` seconds. Polling sooner fails with `slow_down` and adds 5 seconds to the interval. A
+    denied authorization fails with `access_denied`, as does a request for a secret of an agent that
+    already has two, and an unknown, expired or already used code with `expired_token`.
 
     Args:
         body (DeviceTokenRequest): The device code to exchange for an API key.
@@ -79,7 +80,7 @@ def sync_detailed(
         grepvine.TransportError: The request could not be delivered.
 
     Returns:
-        Response[APIKeyCreated | Error]
+        Response[DeviceToken | Error]
     """
 
     kwargs = _get_kwargs(
@@ -97,13 +98,14 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: DeviceTokenRequest,
-) -> APIKeyCreated | Error | None:
+) -> DeviceToken | Error | None:
     """Poll for a device API key
 
-     Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
-    400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
-    `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
-    and an unknown, expired or already used code with `expired_token`.
+     Exchanges an approved device code for an API key, or for the agent secret it asked for, once. Until
+    the user decides, a poll fails with 400 and code `authorization_pending`: poll again after
+    `interval` seconds. Polling sooner fails with `slow_down` and adds 5 seconds to the interval. A
+    denied authorization fails with `access_denied`, as does a request for a secret of an agent that
+    already has two, and an unknown, expired or already used code with `expired_token`.
 
     Args:
         body (DeviceTokenRequest): The device code to exchange for an API key.
@@ -113,7 +115,7 @@ def sync(
         grepvine.TransportError: The request could not be delivered.
 
     Returns:
-        APIKeyCreated | Error
+        DeviceToken | Error
     """
 
     return sync_detailed(
@@ -126,13 +128,14 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: DeviceTokenRequest,
-) -> Response[APIKeyCreated | Error]:
+) -> Response[DeviceToken | Error]:
     """Poll for a device API key
 
-     Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
-    400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
-    `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
-    and an unknown, expired or already used code with `expired_token`.
+     Exchanges an approved device code for an API key, or for the agent secret it asked for, once. Until
+    the user decides, a poll fails with 400 and code `authorization_pending`: poll again after
+    `interval` seconds. Polling sooner fails with `slow_down` and adds 5 seconds to the interval. A
+    denied authorization fails with `access_denied`, as does a request for a secret of an agent that
+    already has two, and an unknown, expired or already used code with `expired_token`.
 
     Args:
         body (DeviceTokenRequest): The device code to exchange for an API key.
@@ -142,7 +145,7 @@ async def asyncio_detailed(
         grepvine.TransportError: The request could not be delivered.
 
     Returns:
-        Response[APIKeyCreated | Error]
+        Response[DeviceToken | Error]
     """
 
     kwargs = _get_kwargs(
@@ -158,13 +161,14 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: DeviceTokenRequest,
-) -> APIKeyCreated | Error | None:
+) -> DeviceToken | Error | None:
     """Poll for a device API key
 
-     Exchanges an approved device code for an API key, once. Until the user decides, a poll fails with
-    400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner fails with
-    `slow_down` and adds 5 seconds to the interval. A denied authorization fails with `access_denied`,
-    and an unknown, expired or already used code with `expired_token`.
+     Exchanges an approved device code for an API key, or for the agent secret it asked for, once. Until
+    the user decides, a poll fails with 400 and code `authorization_pending`: poll again after
+    `interval` seconds. Polling sooner fails with `slow_down` and adds 5 seconds to the interval. A
+    denied authorization fails with `access_denied`, as does a request for a secret of an agent that
+    already has two, and an unknown, expired or already used code with `expired_token`.
 
     Args:
         body (DeviceTokenRequest): The device code to exchange for an API key.
@@ -174,7 +178,7 @@ async def asyncio(
         grepvine.TransportError: The request could not be delivered.
 
     Returns:
-        APIKeyCreated | Error
+        DeviceToken | Error
     """
 
     return (
