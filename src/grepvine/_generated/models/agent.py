@@ -53,6 +53,7 @@ class Agent:
     indexes: list[str] = _attrs_field(factory=list)
     created_by: str | None = None
     last_used_at: datetime.datetime | None = None
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
@@ -83,7 +84,7 @@ class Agent:
             last_used_at = _last_used_at_value.isoformat()
 
         field_dict: dict[str, Any] = {}
-
+        field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "id": id,
@@ -156,4 +157,21 @@ class Agent:
             last_used_at=(None if isinstance(last_used_at, Unset) else last_used_at),
         )
 
+        agent.additional_properties = d
         return agent
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

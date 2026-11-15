@@ -60,7 +60,7 @@ def sync_detailed(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Response[Error | Index]:
     """Get an index
 
@@ -100,7 +100,7 @@ def sync(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Error | Index | None:
     """Get an index
 
@@ -135,7 +135,7 @@ async def asyncio_detailed(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Response[Error | Index]:
     """Get an index
 
@@ -173,7 +173,7 @@ async def asyncio(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Error | Index | None:
     """Get an index
 

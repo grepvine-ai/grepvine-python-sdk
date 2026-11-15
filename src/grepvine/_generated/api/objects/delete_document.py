@@ -79,7 +79,7 @@ def sync_detailed(
     index: str,
     key: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
 ) -> Response[Error | MutationResult]:
@@ -129,7 +129,7 @@ def sync(
     index: str,
     key: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
 ) -> Error | MutationResult | None:
@@ -174,7 +174,7 @@ async def asyncio_detailed(
     index: str,
     key: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
 ) -> Response[Error | MutationResult]:
@@ -222,7 +222,7 @@ async def asyncio(
     index: str,
     key: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     idempotency_key: str | Unset = UNSET,
     if_match: str | Unset = UNSET,
 ) -> Error | MutationResult | None:

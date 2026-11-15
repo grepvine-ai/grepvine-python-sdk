@@ -68,7 +68,7 @@ def _build_response(
 def sync_detailed(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     amount: int | Unset = 50,
     page: str | Unset = UNSET,
     prefix: str | Unset = UNSET,
@@ -111,7 +111,7 @@ def sync_detailed(
 def sync(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     amount: int | Unset = 50,
     page: str | Unset = UNSET,
     prefix: str | Unset = UNSET,
@@ -149,7 +149,7 @@ def sync(
 async def asyncio_detailed(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     amount: int | Unset = 50,
     page: str | Unset = UNSET,
     prefix: str | Unset = UNSET,
@@ -190,7 +190,7 @@ async def asyncio_detailed(
 async def asyncio(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     amount: int | Unset = 50,
     page: str | Unset = UNSET,
     prefix: str | Unset = UNSET,

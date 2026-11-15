@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
+from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
 
@@ -35,6 +36,7 @@ class AgentSecret:
     created_by: str | None = None
     expires_at: datetime.datetime | None = None
     last_used_at: datetime.datetime | None = None
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
@@ -52,7 +54,7 @@ class AgentSecret:
             last_used_at = _last_used_at_value.isoformat()
 
         field_dict: dict[str, Any] = {}
-
+        field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "id": id,
@@ -103,4 +105,21 @@ class AgentSecret:
             last_used_at=(None if isinstance(last_used_at, Unset) else last_used_at),
         )
 
+        agent_secret.additional_properties = d
         return agent_secret
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

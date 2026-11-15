@@ -57,7 +57,7 @@ def _build_response(
 def sync_detailed(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Response[Error | Organization]:
     """Get an organization
 
@@ -92,7 +92,7 @@ def sync_detailed(
 def sync(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Error | Organization | None:
     """Get an organization
 
@@ -122,7 +122,7 @@ def sync(
 async def asyncio_detailed(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Response[Error | Organization]:
     """Get an organization
 
@@ -155,7 +155,7 @@ async def asyncio_detailed(
 async def asyncio(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Error | Organization | None:
     """Get an organization
 

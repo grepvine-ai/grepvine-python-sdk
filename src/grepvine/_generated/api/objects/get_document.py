@@ -81,7 +81,7 @@ def sync_detailed(
     index: str,
     key: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     range_: str | Unset = UNSET,
 ) -> Response[Error | File]:
     """Get a document
@@ -128,7 +128,7 @@ def sync(
     index: str,
     key: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     range_: str | Unset = UNSET,
 ) -> Error | File | None:
     """Get a document
@@ -170,7 +170,7 @@ async def asyncio_detailed(
     index: str,
     key: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     range_: str | Unset = UNSET,
 ) -> Response[Error | File]:
     """Get a document
@@ -215,7 +215,7 @@ async def asyncio(
     index: str,
     key: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     range_: str | Unset = UNSET,
 ) -> Error | File | None:
     """Get a document
