@@ -67,7 +67,9 @@ def sync_detailed(
      Approves a pending device authorization, identified by the code the device shows. The device's next
     poll receives a new API key with the name it asked for. Without a scope it grants what the device
     asked for; a scope replaces that as a whole, narrower or wider. The key never does more than the
-    approving account can. A code that is unknown, already decided or expired is not found. Only a
+    approving account can. A request for an agent secret is approved as asked, without a scope, by a
+    manager of the agent or an account that manages the organization's agents; the device's next poll
+    receives the new secret. A code that is unknown, already decided or expired is not found. Only a
     signed-in session can approve.
 
     Args:
@@ -103,7 +105,9 @@ def sync(
      Approves a pending device authorization, identified by the code the device shows. The device's next
     poll receives a new API key with the name it asked for. Without a scope it grants what the device
     asked for; a scope replaces that as a whole, narrower or wider. The key never does more than the
-    approving account can. A code that is unknown, already decided or expired is not found. Only a
+    approving account can. A request for an agent secret is approved as asked, without a scope, by a
+    manager of the agent or an account that manages the organization's agents; the device's next poll
+    receives the new secret. A code that is unknown, already decided or expired is not found. Only a
     signed-in session can approve.
 
     Args:
@@ -134,7 +138,9 @@ async def asyncio_detailed(
      Approves a pending device authorization, identified by the code the device shows. The device's next
     poll receives a new API key with the name it asked for. Without a scope it grants what the device
     asked for; a scope replaces that as a whole, narrower or wider. The key never does more than the
-    approving account can. A code that is unknown, already decided or expired is not found. Only a
+    approving account can. A request for an agent secret is approved as asked, without a scope, by a
+    manager of the agent or an account that manages the organization's agents; the device's next poll
+    receives the new secret. A code that is unknown, already decided or expired is not found. Only a
     signed-in session can approve.
 
     Args:
@@ -168,7 +174,9 @@ async def asyncio(
      Approves a pending device authorization, identified by the code the device shows. The device's next
     poll receives a new API key with the name it asked for. Without a scope it grants what the device
     asked for; a scope replaces that as a whole, narrower or wider. The key never does more than the
-    approving account can. A code that is unknown, already decided or expired is not found. Only a
+    approving account can. A request for an agent secret is approved as asked, without a scope, by a
+    manager of the agent or an account that manages the organization's agents; the device's next poll
+    receives the new secret. A code that is unknown, already decided or expired is not found. Only a
     signed-in session can approve.
 
     Args:

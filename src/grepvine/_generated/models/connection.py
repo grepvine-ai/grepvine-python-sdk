@@ -29,9 +29,12 @@ class Connection:
         created_at (datetime.datetime):
         last_used_at (datetime.datetime): When the app last signed in or renewed its access.
         expires_at (datetime.datetime): When the connection stops working unless the app keeps using it.
-        organization (str): An account or organization name. Accounts and organizations share one namespace. A name
-            keeps the case it was created with, and any spelling that differs only in case refers to it; no other account or
-            organization can take such a spelling.
+        agent (str): A name: of an account, an organization or an agent. Accounts and organizations share one namespace;
+            an agent's name is unique within its organization. A name keeps the case it was created with, and any spelling
+            that differs only in case refers to it; nothing else in the same namespace can take such a spelling.
+        organization (str): A name: of an account, an organization or an agent. Accounts and organizations share one
+            namespace; an agent's name is unique within its organization. A name keeps the case it was created with, and any
+            spelling that differs only in case refers to it; nothing else in the same namespace can take such a spelling.
         indexes (list[str]): The indexes a key reaches, by name, in the key's one organization. Omitted for every index
             of its organizations, including indexes created later. A request names at least one; a key's list is empty once
             every index it named is deleted.
@@ -44,6 +47,7 @@ class Connection:
     created_at: datetime.datetime
     last_used_at: datetime.datetime
     expires_at: datetime.datetime
+    agent: str | None = None
     organization: str | None = None
     indexes: list[str] = _attrs_field(factory=list)
 
@@ -59,6 +63,8 @@ class Connection:
         created_at = self.created_at.isoformat()
         last_used_at = self.last_used_at.isoformat()
         expires_at = self.expires_at.isoformat()
+        _agent_value = UNSET if self.agent is None else self.agent
+        agent = _agent_value
         _organization_value = UNSET if self.organization is None else self.organization
         organization = _organization_value
         _indexes_value = UNSET if self.indexes is None else self.indexes
@@ -79,6 +85,8 @@ class Connection:
                 "expires_at": expires_at,
             }
         )
+        if agent is not UNSET:
+            field_dict["agent"] = agent
         if organization is not UNSET:
             field_dict["organization"] = organization
         if indexes is not UNSET:
@@ -108,6 +116,8 @@ class Connection:
 
         expires_at = datetime.datetime.fromisoformat(d.pop("expires_at"))
 
+        agent = d.pop("agent", UNSET)
+
         organization = d.pop("organization", UNSET)
 
         indexes = cast(list[str], d.pop("indexes", UNSET))
@@ -120,6 +130,7 @@ class Connection:
             created_at=created_at,
             last_used_at=last_used_at,
             expires_at=expires_at,
+            agent=(None if isinstance(agent, Unset) else agent),
             organization=(None if isinstance(organization, Unset) else organization),
             indexes=([] if isinstance(indexes, Unset) else indexes),
         )

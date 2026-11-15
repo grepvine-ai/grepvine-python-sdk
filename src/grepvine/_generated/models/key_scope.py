@@ -22,9 +22,12 @@ class KeyScope:
 
     Attributes:
         permissions (list[Permission]): The permissions a key carries, each named once.
-        organization (str): An account or organization name. Accounts and organizations share one namespace. A name
-            keeps the case it was created with, and any spelling that differs only in case refers to it; no other account or
-            organization can take such a spelling.
+        agent (str): A name: of an account, an organization or an agent. Accounts and organizations share one namespace;
+            an agent's name is unique within its organization. A name keeps the case it was created with, and any spelling
+            that differs only in case refers to it; nothing else in the same namespace can take such a spelling.
+        organization (str): A name: of an account, an organization or an agent. Accounts and organizations share one
+            namespace; an agent's name is unique within its organization. A name keeps the case it was created with, and any
+            spelling that differs only in case refers to it; nothing else in the same namespace can take such a spelling.
         indexes (list[str]): The indexes a key reaches, by name, in the key's one organization. Omitted for every index
             of its organizations, including indexes created later. A request names at least one; a key's list is empty once
             every index it named is deleted.
@@ -33,6 +36,7 @@ class KeyScope:
     """
 
     permissions: list[Permission]
+    agent: str | None = None
     organization: str | None = None
     indexes: list[str] = _attrs_field(factory=list)
     expires_at: datetime.datetime | None = None
@@ -43,6 +47,8 @@ class KeyScope:
             componentsschemas_permissions_item = componentsschemas_permissions_item_data.value
             permissions.append(componentsschemas_permissions_item)
 
+        _agent_value = UNSET if self.agent is None else self.agent
+        agent = _agent_value
         _organization_value = UNSET if self.organization is None else self.organization
         organization = _organization_value
         _indexes_value = UNSET if self.indexes is None else self.indexes
@@ -62,6 +68,8 @@ class KeyScope:
                 "permissions": permissions,
             }
         )
+        if agent is not UNSET:
+            field_dict["agent"] = agent
         if organization is not UNSET:
             field_dict["organization"] = organization
         if indexes is not UNSET:
@@ -81,6 +89,8 @@ class KeyScope:
 
             permissions.append(componentsschemas_permissions_item)
 
+        agent = d.pop("agent", UNSET)
+
         organization = d.pop("organization", UNSET)
 
         indexes = cast(list[str], d.pop("indexes", UNSET))
@@ -94,6 +104,7 @@ class KeyScope:
 
         key_scope = cls(
             permissions=permissions,
+            agent=(None if isinstance(agent, Unset) else agent),
             organization=(None if isinstance(organization, Unset) else organization),
             indexes=([] if isinstance(indexes, Unset) else indexes),
             expires_at=(None if isinstance(expires_at, Unset) else expires_at),

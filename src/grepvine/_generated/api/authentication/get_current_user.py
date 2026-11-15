@@ -56,7 +56,8 @@ def sync_detailed(
     """Get the current user
 
      Returns the account the request authenticates as, whether with a session or an API key. A session
-    request also receives its CSRF token in X-Csrf-Token.
+    request also receives its CSRF token in X-Csrf-Token. An agent working on its own has no account and
+    is refused with 403.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -82,7 +83,8 @@ def sync(
     """Get the current user
 
      Returns the account the request authenticates as, whether with a session or an API key. A session
-    request also receives its CSRF token in X-Csrf-Token.
+    request also receives its CSRF token in X-Csrf-Token. An agent working on its own has no account and
+    is refused with 403.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -104,7 +106,8 @@ async def asyncio_detailed(
     """Get the current user
 
      Returns the account the request authenticates as, whether with a session or an API key. A session
-    request also receives its CSRF token in X-Csrf-Token.
+    request also receives its CSRF token in X-Csrf-Token. An agent working on its own has no account and
+    is refused with 403.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -128,7 +131,8 @@ async def asyncio(
     """Get the current user
 
      Returns the account the request authenticates as, whether with a session or an API key. A session
-    request also receives its CSRF token in X-Csrf-Token.
+    request also receives its CSRF token in X-Csrf-Token. An agent working on its own has no account and
+    is refused with 403.
 
     Raises:
         grepvine.APIError: The service answered with an error.

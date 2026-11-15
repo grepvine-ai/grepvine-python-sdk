@@ -12,21 +12,30 @@ from ..client import Client
 from ..types import File
 from ..models.add_member_request import AddMemberRequest
 from ..models.add_member_request_role import AddMemberRequestRole
+from ..models.agent import Agent
+from ..models.agent_ceiling import AgentCeiling
+from ..models.agent_page import AgentPage
+from ..models.agent_secret_created import AgentSecretCreated
+from ..models.agent_secret_page import AgentSecretPage
 from ..models.api_key import APIKey
 from ..models.api_key_created import APIKeyCreated
 from ..models.api_key_page import APIKeyPage
 from ..models.auth_options import AuthOptions
 from ..models.change_password_request import ChangePasswordRequest
 from ..models.connection_page import ConnectionPage
+from ..models.create_agent_request import CreateAgentRequest
+from ..models.create_agent_secret_request import CreateAgentSecretRequest
 from ..models.create_api_key_request import CreateAPIKeyRequest
 from ..models.create_index_request import CreateIndexRequest
 from ..models.create_organization_request import CreateOrganizationRequest
 from ..models.delete_object_record import DeleteObjectRecord
 from ..models.delete_objects_request import DeleteObjectsRequest
+from ..models.device_agent_secret import DeviceAgentSecret
 from ..models.device_approval_request import DeviceApprovalRequest
 from ..models.device_authorization import DeviceAuthorization
 from ..models.device_authorization_request import DeviceAuthorizationRequest
 from ..models.device_decision_request import DeviceDecisionRequest
+from ..models.device_token import DeviceToken
 from ..models.device_token_request import DeviceTokenRequest
 from ..models.document_page import DocumentPage
 from ..models.index import Index
@@ -60,11 +69,23 @@ from ..models.tagged_number_metadata_value import TaggedNumberMetadataValue
 from ..models.tagged_string_metadata_value import TaggedStringMetadataValue
 from ..models.tagged_timestamp_metadata_value import TaggedTimestampMetadataValue
 from ..models.transfer_ownership_request import TransferOwnershipRequest
+from ..models.update_agent_request import UpdateAgentRequest
 from ..models.update_index_request import UpdateIndexRequest
 from ..models.update_member_request import UpdateMemberRequest
 from ..models.update_member_request_role import UpdateMemberRequestRole
+from ..models.update_organization_request import UpdateOrganizationRequest
 from ..models.user import User
 from ..models.username_availability import UsernameAvailability
+from .agents import add_agent_manager
+from .agents import create_agent
+from .agents import create_agent_secret
+from .agents import delete_agent
+from .agents import get_agent
+from .agents import list_agent_secrets
+from .agents import list_agents
+from .agents import remove_agent_manager
+from .agents import revoke_agent_secret
+from .agents import update_agent
 from .api_keys import create_api_key
 from .api_keys import list_api_keys
 from .api_keys import revoke_api_key
@@ -102,6 +123,7 @@ from .organizations import list_organization_members
 from .organizations import list_organizations
 from .organizations import remove_organization_member
 from .organizations import transfer_organization_ownership
+from .organizations import update_organization
 from .organizations import update_organization_member
 from .search import query_index
 from uuid import UUID
@@ -321,9 +343,10 @@ class Members:
         role.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             amount: Default: 50.
 
         Returns:
@@ -353,9 +376,10 @@ class Members:
         role.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             amount: Default: 50.
             page: The ``pagination.next_page_id`` of the previous page; the first page without it.
 
@@ -389,12 +413,14 @@ class Members:
         the owner or admin role. An organization has one owner, changed only by transferring ownership.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
-            user: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
             role: The role to grant. `owner` is granted only by transferring ownership. One of
                 ``"admin"``, ``"developer"``, ``"reader"``.
 
@@ -428,12 +454,14 @@ class Members:
         owner's role changes only by transferring ownership.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
-            user: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
             role: The new role. `owner` is granted only by transferring ownership. One of ``"admin"``,
                 ``"developer"``, ``"reader"``.
 
@@ -465,12 +493,14 @@ class Members:
         removed; transfer ownership first.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
-            user: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
 
         Returns:
             None
@@ -484,6 +514,214 @@ class Members:
         kwargs["user"] = user
 
         remove_organization_member.sync_detailed(**kwargs)
+
+
+class Managers:
+    """The managers."""
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+
+    def add(
+        self,
+        organization: str,
+        agent: str,
+        user: str,
+    ) -> Agent:
+        """Add an agent manager
+
+        Makes a member of the organization a manager of the agent. Its managers, owners and admins can
+        add one. A 404 means the account is not an active member; a 409, that their role does not allow
+        everything the agent may do.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        kwargs["user"] = user
+
+        response = add_agent_manager.sync_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+    def remove(
+        self,
+        organization: str,
+        agent: str,
+        user: str,
+    ) -> Agent:
+        """Remove an agent manager
+
+        Removes a manager of the agent. Its managers, owners and admins can remove one.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        kwargs["user"] = user
+
+        response = remove_agent_manager.sync_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+
+class Secrets:
+    """The secrets."""
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+
+    def list(
+        self,
+        organization: str,
+        agent: str,
+    ) -> AgentSecretPage:
+        """List agent secrets
+
+        Lists an agent's active secrets, oldest first. The secret itself is never returned again;
+        `prefix` tells secrets apart. Its managers, owners and admins can list them.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            AgentSecretPage
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+
+        response = list_agent_secrets.sync_detailed(**kwargs)
+        return cast(AgentSecretPage, response.parsed)
+
+    def create(
+        self,
+        organization: str,
+        agent: str,
+        *,
+        expires_at: datetime.datetime | None = None,
+    ) -> AgentSecretCreated:
+        """Create an agent secret
+
+        Creates a secret the agent signs in with. An agent has at most two, so one can replace the
+        other; a 409 asks you to remove one first. Its managers, owners and admins can create one, and
+        only from a signed-in session. The response is the only time the secret is shown, so store it
+        securely.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            expires_at: When the secret stops working, at most one year ahead. Omitted for a secret that
+                never expires.
+
+        Returns:
+            AgentSecretCreated
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        fields: dict[str, Any] = {}
+        if expires_at is not None:
+            fields["expires_at"] = expires_at
+        kwargs["body"] = CreateAgentSecretRequest(**fields)
+
+        response = create_agent_secret.sync_detailed(**kwargs)
+        return cast(AgentSecretCreated, response.parsed)
+
+    def revoke(
+        self,
+        organization: str,
+        agent: str,
+        secret_id: UUID,
+    ) -> None:
+        """Revoke an agent secret
+
+        Revokes one of the agent's secrets: it can't sign in with it any more, and the tokens exchanged
+        for it stop working at once. Its managers, owners and admins can revoke one.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            secret_id:
+
+        Returns:
+            None
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        kwargs["secret_id"] = secret_id
+
+        revoke_agent_secret.sync_detailed(**kwargs)
 
 
 class Organizations:
@@ -563,9 +801,10 @@ class Organizations:
         namespace, so a 409 means an account or organization already holds the name, in any case.
 
         Args:
-            name: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            name: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
 
         Returns:
             Organization
@@ -592,9 +831,10 @@ class Organizations:
         for a suspended organization too, and reports `suspended`.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
 
         Returns:
             Organization
@@ -609,6 +849,41 @@ class Organizations:
         response = get_organization.sync_detailed(**kwargs)
         return cast(Organization, response.parsed)
 
+    def update(
+        self,
+        organization: str,
+        *,
+        members_create_agents: bool | None = None,
+    ) -> Organization:
+        """Update an organization
+
+        Changes an organization's settings. Requires the owner or admin role, and only a signed-in
+        session can change them.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            members_create_agents: Whether developers can create agents.
+
+        Returns:
+            Organization
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        fields: dict[str, Any] = {}
+        if members_create_agents is not None:
+            fields["members_create_agents"] = members_create_agents
+        kwargs["body"] = UpdateOrganizationRequest(**fields)
+
+        response = update_organization.sync_detailed(**kwargs)
+        return cast(Organization, response.parsed)
+
     def delete(
         self,
         organization: str,
@@ -619,9 +894,10 @@ class Organizations:
         it. The deletion finishes in the background and can't be undone.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
 
         Returns:
             None
@@ -648,12 +924,14 @@ class Organizations:
         time-limited access.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
-            user: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
 
         Returns:
             None
@@ -689,9 +967,10 @@ class Indexes:
         Lists the organization's indexes, ordered by name. Any member can list them.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             amount: Default: 50.
             prefix:
 
@@ -724,9 +1003,10 @@ class Indexes:
         Lists the organization's indexes, ordered by name. Any member can list them.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             amount: Default: 50.
             prefix:
             page: The ``pagination.next_page_id`` of the previous page; the first page without it.
@@ -765,9 +1045,10 @@ class Indexes:
         already has an index with that name, in any case.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             name: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -818,9 +1099,10 @@ class Indexes:
         background optimization while one runs. Any member can read it.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -853,9 +1135,10 @@ class Indexes:
         name is immutable.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -895,9 +1178,10 @@ class Indexes:
         `deleting` until the deletion finishes in the background, and it can't be undone.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -951,9 +1235,10 @@ class Documents:
         `common_prefixes`.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -1016,9 +1301,10 @@ class Documents:
         reports which applies.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -1072,9 +1358,10 @@ class Documents:
         response is then 206, or 416 when the range lies outside the document.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -1114,9 +1401,10 @@ class Documents:
         the document no longer matches any search.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -1166,9 +1454,10 @@ class Documents:
         `unsupported_content_encoding`.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -1207,9 +1496,10 @@ class Documents:
         says which happened. Retrying with the same Idempotency-Key returns the same results.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -1266,9 +1556,10 @@ class Search:
         or `invalid_filter`.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -1353,9 +1644,10 @@ class Search:
         more results follow.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -1495,8 +1787,10 @@ class APIKeys:
                 "manage_index",
                 "manage_members",
                 "manage_organization",
+                "manage_agents",
             ]
         ],
+        agent: str | None = None,
         organization: str | None = None,
         indexes: builtins.list[str] | None = None,
         expires_at: datetime.datetime | None = None,
@@ -1513,10 +1807,15 @@ class APIKeys:
             name: A name to tell the key apart, 1 to 128 characters.
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
-                ``"manage_organization"``.
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+                ``"manage_organization"``, ``"manage_agents"``.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
                 every index of its organizations, including indexes created later. A request names at least
                 one; a key's list is empty once every index it named is deleted.
@@ -1534,6 +1833,8 @@ class APIKeys:
         fields: dict[str, Any] = {}
         fields["name"] = name
         fields["permissions"] = [Permission(item) for item in permissions]
+        if agent is not None:
+            fields["agent"] = agent
         if organization is not None:
             fields["organization"] = organization
         if indexes is not None:
@@ -1594,9 +1895,10 @@ class Account:
         organization it names, if any.
 
         Args:
-            name: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            name: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
             email: The account's email address, at most 320 characters. No other account can use it.
             password: The password, 12 to 1,024 characters.
             invitation: The token of the invitation link the account was invited with. Required when
@@ -1681,9 +1983,10 @@ class Account:
         name is registered.
 
         Args:
-            name: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            name: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
 
         Returns:
             UsernameAvailability
@@ -1756,7 +2059,8 @@ class Account:
         """Get the current user
 
         Returns the account the request authenticates as, whether with a session or an API key. A
-        session request also receives its CSRF token in X-Csrf-Token.
+        session request also receives its CSRF token in X-Csrf-Token. An agent working on its own has no
+        account and is refused with 403.
 
         Returns:
             User
@@ -1811,7 +2115,11 @@ class DeviceLogin:
     def start(
         self,
         *,
-        api_key_name: str,
+        agent_secret: DeviceAgentSecret | None = None,
+        api_key_name: str | None = None,
+        agent: str | None = None,
+        organization: str | None = None,
+        indexes: builtins.list[str] | None = None,
         permissions: builtins.list[
             Literal[
                 "search",
@@ -1821,10 +2129,10 @@ class DeviceLogin:
                 "manage_index",
                 "manage_members",
                 "manage_organization",
+                "manage_agents",
             ]
-        ],
-        organization: str | None = None,
-        indexes: builtins.list[str] | None = None,
+        ]
+        | None = None,
         expires_at: datetime.datetime | None = None,
     ) -> DeviceAuthorization:
         """Start device authorization
@@ -1832,19 +2140,27 @@ class DeviceLogin:
         Starts signing in a device, such as the command-line client, without entering a password on it.
         Show the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`)
         to approve it in a signed-in browser, then poll for the API key with `device_code`. The
-        authorization expires after `expires_in` seconds.
+        authorization expires after `expires_in` seconds. A device may ask for a new secret of an agent
+        instead of an API key, with `agent_secret` and none of the key's fields.
 
         Args:
+            agent_secret: A new secret of an agent, which a device asks for instead of an API key.
             api_key_name: The name to give the API key the device receives, 1 to 128 characters.
-            permissions: The permissions a key carries, each named once. Each one of ``"search"``,
-                ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
-                ``"manage_organization"``.
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+                Required for an API key.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
                 every index of its organizations, including indexes created later. A request names at least
                 one; a key's list is empty once every index it named is deleted.
+            permissions: The permissions a key carries, each named once. Each one of ``"search"``,
+                ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
+                ``"manage_organization"``, ``"manage_agents"``.
             expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
                 expires.
 
@@ -1857,12 +2173,18 @@ class DeviceLogin:
         """
         kwargs: dict[str, Any] = {"client": self._client}
         fields: dict[str, Any] = {}
-        fields["api_key_name"] = api_key_name
-        fields["permissions"] = [Permission(item) for item in permissions]
+        if agent_secret is not None:
+            fields["agent_secret"] = agent_secret
+        if api_key_name is not None:
+            fields["api_key_name"] = api_key_name
+        if agent is not None:
+            fields["agent"] = agent
         if organization is not None:
             fields["organization"] = organization
         if indexes is not None:
             fields["indexes"] = indexes
+        if permissions is not None:
+            fields["permissions"] = [Permission(item) for item in permissions]
         if expires_at is not None:
             fields["expires_at"] = expires_at
         kwargs["body"] = DeviceAuthorizationRequest(**fields)
@@ -1881,8 +2203,10 @@ class DeviceLogin:
         Approves a pending device authorization, identified by the code the device shows. The device's
         next poll receives a new API key with the name it asked for. Without a scope it grants what the
         device asked for; a scope replaces that as a whole, narrower or wider. The key never does more
-        than the approving account can. A code that is unknown, already decided or expired is not found.
-        Only a signed-in session can approve.
+        than the approving account can. A request for an agent secret is approved as asked, without a
+        scope, by a manager of the agent or an account that manages the organization's agents; the
+        device's next poll receives the new secret. A code that is unknown, already decided or expired
+        is not found. Only a signed-in session can approve.
 
         Args:
             user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
@@ -1936,19 +2260,20 @@ class DeviceLogin:
         self,
         *,
         device_code: str,
-    ) -> APIKeyCreated:
+    ) -> DeviceToken:
         """Poll for a device API key
 
-        Exchanges an approved device code for an API key, once. Until the user decides, a poll fails
-        with 400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner
-        fails with `slow_down` and adds 5 seconds to the interval. A denied authorization fails with
-        `access_denied`, and an unknown, expired or already used code with `expired_token`.
+        Exchanges an approved device code for an API key, or for the agent secret it asked for, once.
+        Until the user decides, a poll fails with 400 and code `authorization_pending`: poll again after
+        `interval` seconds. Polling sooner fails with `slow_down` and adds 5 seconds to the interval. A
+        denied authorization fails with `access_denied`, as does a request for a secret of an agent that
+        already has two, and an unknown, expired or already used code with `expired_token`.
 
         Args:
             device_code: The `device_code` from starting the authorization.
 
         Returns:
-            APIKeyCreated
+            DeviceToken
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -1960,7 +2285,7 @@ class DeviceLogin:
         kwargs["body"] = DeviceTokenRequest(**fields)
 
         response = poll_device_token.sync_detailed(**kwargs)
-        return cast(APIKeyCreated, response.parsed)
+        return cast(DeviceToken, response.parsed)
 
     def get(
         self,
@@ -2043,6 +2368,230 @@ class Connections:
         revoke_connection.sync_detailed(**kwargs)
 
 
+class Agents:
+    """The agents."""
+
+    managers: Managers
+
+    secrets: Secrets
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+        self.managers = Managers(client)
+        self.secrets = Secrets(client)
+
+    def list(
+        self,
+        organization: str,
+    ) -> AgentPage:
+        """List agents
+
+        Lists an organization's agents, ordered by name. Any member can list them; an agent cannot.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+
+        Returns:
+            AgentPage
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+
+        response = list_agents.sync_detailed(**kwargs)
+        return cast(AgentPage, response.parsed)
+
+    def create(
+        self,
+        organization: str,
+        *,
+        name: str,
+        permissions: builtins.list[
+            Literal[
+                "search",
+                "read",
+                "write",
+                "create_index",
+                "manage_index",
+                "manage_members",
+                "manage_organization",
+                "manage_agents",
+            ]
+        ],
+        description: str | None = None,
+        indexes: builtins.list[str] | None = None,
+    ) -> Agent:
+        """Create an agent
+
+        Creates an agent, with the creator as its first manager. Owners and admins can create agents,
+        and developers too when the organization allows it. The agent's permissions must be within your
+        own, and within the key's when a key creates it; a key needs `manage_agents`. A 409 means the
+        organization already has an agent of that name, in any case.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            name: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            permissions: What an agent may do, each named once: `search`, `read`, `write`,
+                `create_index` and `manage_index`, as for a key. `create_index` needs every index. Each one
+                of ``"search"``, ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``,
+                ``"manage_members"``, ``"manage_organization"``, ``"manage_agents"``.
+            description: What the agent is for, at most 1,024 characters.
+            indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
+                every index of its organizations, including indexes created later. A request names at least
+                one; a key's list is empty once every index it named is deleted.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        fields: dict[str, Any] = {}
+        fields["name"] = name
+        fields["permissions"] = [Permission(item) for item in permissions]
+        if description is not None:
+            fields["description"] = description
+        if indexes is not None:
+            fields["indexes"] = indexes
+        kwargs["body"] = CreateAgentRequest(**fields)
+
+        response = create_agent.sync_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+    def get(
+        self,
+        organization: str,
+        agent: str,
+    ) -> Agent:
+        """Get an agent
+
+        Returns one of the organization's agents. Any member can read it; an agent cannot.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+
+        response = get_agent.sync_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+    def update(
+        self,
+        organization: str,
+        agent: str,
+        *,
+        description: str | None = None,
+        ceiling: AgentCeiling | None = None,
+        disabled: bool | None = None,
+    ) -> Agent:
+        """Update an agent
+
+        Changes an agent's description or permissions, or disables or enables it. Its managers, owners
+        and admins can change it, and only within their own permissions (and the key's, for a key with
+        `manage_agents`); any of them can disable it. New permissions must also be allowed by every
+        manager's role, or the change is refused with 409. Saving the permissions of an agent with no
+        managers makes you one. A disabled agent is refused at once, with every credential it has.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            description: What the agent is for, at most 1,024 characters.
+            ceiling: What an agent reaches and may do, as a whole. Leave indexes out for every index.
+            disabled: Disables or enables the agent.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        fields: dict[str, Any] = {}
+        if description is not None:
+            fields["description"] = description
+        if ceiling is not None:
+            fields["ceiling"] = ceiling
+        if disabled is not None:
+            fields["disabled"] = disabled
+        kwargs["body"] = UpdateAgentRequest(**fields)
+
+        response = update_agent.sync_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+    def delete(
+        self,
+        organization: str,
+        agent: str,
+    ) -> None:
+        """Delete an agent
+
+        Deletes an agent with its secrets and every credential it has. Requires the owner or admin role.
+        It can't be undone.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            None
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+
+        delete_agent.sync_detailed(**kwargs)
+
+
 class _GeneratedClient:
     """The API's resources."""
 
@@ -2054,6 +2603,7 @@ class _GeneratedClient:
     account: Account
     device_login: DeviceLogin
     connections: Connections
+    agents: Agents
 
     def __init__(self, client: Client) -> None:
         self._client = client
@@ -2065,6 +2615,7 @@ class _GeneratedClient:
         self.account = Account(client)
         self.device_login = DeviceLogin(client)
         self.connections = Connections(client)
+        self.agents = Agents(client)
 
 
 class _IndexClient:
@@ -2648,9 +3199,10 @@ class AsyncMembers:
         role.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             amount: Default: 50.
 
         Returns:
@@ -2680,9 +3232,10 @@ class AsyncMembers:
         role.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             amount: Default: 50.
             page: The ``pagination.next_page_id`` of the previous page; the first page without it.
 
@@ -2716,12 +3269,14 @@ class AsyncMembers:
         the owner or admin role. An organization has one owner, changed only by transferring ownership.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
-            user: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
             role: The role to grant. `owner` is granted only by transferring ownership. One of
                 ``"admin"``, ``"developer"``, ``"reader"``.
 
@@ -2755,12 +3310,14 @@ class AsyncMembers:
         owner's role changes only by transferring ownership.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
-            user: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
             role: The new role. `owner` is granted only by transferring ownership. One of ``"admin"``,
                 ``"developer"``, ``"reader"``.
 
@@ -2792,12 +3349,14 @@ class AsyncMembers:
         removed; transfer ownership first.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
-            user: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
 
         Returns:
             None
@@ -2811,6 +3370,214 @@ class AsyncMembers:
         kwargs["user"] = user
 
         await remove_organization_member.asyncio_detailed(**kwargs)
+
+
+class AsyncManagers:
+    """The managers."""
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+
+    async def add(
+        self,
+        organization: str,
+        agent: str,
+        user: str,
+    ) -> Agent:
+        """Add an agent manager
+
+        Makes a member of the organization a manager of the agent. Its managers, owners and admins can
+        add one. A 404 means the account is not an active member; a 409, that their role does not allow
+        everything the agent may do.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        kwargs["user"] = user
+
+        response = await add_agent_manager.asyncio_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+    async def remove(
+        self,
+        organization: str,
+        agent: str,
+        user: str,
+    ) -> Agent:
+        """Remove an agent manager
+
+        Removes a manager of the agent. Its managers, owners and admins can remove one.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        kwargs["user"] = user
+
+        response = await remove_agent_manager.asyncio_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+
+class AsyncSecrets:
+    """The secrets."""
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+
+    async def list(
+        self,
+        organization: str,
+        agent: str,
+    ) -> AgentSecretPage:
+        """List agent secrets
+
+        Lists an agent's active secrets, oldest first. The secret itself is never returned again;
+        `prefix` tells secrets apart. Its managers, owners and admins can list them.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            AgentSecretPage
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+
+        response = await list_agent_secrets.asyncio_detailed(**kwargs)
+        return cast(AgentSecretPage, response.parsed)
+
+    async def create(
+        self,
+        organization: str,
+        agent: str,
+        *,
+        expires_at: datetime.datetime | None = None,
+    ) -> AgentSecretCreated:
+        """Create an agent secret
+
+        Creates a secret the agent signs in with. An agent has at most two, so one can replace the
+        other; a 409 asks you to remove one first. Its managers, owners and admins can create one, and
+        only from a signed-in session. The response is the only time the secret is shown, so store it
+        securely.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            expires_at: When the secret stops working, at most one year ahead. Omitted for a secret that
+                never expires.
+
+        Returns:
+            AgentSecretCreated
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        fields: dict[str, Any] = {}
+        if expires_at is not None:
+            fields["expires_at"] = expires_at
+        kwargs["body"] = CreateAgentSecretRequest(**fields)
+
+        response = await create_agent_secret.asyncio_detailed(**kwargs)
+        return cast(AgentSecretCreated, response.parsed)
+
+    async def revoke(
+        self,
+        organization: str,
+        agent: str,
+        secret_id: UUID,
+    ) -> None:
+        """Revoke an agent secret
+
+        Revokes one of the agent's secrets: it can't sign in with it any more, and the tokens exchanged
+        for it stop working at once. Its managers, owners and admins can revoke one.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            secret_id:
+
+        Returns:
+            None
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        kwargs["secret_id"] = secret_id
+
+        await revoke_agent_secret.asyncio_detailed(**kwargs)
 
 
 class AsyncOrganizations:
@@ -2890,9 +3657,10 @@ class AsyncOrganizations:
         namespace, so a 409 means an account or organization already holds the name, in any case.
 
         Args:
-            name: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            name: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
 
         Returns:
             Organization
@@ -2919,9 +3687,10 @@ class AsyncOrganizations:
         for a suspended organization too, and reports `suspended`.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
 
         Returns:
             Organization
@@ -2936,6 +3705,41 @@ class AsyncOrganizations:
         response = await get_organization.asyncio_detailed(**kwargs)
         return cast(Organization, response.parsed)
 
+    async def update(
+        self,
+        organization: str,
+        *,
+        members_create_agents: bool | None = None,
+    ) -> Organization:
+        """Update an organization
+
+        Changes an organization's settings. Requires the owner or admin role, and only a signed-in
+        session can change them.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            members_create_agents: Whether developers can create agents.
+
+        Returns:
+            Organization
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        fields: dict[str, Any] = {}
+        if members_create_agents is not None:
+            fields["members_create_agents"] = members_create_agents
+        kwargs["body"] = UpdateOrganizationRequest(**fields)
+
+        response = await update_organization.asyncio_detailed(**kwargs)
+        return cast(Organization, response.parsed)
+
     async def delete(
         self,
         organization: str,
@@ -2946,9 +3750,10 @@ class AsyncOrganizations:
         it. The deletion finishes in the background and can't be undone.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
 
         Returns:
             None
@@ -2975,12 +3780,14 @@ class AsyncOrganizations:
         time-limited access.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
-            user: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            user: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
 
         Returns:
             None
@@ -3016,9 +3823,10 @@ class AsyncIndexes:
         Lists the organization's indexes, ordered by name. Any member can list them.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             amount: Default: 50.
             prefix:
 
@@ -3051,9 +3859,10 @@ class AsyncIndexes:
         Lists the organization's indexes, ordered by name. Any member can list them.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             amount: Default: 50.
             prefix:
             page: The ``pagination.next_page_id`` of the previous page; the first page without it.
@@ -3092,9 +3901,10 @@ class AsyncIndexes:
         already has an index with that name, in any case.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             name: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3145,9 +3955,10 @@ class AsyncIndexes:
         background optimization while one runs. Any member can read it.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3180,9 +3991,10 @@ class AsyncIndexes:
         name is immutable.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3222,9 +4034,10 @@ class AsyncIndexes:
         `deleting` until the deletion finishes in the background, and it can't be undone.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3278,9 +4091,10 @@ class AsyncDocuments:
         `common_prefixes`.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3343,9 +4157,10 @@ class AsyncDocuments:
         reports which applies.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3399,9 +4214,10 @@ class AsyncDocuments:
         response is then 206, or 416 when the range lies outside the document.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3441,9 +4257,10 @@ class AsyncDocuments:
         the document no longer matches any search.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3493,9 +4310,10 @@ class AsyncDocuments:
         `unsupported_content_encoding`.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3534,9 +4352,10 @@ class AsyncDocuments:
         says which happened. Retrying with the same Idempotency-Key returns the same results.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3593,9 +4412,10 @@ class AsyncSearch:
         or `invalid_filter`.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3680,9 +4500,10 @@ class AsyncSearch:
         more results follow.
 
         Args:
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             index: An index name, unique in its organization. A name keeps the case it was created with,
                 and any spelling that differs only in case refers to it; no other index in the organization
                 can take such a spelling.
@@ -3822,8 +4643,10 @@ class AsyncAPIKeys:
                 "manage_index",
                 "manage_members",
                 "manage_organization",
+                "manage_agents",
             ]
         ],
+        agent: str | None = None,
         organization: str | None = None,
         indexes: builtins.list[str] | None = None,
         expires_at: datetime.datetime | None = None,
@@ -3840,10 +4663,15 @@ class AsyncAPIKeys:
             name: A name to tell the key apart, 1 to 128 characters.
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
-                ``"manage_organization"``.
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+                ``"manage_organization"``, ``"manage_agents"``.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
                 every index of its organizations, including indexes created later. A request names at least
                 one; a key's list is empty once every index it named is deleted.
@@ -3861,6 +4689,8 @@ class AsyncAPIKeys:
         fields: dict[str, Any] = {}
         fields["name"] = name
         fields["permissions"] = [Permission(item) for item in permissions]
+        if agent is not None:
+            fields["agent"] = agent
         if organization is not None:
             fields["organization"] = organization
         if indexes is not None:
@@ -3921,9 +4751,10 @@ class AsyncAccount:
         organization it names, if any.
 
         Args:
-            name: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            name: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
             email: The account's email address, at most 320 characters. No other account can use it.
             password: The password, 12 to 1,024 characters.
             invitation: The token of the invitation link the account was invited with. Required when
@@ -4008,9 +4839,10 @@ class AsyncAccount:
         name is registered.
 
         Args:
-            name: An account or organization name. Accounts and organizations share one namespace. A
-                name keeps the case it was created with, and any spelling that differs only in case refers
-                to it; no other account or organization can take such a spelling.
+            name: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
 
         Returns:
             UsernameAvailability
@@ -4083,7 +4915,8 @@ class AsyncAccount:
         """Get the current user
 
         Returns the account the request authenticates as, whether with a session or an API key. A
-        session request also receives its CSRF token in X-Csrf-Token.
+        session request also receives its CSRF token in X-Csrf-Token. An agent working on its own has no
+        account and is refused with 403.
 
         Returns:
             User
@@ -4138,7 +4971,11 @@ class AsyncDeviceLogin:
     async def start(
         self,
         *,
-        api_key_name: str,
+        agent_secret: DeviceAgentSecret | None = None,
+        api_key_name: str | None = None,
+        agent: str | None = None,
+        organization: str | None = None,
+        indexes: builtins.list[str] | None = None,
         permissions: builtins.list[
             Literal[
                 "search",
@@ -4148,10 +4985,10 @@ class AsyncDeviceLogin:
                 "manage_index",
                 "manage_members",
                 "manage_organization",
+                "manage_agents",
             ]
-        ],
-        organization: str | None = None,
-        indexes: builtins.list[str] | None = None,
+        ]
+        | None = None,
         expires_at: datetime.datetime | None = None,
     ) -> DeviceAuthorization:
         """Start device authorization
@@ -4159,19 +4996,27 @@ class AsyncDeviceLogin:
         Starts signing in a device, such as the command-line client, without entering a password on it.
         Show the user `user_code` and send them to `verification_uri` (or `verification_uri_complete`)
         to approve it in a signed-in browser, then poll for the API key with `device_code`. The
-        authorization expires after `expires_in` seconds.
+        authorization expires after `expires_in` seconds. A device may ask for a new secret of an agent
+        instead of an API key, with `agent_secret` and none of the key's fields.
 
         Args:
+            agent_secret: A new secret of an agent, which a device asks for instead of an API key.
             api_key_name: The name to give the API key the device receives, 1 to 128 characters.
-            permissions: The permissions a key carries, each named once. Each one of ``"search"``,
-                ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
-                ``"manage_organization"``.
-            organization: An account or organization name. Accounts and organizations share one
-                namespace. A name keeps the case it was created with, and any spelling that differs only in
-                case refers to it; no other account or organization can take such a spelling.
+                Required for an API key.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
             indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
                 every index of its organizations, including indexes created later. A request names at least
                 one; a key's list is empty once every index it named is deleted.
+            permissions: The permissions a key carries, each named once. Each one of ``"search"``,
+                ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
+                ``"manage_organization"``, ``"manage_agents"``.
             expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
                 expires.
 
@@ -4184,12 +5029,18 @@ class AsyncDeviceLogin:
         """
         kwargs: dict[str, Any] = {"client": self._client}
         fields: dict[str, Any] = {}
-        fields["api_key_name"] = api_key_name
-        fields["permissions"] = [Permission(item) for item in permissions]
+        if agent_secret is not None:
+            fields["agent_secret"] = agent_secret
+        if api_key_name is not None:
+            fields["api_key_name"] = api_key_name
+        if agent is not None:
+            fields["agent"] = agent
         if organization is not None:
             fields["organization"] = organization
         if indexes is not None:
             fields["indexes"] = indexes
+        if permissions is not None:
+            fields["permissions"] = [Permission(item) for item in permissions]
         if expires_at is not None:
             fields["expires_at"] = expires_at
         kwargs["body"] = DeviceAuthorizationRequest(**fields)
@@ -4208,8 +5059,10 @@ class AsyncDeviceLogin:
         Approves a pending device authorization, identified by the code the device shows. The device's
         next poll receives a new API key with the name it asked for. Without a scope it grants what the
         device asked for; a scope replaces that as a whole, narrower or wider. The key never does more
-        than the approving account can. A code that is unknown, already decided or expired is not found.
-        Only a signed-in session can approve.
+        than the approving account can. A request for an agent secret is approved as asked, without a
+        scope, by a manager of the agent or an account that manages the organization's agents; the
+        device's next poll receives the new secret. A code that is unknown, already decided or expired
+        is not found. Only a signed-in session can approve.
 
         Args:
             user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
@@ -4263,19 +5116,20 @@ class AsyncDeviceLogin:
         self,
         *,
         device_code: str,
-    ) -> APIKeyCreated:
+    ) -> DeviceToken:
         """Poll for a device API key
 
-        Exchanges an approved device code for an API key, once. Until the user decides, a poll fails
-        with 400 and code `authorization_pending`: poll again after `interval` seconds. Polling sooner
-        fails with `slow_down` and adds 5 seconds to the interval. A denied authorization fails with
-        `access_denied`, and an unknown, expired or already used code with `expired_token`.
+        Exchanges an approved device code for an API key, or for the agent secret it asked for, once.
+        Until the user decides, a poll fails with 400 and code `authorization_pending`: poll again after
+        `interval` seconds. Polling sooner fails with `slow_down` and adds 5 seconds to the interval. A
+        denied authorization fails with `access_denied`, as does a request for a secret of an agent that
+        already has two, and an unknown, expired or already used code with `expired_token`.
 
         Args:
             device_code: The `device_code` from starting the authorization.
 
         Returns:
-            APIKeyCreated
+            DeviceToken
 
         Raises:
             grepvine.APIError: The service answered with an error.
@@ -4287,7 +5141,7 @@ class AsyncDeviceLogin:
         kwargs["body"] = DeviceTokenRequest(**fields)
 
         response = await poll_device_token.asyncio_detailed(**kwargs)
-        return cast(APIKeyCreated, response.parsed)
+        return cast(DeviceToken, response.parsed)
 
     async def get(
         self,
@@ -4370,6 +5224,230 @@ class AsyncConnections:
         await revoke_connection.asyncio_detailed(**kwargs)
 
 
+class AsyncAgents:
+    """The agents."""
+
+    managers: AsyncManagers
+
+    secrets: AsyncSecrets
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+        self.managers = AsyncManagers(client)
+        self.secrets = AsyncSecrets(client)
+
+    async def list(
+        self,
+        organization: str,
+    ) -> AgentPage:
+        """List agents
+
+        Lists an organization's agents, ordered by name. Any member can list them; an agent cannot.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+
+        Returns:
+            AgentPage
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+
+        response = await list_agents.asyncio_detailed(**kwargs)
+        return cast(AgentPage, response.parsed)
+
+    async def create(
+        self,
+        organization: str,
+        *,
+        name: str,
+        permissions: builtins.list[
+            Literal[
+                "search",
+                "read",
+                "write",
+                "create_index",
+                "manage_index",
+                "manage_members",
+                "manage_organization",
+                "manage_agents",
+            ]
+        ],
+        description: str | None = None,
+        indexes: builtins.list[str] | None = None,
+    ) -> Agent:
+        """Create an agent
+
+        Creates an agent, with the creator as its first manager. Owners and admins can create agents,
+        and developers too when the organization allows it. The agent's permissions must be within your
+        own, and within the key's when a key creates it; a key needs `manage_agents`. A 409 means the
+        organization already has an agent of that name, in any case.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            name: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            permissions: What an agent may do, each named once: `search`, `read`, `write`,
+                `create_index` and `manage_index`, as for a key. `create_index` needs every index. Each one
+                of ``"search"``, ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``,
+                ``"manage_members"``, ``"manage_organization"``, ``"manage_agents"``.
+            description: What the agent is for, at most 1,024 characters.
+            indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
+                every index of its organizations, including indexes created later. A request names at least
+                one; a key's list is empty once every index it named is deleted.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        fields: dict[str, Any] = {}
+        fields["name"] = name
+        fields["permissions"] = [Permission(item) for item in permissions]
+        if description is not None:
+            fields["description"] = description
+        if indexes is not None:
+            fields["indexes"] = indexes
+        kwargs["body"] = CreateAgentRequest(**fields)
+
+        response = await create_agent.asyncio_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+    async def get(
+        self,
+        organization: str,
+        agent: str,
+    ) -> Agent:
+        """Get an agent
+
+        Returns one of the organization's agents. Any member can read it; an agent cannot.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+
+        response = await get_agent.asyncio_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+    async def update(
+        self,
+        organization: str,
+        agent: str,
+        *,
+        description: str | None = None,
+        ceiling: AgentCeiling | None = None,
+        disabled: bool | None = None,
+    ) -> Agent:
+        """Update an agent
+
+        Changes an agent's description or permissions, or disables or enables it. Its managers, owners
+        and admins can change it, and only within their own permissions (and the key's, for a key with
+        `manage_agents`); any of them can disable it. New permissions must also be allowed by every
+        manager's role, or the change is refused with 409. Saving the permissions of an agent with no
+        managers makes you one. A disabled agent is refused at once, with every credential it has.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+            description: What the agent is for, at most 1,024 characters.
+            ceiling: What an agent reaches and may do, as a whole. Leave indexes out for every index.
+            disabled: Disables or enables the agent.
+
+        Returns:
+            Agent
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+        fields: dict[str, Any] = {}
+        if description is not None:
+            fields["description"] = description
+        if ceiling is not None:
+            fields["ceiling"] = ceiling
+        if disabled is not None:
+            fields["disabled"] = disabled
+        kwargs["body"] = UpdateAgentRequest(**fields)
+
+        response = await update_agent.asyncio_detailed(**kwargs)
+        return cast(Agent, response.parsed)
+
+    async def delete(
+        self,
+        organization: str,
+        agent: str,
+    ) -> None:
+        """Delete an agent
+
+        Deletes an agent with its secrets and every credential it has. Requires the owner or admin role.
+        It can't be undone.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            agent: A name: of an account, an organization or an agent. Accounts and organizations share
+                one namespace; an agent's name is unique within its organization. A name keeps the case it
+                was created with, and any spelling that differs only in case refers to it; nothing else in
+                the same namespace can take such a spelling.
+
+        Returns:
+            None
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["agent"] = agent
+
+        await delete_agent.asyncio_detailed(**kwargs)
+
+
 class _GeneratedAsyncClient:
     """The API's resources."""
 
@@ -4381,6 +5459,7 @@ class _GeneratedAsyncClient:
     account: AsyncAccount
     device_login: AsyncDeviceLogin
     connections: AsyncConnections
+    agents: AsyncAgents
 
     def __init__(self, client: Client) -> None:
         self._client = client
@@ -4392,6 +5471,7 @@ class _GeneratedAsyncClient:
         self.account = AsyncAccount(client)
         self.device_login = AsyncDeviceLogin(client)
         self.connections = AsyncConnections(client)
+        self.agents = AsyncAgents(client)
 
 
 class _AsyncIndexClient:

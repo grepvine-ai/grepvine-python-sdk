@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
+import threading
+from collections.abc import AsyncGenerator, Generator
 from importlib.metadata import version
 from typing import Any, Final, Self
 
 import httpx
 from httpx._utils import get_environment_proxies
 
+from grepvine import _retry
 from grepvine._config import Settings, environment, read_file, resolve
 from grepvine._generated.api.resources import _GeneratedAsyncClient, _GeneratedClient
 from grepvine._generated.client import Client as _Connection
@@ -44,6 +48,67 @@ def _options(
     }
 
 
+class _AgentToken(httpx.Auth):
+    """Sends requests with a token exchanged for an agent secret, exchanged again shortly
+    before it expires, or after the service refused it. The secret goes only to the token
+    endpoint, and only one exchange runs at a time per client."""
+
+    def __init__(self, secret: str, base_url: str, headers: dict[str, str]) -> None:
+        self._secret = secret
+        self._url = base_url.removesuffix("/v1") + "/oauth/token"
+        self._headers = headers
+        self._token = ""
+        self._renew_at = 0.0
+        self._lock = threading.Lock()
+        self._async_lock = asyncio.Lock()
+
+    def _stale(self) -> bool:
+        return _retry.monotonic() >= self._renew_at
+
+    def forget(self) -> None:
+        self._renew_at = 0.0
+
+    def _exchange(self) -> httpx.Request:
+        form = {"grant_type": "client_credentials", "client_secret": self._secret}
+        return httpx.Request("POST", self._url, data=form, headers=self._headers)
+
+    def _keep(self, answer: httpx.Response) -> None:
+        body = answer.json()
+        lifetime = float(body["expires_in"])
+        self._token = body["access_token"]
+        self._renew_at = _retry.monotonic() + max(lifetime - 60, lifetime / 2)
+
+    def _sign(self, request: httpx.Request) -> httpx.Request:
+        request.headers["Authorization"] = f"Bearer {self._token}"
+        return request
+
+    def sync_auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response]:
+        with self._lock:
+            if self._stale():
+                answer = yield self._exchange()
+                answer.read()
+                self._keep(answer)
+            signed = self._sign(request)
+        yield signed
+
+    async def async_auth_flow(
+        self, request: httpx.Request
+    ) -> AsyncGenerator[httpx.Request, httpx.Response]:
+        async with self._async_lock:
+            if self._stale():
+                answer = yield self._exchange()
+                await answer.aread()
+                self._keep(answer)
+            signed = self._sign(request)
+        yield signed
+
+
+def _auth(settings: Settings, options: dict[str, Any]) -> _AgentToken | None:
+    if not settings.agent_secret:
+        return None
+    return _AgentToken(settings.agent_secret, options["base_url"], dict(options["headers"]))
+
+
 def _network(sync: bool, transport: Any, retry: RetryPolicy | None) -> dict[str, Any]:
     """The httpx client's transports, each wrapped in the client's retries.
 
@@ -76,20 +141,26 @@ def _qualify(settings: Settings, name: str) -> str:
 
 
 def _session(http: httpx.Client | httpx.AsyncClient, response: httpx.Response) -> None:
-    """Send the CSRF token a sign-in issued with every later request; httpx keeps the cookie."""
+    """Send the CSRF token a sign-in issued with every later request; httpx keeps the cookie.
+    A refused agent token is exchanged again on the next request."""
     if token := response.headers.get("x-csrf-token"):
         http.headers["X-Csrf-Token"] = token
+    if response.status_code == 401 and isinstance(http.auth, _AgentToken):
+        http.auth.forget()
 
 
 class Client(_GeneratedClient):
     """A client of the Grepvine API.
 
     ``Client()`` with no arguments is configured like ``gv``: each of
-    ``api_key``, ``endpoint`` and ``organization`` is taken from its argument,
-    else from its environment variable (``GREPVINE_API_KEY``,
-    ``GREPVINE_API_ENDPOINT``, ``GREPVINE_ORGANIZATION``), else from the
-    configuration file (``$GREPVINE_CONFIG``, else ``~/.grepvine/config.yaml``
-    when it exists), else from its default. `from_env` and `from_config` make
+    ``api_key``, ``agent_secret``, ``endpoint`` and ``organization`` is taken
+    from its argument, else from its environment variable
+    (``GREPVINE_API_KEY``, ``GREPVINE_AGENT_SECRET``, ``GREPVINE_API_ENDPOINT``,
+    ``GREPVINE_ORGANIZATION``), else from the configuration file
+    (``$GREPVINE_CONFIG``, else ``~/.grepvine/config.yaml`` when it exists),
+    else from its default. The API key and the agent secret both come from the
+    first of those sources that sets either; a source that sets both is an
+    error. `from_env` and `from_config` make
     a client from one of those sources alone. Clients configured differently
     can be used side by side.
 
@@ -98,6 +169,10 @@ class Client(_GeneratedClient):
             methods that need no credentials work, such as ``account.login``
             and ``device_login.authorize``; after ``account.login`` the
             client uses the signed-in session.
+        agent_secret: An agent secret (``gvs_...``), for working as an agent
+            alone instead of with an API key. The client exchanges it for a
+            short-lived token, renews the token before it expires, and sends
+            only the token with requests.
         endpoint: The service URL, with or without ``/v1``. Default:
             ``https://api.grepvine.ai``.
         organization: The organization of an index named without one, as in
@@ -129,18 +204,24 @@ class Client(_GeneratedClient):
         api_key: str | None = None,
         endpoint: str | None = None,
         organization: str | None = None,
+        agent_secret: str | None = None,
         trust_env: bool = True,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.BaseTransport | None = None,
     ) -> None:
         self.settings = resolve(
-            endpoint=endpoint, api_key=api_key, organization=organization, trust_env=trust_env
+            endpoint=endpoint,
+            api_key=api_key,
+            organization=organization,
+            agent_secret=agent_secret,
+            trust_env=trust_env,
         )
         options = _options(self.settings.api_key, self.settings.endpoint, timeout)
         self.http = httpx.Client(
             **options,
             **_network(True, transport, retry),
+            auth=_auth(self.settings, options),
             event_hooks={"response": [self._on_response]},
         )
         connection = _Connection(base_url=options["base_url"]).set_httpx_client(self.http)
@@ -158,7 +239,7 @@ class Client(_GeneratedClient):
         retry: RetryPolicy | None = None,
         transport: httpx.BaseTransport | None = None,
     ) -> Self:
-        """A client whose settings come only from ``GREPVINE_API_KEY``,
+        """A client whose settings come only from ``GREPVINE_API_KEY``, ``GREPVINE_AGENT_SECRET``,
         ``GREPVINE_API_ENDPOINT`` and ``GREPVINE_ORGANIZATION``; no configuration file is read.
         A variable that is not set leaves its setting at its default."""
         return cls(
@@ -178,8 +259,8 @@ class Client(_GeneratedClient):
         format ``gv`` writes (``~`` is expanded); no ``GREPVINE_*`` variable is read.
 
         Raises:
-            grepvine.ConfigurationError: The file does not exist, other users can read it, or
-                it is not a mapping of settings.
+            grepvine.ConfigurationError: The file does not exist, other users can read it,
+                it is not a mapping of settings, or it sets both an API key and an agent secret.
         """
         return cls(
             **read_file(path), trust_env=False, timeout=timeout, retry=retry, transport=transport
@@ -227,18 +308,24 @@ class AsyncClient(_GeneratedAsyncClient):
         api_key: str | None = None,
         endpoint: str | None = None,
         organization: str | None = None,
+        agent_secret: str | None = None,
         trust_env: bool = True,
         timeout: float | httpx.Timeout | None = DEFAULT_TIMEOUT,
         retry: RetryPolicy | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self.settings = resolve(
-            endpoint=endpoint, api_key=api_key, organization=organization, trust_env=trust_env
+            endpoint=endpoint,
+            api_key=api_key,
+            organization=organization,
+            agent_secret=agent_secret,
+            trust_env=trust_env,
         )
         options = _options(self.settings.api_key, self.settings.endpoint, timeout)
         self.http = httpx.AsyncClient(
             **options,
             **_network(False, transport, retry),
+            auth=_auth(self.settings, options),
             event_hooks={"response": [self._on_response]},
         )
         connection = _Connection(base_url=options["base_url"]).set_async_httpx_client(self.http)
@@ -256,7 +343,7 @@ class AsyncClient(_GeneratedAsyncClient):
         retry: RetryPolicy | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> Self:
-        """A client whose settings come only from ``GREPVINE_API_KEY``,
+        """A client whose settings come only from ``GREPVINE_API_KEY``, ``GREPVINE_AGENT_SECRET``,
         ``GREPVINE_API_ENDPOINT`` and ``GREPVINE_ORGANIZATION``; no configuration file is read.
         A variable that is not set leaves its setting at its default."""
         return cls(
@@ -276,8 +363,8 @@ class AsyncClient(_GeneratedAsyncClient):
         format ``gv`` writes (``~`` is expanded); no ``GREPVINE_*`` variable is read.
 
         Raises:
-            grepvine.ConfigurationError: The file does not exist, other users can read it, or
-                it is not a mapping of settings.
+            grepvine.ConfigurationError: The file does not exist, other users can read it,
+                it is not a mapping of settings, or it sets both an API key and an agent secret.
         """
         return cls(
             **read_file(path), trust_env=False, timeout=timeout, retry=retry, transport=transport

@@ -3,6 +3,7 @@ from enum import StrEnum
 
 class Permission(StrEnum):
     CREATE_INDEX = "create_index"
+    MANAGE_AGENTS = "manage_agents"
     MANAGE_INDEX = "manage_index"
     MANAGE_MEMBERS = "manage_members"
     MANAGE_ORGANIZATION = "manage_organization"
