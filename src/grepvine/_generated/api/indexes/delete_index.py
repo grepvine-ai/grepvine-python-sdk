@@ -58,7 +58,7 @@ def sync_detailed(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Response[Any | Error]:
     """Delete an index
 
@@ -98,7 +98,7 @@ def sync(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Any | Error | None:
     """Delete an index
 
@@ -133,7 +133,7 @@ async def asyncio_detailed(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Response[Any | Error]:
     """Delete an index
 
@@ -171,7 +171,7 @@ async def asyncio(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Any | Error | None:
     """Delete an index
 

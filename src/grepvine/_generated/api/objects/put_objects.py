@@ -72,7 +72,7 @@ def sync_detailed(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: File,
     idempotency_key: str | Unset = UNSET,
 ) -> Response[Error | MutationBatchResult]:
@@ -125,7 +125,7 @@ def sync(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: File,
     idempotency_key: str | Unset = UNSET,
 ) -> Error | MutationBatchResult | None:
@@ -173,7 +173,7 @@ async def asyncio_detailed(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: File,
     idempotency_key: str | Unset = UNSET,
 ) -> Response[Error | MutationBatchResult]:
@@ -224,7 +224,7 @@ async def asyncio(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: File,
     idempotency_key: str | Unset = UNSET,
 ) -> Error | MutationBatchResult | None:

@@ -52,6 +52,7 @@ class APIKey:
     expires_at: datetime.datetime | None = None
     last_used_at: datetime.datetime | None = None
     revoked_at: datetime.datetime | None = None
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
@@ -86,7 +87,7 @@ class APIKey:
             revoked_at = _revoked_at_value.isoformat()
 
         field_dict: dict[str, Any] = {}
-
+        field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "id": id,
@@ -170,4 +171,21 @@ class APIKey:
             revoked_at=(None if isinstance(revoked_at, Unset) else revoked_at),
         )
 
+        api_key.additional_properties = d
         return api_key
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

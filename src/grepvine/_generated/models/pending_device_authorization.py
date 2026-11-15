@@ -47,6 +47,7 @@ class PendingDeviceAuthorization:
     indexes: list[str] = _attrs_field(factory=list)
     permissions: list[Permission] = _attrs_field(factory=list)
     expires_at: datetime.datetime | None = None
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         _agent_secret_value = UNSET if self.agent_secret is None else self.agent_secret
@@ -78,7 +79,7 @@ class PendingDeviceAuthorization:
             expires_at = _expires_at_value.isoformat()
 
         field_dict: dict[str, Any] = {}
-
+        field_dict.update(self.additional_properties)
         field_dict.update({})
         if agent_secret is not UNSET:
             field_dict["agent_secret"] = agent_secret
@@ -145,4 +146,21 @@ class PendingDeviceAuthorization:
             expires_at=(None if isinstance(expires_at, Unset) else expires_at),
         )
 
+        pending_device_authorization.additional_properties = d
         return pending_device_authorization
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

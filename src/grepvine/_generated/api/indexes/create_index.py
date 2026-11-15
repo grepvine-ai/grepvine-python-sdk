@@ -66,7 +66,7 @@ def _build_response(
 def sync_detailed(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: CreateIndexRequest,
 ) -> Response[Error | Index]:
     """Create an index
@@ -105,7 +105,7 @@ def sync_detailed(
 def sync(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: CreateIndexRequest,
 ) -> Error | Index | None:
     """Create an index
@@ -139,7 +139,7 @@ def sync(
 async def asyncio_detailed(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: CreateIndexRequest,
 ) -> Response[Error | Index]:
     """Create an index
@@ -176,7 +176,7 @@ async def asyncio_detailed(
 async def asyncio(
     organization: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: CreateIndexRequest,
 ) -> Error | Index | None:
     """Create an index

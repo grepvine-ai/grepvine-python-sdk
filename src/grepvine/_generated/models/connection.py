@@ -50,6 +50,7 @@ class Connection:
     agent: str | None = None
     organization: str | None = None
     indexes: list[str] = _attrs_field(factory=list)
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         id = str(self.id)
@@ -73,7 +74,7 @@ class Connection:
             indexes = _indexes_value
 
         field_dict: dict[str, Any] = {}
-
+        field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "id": id,
@@ -135,4 +136,21 @@ class Connection:
             indexes=([] if isinstance(indexes, Unset) else indexes),
         )
 
+        connection.additional_properties = d
         return connection
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

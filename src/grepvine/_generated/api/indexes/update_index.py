@@ -69,7 +69,7 @@ def sync_detailed(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: UpdateIndexRequest,
 ) -> Response[Error | Index]:
     """Update an index
@@ -113,7 +113,7 @@ def sync(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: UpdateIndexRequest,
 ) -> Error | Index | None:
     """Update an index
@@ -152,7 +152,7 @@ async def asyncio_detailed(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: UpdateIndexRequest,
 ) -> Response[Error | Index]:
     """Update an index
@@ -194,7 +194,7 @@ async def asyncio(
     organization: str,
     index: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
     body: UpdateIndexRequest,
 ) -> Error | Index | None:
     """Update an index
