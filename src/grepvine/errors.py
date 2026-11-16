@@ -148,7 +148,13 @@ class AuthenticationError(APIError):
 
 
 class PermissionDeniedError(APIError):
-    """The API key may not perform this action (HTTP 403)."""
+    """The API key may not perform this action (HTTP 403).
+
+    Code ``"organization_suspended"`` means the organization is suspended: every
+    operation on its members, indexes, documents and searches is refused until
+    it is resumed, while ``organizations.get`` still answers with ``suspended``
+    set. Contact support.
+    """
 
 
 class NotFoundError(APIError):
