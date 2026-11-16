@@ -47,7 +47,7 @@ class CreateAgentRequest:
 
         _description_value = UNSET if self.description is None else self.description
         description = _description_value
-        _indexes_value = UNSET if self.indexes is None else self.indexes
+        _indexes_value = UNSET if not self.indexes else self.indexes
         indexes: list[str] | Unset = UNSET
         if not isinstance(_indexes_value, Unset):
             indexes = _indexes_value

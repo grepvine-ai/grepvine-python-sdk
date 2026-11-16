@@ -37,7 +37,7 @@ class Error:
         code = self.code
         reason = self.reason
         error = self.error
-        _details_value = UNSET if self.details is None else self.details
+        _details_value = UNSET if not self.details else self.details
         details: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(_details_value, Unset):
             details = []

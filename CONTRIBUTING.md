@@ -78,11 +78,14 @@ generator cannot know.
   `device_login.authorize` raise the same errors. Deleting an organization is not listed:
   the organization reads as not found as soon as the call returns.
 - Models read a field the service left out as `None`, or `[]` for a list,
-  never as the generator's internal "not set" value, and leave a field set
-  to `None` out of a request. `absent_fields_as_none` in `generate.py`
-  adapts the generator's model template for this, and fails generation when
-  a new generator version no longer matches it. No field of the contract is
-  nullable, so `None` never has to be sent.
+  never as the generator's internal "not set" value, and leave an optional
+  field set to `None`, or an empty list, out of a request.
+  `absent_fields_as_none` in `generate.py` adapts the generator's model
+  template for this, and fails generation when a new generator version no
+  longer matches it. A required field is always sent, so a required nullable
+  one, such as the `expires_at` of a new key, sends `None` as `null`. An
+  optional `None` cannot be sent, so `device_login.authorize` builds its own
+  request to send `expires_at` as `null` (a key that never expires).
 - The adapter in `generate.py` makes these changes before generating: the
   `If-None-Match` constant becomes a singleton enum; the NDJSON batch body
   becomes a binary `File` whose bytes the template buffers so both HTTPX

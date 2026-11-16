@@ -111,8 +111,8 @@ def flattened_collisions(spec: dict) -> list[str]:
 
 
 # Model fields the service left out read as None (an empty list for a list), never as the
-# generator's Unset sentinel, and a field set to None is left out of a request. No field of the
-# contract is nullable, so None never has to be sent.
+# generator's Unset sentinel, and an optional field set to None (or an empty list) is left out of
+# a request. A required field is always sent, so a required nullable one sends None as null.
 NONE_DECLARATION = """{% macro declaration(property) -%}
 {%- set type_ = property.get_type_string(no_optional=True) | as_unembedded_code -%}
 {%- if property.required -%}
@@ -142,13 +142,16 @@ def absent_fields_as_none() -> str:
             " | wordwrap(112) | indent(12) }}",
             1,
         ),
-        # Requests: None is encoded as the sentinel, so the field is left out.
+        # Requests: None, or an empty list, is encoded as the sentinel, so the field is left out.
         (
             '{{ _transform_property(property, "self." + property.python_name) }}',
             "{% if property.required %}"
             '{{ _transform_property(property, "self." + property.python_name) }}'
             "{% else %}"
-            "_{{ property.python_name }}_value = UNSET if self.{{ property.python_name }} is None"
+            "_{{ property.python_name }}_value = UNSET if "
+            '{% if property.template == "list_property.py.jinja" %}'
+            "not self.{{ property.python_name }}"
+            "{% else %}self.{{ property.python_name }} is None{% endif %}"
             " else self.{{ property.python_name }}\n"
             '{{ _transform_property(property, "_" + property.python_name + "_value") }}'
             "{% endif %}",
