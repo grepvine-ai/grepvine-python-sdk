@@ -5,8 +5,8 @@ from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 
-from ..types import UNSET, Unset
 
+from typing import cast
 import datetime
 
 
@@ -18,38 +18,50 @@ class CreateAgentSecretRequest:
     """A new agent secret.
 
     Attributes:
-        expires_at (datetime.datetime): When the secret stops working, at most one year ahead. Omitted for a secret that
-            never expires.
+        expires_at (datetime.datetime | None): When the secret stops working, at most one year ahead, or null for a
+            secret that never expires.
     """
 
-    expires_at: datetime.datetime | None = None
+    expires_at: datetime.datetime | None
 
     def to_dict(self) -> dict[str, Any]:
-        _expires_at_value = UNSET if self.expires_at is None else self.expires_at
-        expires_at: str | Unset = UNSET
-        if not isinstance(_expires_at_value, Unset):
-            expires_at = _expires_at_value.isoformat()
+        expires_at: None | str
+        if isinstance(self.expires_at, datetime.datetime):
+            expires_at = self.expires_at.isoformat()
+        else:
+            expires_at = self.expires_at
 
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({})
-        if expires_at is not UNSET:
-            field_dict["expires_at"] = expires_at
+        field_dict.update(
+            {
+                "expires_at": expires_at,
+            }
+        )
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        _expires_at = d.pop("expires_at", UNSET)
-        expires_at: datetime.datetime | Unset
-        if isinstance(_expires_at, Unset):
-            expires_at = UNSET
-        else:
-            expires_at = datetime.datetime.fromisoformat(_expires_at)
+
+        def _parse_expires_at(data: object) -> datetime.datetime | None:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                expires_at_type_0 = datetime.datetime.fromisoformat(data)
+
+                return expires_at_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(datetime.datetime | None, data)
+
+        expires_at = _parse_expires_at(d.pop("expires_at"))
 
         create_agent_secret_request = cls(
-            expires_at=(None if isinstance(expires_at, Unset) else expires_at),
+            expires_at=expires_at,
         )
 
         return create_agent_secret_request

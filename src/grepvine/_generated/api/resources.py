@@ -648,7 +648,7 @@ class Secrets:
         organization: str,
         agent: str,
         *,
-        expires_at: datetime.datetime | None = None,
+        expires_at: datetime.datetime | None,
     ) -> AgentSecretCreated:
         """Create an agent secret
 
@@ -666,7 +666,7 @@ class Secrets:
                 one namespace; an agent's name is unique within its organization. A name keeps the case it
                 was created with, and any spelling that differs only in case refers to it; nothing else in
                 the same namespace can take such a spelling.
-            expires_at: When the secret stops working, at most one year ahead. Omitted for a secret that
+            expires_at: When the secret stops working, at most one year ahead, or null for a secret that
                 never expires.
 
         Returns:
@@ -680,8 +680,7 @@ class Secrets:
         kwargs["organization"] = organization
         kwargs["agent"] = agent
         fields: dict[str, Any] = {}
-        if expires_at is not None:
-            fields["expires_at"] = expires_at
+        fields["expires_at"] = expires_at
         kwargs["body"] = CreateAgentSecretRequest(**fields)
 
         response = create_agent_secret.sync_detailed(**kwargs)
@@ -1790,10 +1789,10 @@ class APIKeys:
                 "manage_agents",
             ]
         ],
+        expires_at: datetime.datetime | None,
         agent: str | None = None,
         organization: str | None = None,
         indexes: builtins.list[str] | None = None,
-        expires_at: datetime.datetime | None = None,
     ) -> APIKeyCreated:
         """Create an API key
 
@@ -1808,6 +1807,8 @@ class APIKeys:
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
                 ``"manage_organization"``, ``"manage_agents"``.
+            expires_at: When the key stops working, at most one year ahead, or null for a key that never
+                expires.
             agent: A name: of an account, an organization or an agent. Accounts and organizations share
                 one namespace; an agent's name is unique within its organization. A name keeps the case it
                 was created with, and any spelling that differs only in case refers to it; nothing else in
@@ -1819,8 +1820,6 @@ class APIKeys:
             indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
                 every index of its organizations, including indexes created later. A request names at least
                 one; a key's list is empty once every index it named is deleted.
-            expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
-                expires.
 
         Returns:
             APIKeyCreated
@@ -1833,14 +1832,13 @@ class APIKeys:
         fields: dict[str, Any] = {}
         fields["name"] = name
         fields["permissions"] = [Permission(item) for item in permissions]
+        fields["expires_at"] = expires_at
         if agent is not None:
             fields["agent"] = agent
         if organization is not None:
             fields["organization"] = organization
         if indexes is not None:
             fields["indexes"] = indexes
-        if expires_at is not None:
-            fields["expires_at"] = expires_at
         kwargs["body"] = CreateAPIKeyRequest(**fields)
 
         response = create_api_key.sync_detailed(**kwargs)
@@ -2133,7 +2131,7 @@ class DeviceLogin:
             ]
         ]
         | None = None,
-        expires_at: datetime.datetime | None = None,
+        expires_at: datetime.datetime | None | None = None,
     ) -> DeviceAuthorization:
         """Start device authorization
 
@@ -2161,7 +2159,7 @@ class DeviceLogin:
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
                 ``"manage_organization"``, ``"manage_agents"``.
-            expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
+            expires_at: When the key stops working, at most one year ahead, or null for a key that never
                 expires.
 
         Returns:
@@ -2210,7 +2208,8 @@ class DeviceLogin:
 
         Args:
             user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
-            scope: What a key reaches and may do. A field left out sets no limit.
+            scope: What a key reaches and may do. A field left out sets no limit; the expiry is always
+                given.
 
         Returns:
             None
@@ -3544,7 +3543,7 @@ class AsyncSecrets:
         organization: str,
         agent: str,
         *,
-        expires_at: datetime.datetime | None = None,
+        expires_at: datetime.datetime | None,
     ) -> AgentSecretCreated:
         """Create an agent secret
 
@@ -3562,7 +3561,7 @@ class AsyncSecrets:
                 one namespace; an agent's name is unique within its organization. A name keeps the case it
                 was created with, and any spelling that differs only in case refers to it; nothing else in
                 the same namespace can take such a spelling.
-            expires_at: When the secret stops working, at most one year ahead. Omitted for a secret that
+            expires_at: When the secret stops working, at most one year ahead, or null for a secret that
                 never expires.
 
         Returns:
@@ -3576,8 +3575,7 @@ class AsyncSecrets:
         kwargs["organization"] = organization
         kwargs["agent"] = agent
         fields: dict[str, Any] = {}
-        if expires_at is not None:
-            fields["expires_at"] = expires_at
+        fields["expires_at"] = expires_at
         kwargs["body"] = CreateAgentSecretRequest(**fields)
 
         response = await create_agent_secret.asyncio_detailed(**kwargs)
@@ -4686,10 +4684,10 @@ class AsyncAPIKeys:
                 "manage_agents",
             ]
         ],
+        expires_at: datetime.datetime | None,
         agent: str | None = None,
         organization: str | None = None,
         indexes: builtins.list[str] | None = None,
-        expires_at: datetime.datetime | None = None,
     ) -> APIKeyCreated:
         """Create an API key
 
@@ -4704,6 +4702,8 @@ class AsyncAPIKeys:
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
                 ``"manage_organization"``, ``"manage_agents"``.
+            expires_at: When the key stops working, at most one year ahead, or null for a key that never
+                expires.
             agent: A name: of an account, an organization or an agent. Accounts and organizations share
                 one namespace; an agent's name is unique within its organization. A name keeps the case it
                 was created with, and any spelling that differs only in case refers to it; nothing else in
@@ -4715,8 +4715,6 @@ class AsyncAPIKeys:
             indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
                 every index of its organizations, including indexes created later. A request names at least
                 one; a key's list is empty once every index it named is deleted.
-            expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
-                expires.
 
         Returns:
             APIKeyCreated
@@ -4729,14 +4727,13 @@ class AsyncAPIKeys:
         fields: dict[str, Any] = {}
         fields["name"] = name
         fields["permissions"] = [Permission(item) for item in permissions]
+        fields["expires_at"] = expires_at
         if agent is not None:
             fields["agent"] = agent
         if organization is not None:
             fields["organization"] = organization
         if indexes is not None:
             fields["indexes"] = indexes
-        if expires_at is not None:
-            fields["expires_at"] = expires_at
         kwargs["body"] = CreateAPIKeyRequest(**fields)
 
         response = await create_api_key.asyncio_detailed(**kwargs)
@@ -5029,7 +5026,7 @@ class AsyncDeviceLogin:
             ]
         ]
         | None = None,
-        expires_at: datetime.datetime | None = None,
+        expires_at: datetime.datetime | None | None = None,
     ) -> DeviceAuthorization:
         """Start device authorization
 
@@ -5057,7 +5054,7 @@ class AsyncDeviceLogin:
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
                 ``"manage_organization"``, ``"manage_agents"``.
-            expires_at: When the key stops working, at most one year ahead. Omitted for a key that never
+            expires_at: When the key stops working, at most one year ahead, or null for a key that never
                 expires.
 
         Returns:
@@ -5106,7 +5103,8 @@ class AsyncDeviceLogin:
 
         Args:
             user_code: The code the device shows. Hyphens, surrounding spaces and case are ignored.
-            scope: What a key reaches and may do. A field left out sets no limit.
+            scope: What a key reaches and may do. A field left out sets no limit; the expiry is always
+                given.
 
         Returns:
             None

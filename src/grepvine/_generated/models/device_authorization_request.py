@@ -22,8 +22,9 @@ T = TypeVar("T", bound="DeviceAuthorizationRequest")
 @_attrs_define
 class DeviceAuthorizationRequest:
     """Starts a device authorization. The scope fields are what the device asks for; the person approving it sees them and
-    may change them. A scope field left out sets no limit. A request for an API key names it and its permissions; a
-    request for an agent secret sends `agent_secret` and none of the other fields.
+    may change them. A scope field left out sets no limit. A request for an API key names it, its permissions and its
+    expiry (`expires_at`, null for never); a request for an agent secret sends `agent_secret` and none of the other
+    fields.
 
         Attributes:
             agent_secret (DeviceAgentSecret): A new secret of an agent, which a device asks for instead of an API key.
@@ -39,8 +40,8 @@ class DeviceAuthorizationRequest:
                 of its organizations, including indexes created later. A request names at least one; a key's list is empty once
                 every index it named is deleted.
             permissions (list[Permission]): The permissions a key carries, each named once.
-            expires_at (datetime.datetime): When the key stops working, at most one year ahead. Omitted for a key that never
-                expires.
+            expires_at (datetime.datetime | None): When the key stops working, at most one year ahead, or null for a key
+                that never expires.
     """
 
     agent_secret: DeviceAgentSecret | None = None
@@ -49,7 +50,7 @@ class DeviceAuthorizationRequest:
     organization: str | None = None
     indexes: list[str] = _attrs_field(factory=list)
     permissions: list[Permission] = _attrs_field(factory=list)
-    expires_at: datetime.datetime | None = None
+    expires_at: datetime.datetime | None | None = None
 
     def to_dict(self) -> dict[str, Any]:
         _agent_secret_value = UNSET if self.agent_secret is None else self.agent_secret
@@ -76,9 +77,13 @@ class DeviceAuthorizationRequest:
                 permissions.append(componentsschemas_permissions_item)
 
         _expires_at_value = UNSET if self.expires_at is None else self.expires_at
-        expires_at: str | Unset = UNSET
-        if not isinstance(_expires_at_value, Unset):
+        expires_at: None | str | Unset
+        if isinstance(_expires_at_value, Unset):
+            expires_at = UNSET
+        elif isinstance(_expires_at_value, datetime.datetime):
             expires_at = _expires_at_value.isoformat()
+        else:
+            expires_at = _expires_at_value
 
         field_dict: dict[str, Any] = {}
 
@@ -131,12 +136,22 @@ class DeviceAuthorizationRequest:
 
                 permissions.append(componentsschemas_permissions_item)
 
-        _expires_at = d.pop("expires_at", UNSET)
-        expires_at: datetime.datetime | Unset
-        if isinstance(_expires_at, Unset):
-            expires_at = UNSET
-        else:
-            expires_at = datetime.datetime.fromisoformat(_expires_at)
+        def _parse_expires_at(data: object) -> datetime.datetime | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                expires_at_type_0 = datetime.datetime.fromisoformat(data)
+
+                return expires_at_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(datetime.datetime | None | Unset, data)
+
+        expires_at = _parse_expires_at(d.pop("expires_at", UNSET))
 
         device_authorization_request = cls(
             agent_secret=(None if isinstance(agent_secret, Unset) else agent_secret),

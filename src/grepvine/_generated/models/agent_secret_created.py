@@ -24,6 +24,8 @@ class AgentSecretCreated:
         prefix (str): The first characters of the secret, shown to tell secrets apart.
         created_at (datetime.datetime):
         secret (str): The secret. It is shown only in this response.
+        client_id (UUID): The agent's `id`, for OAuth clients that ask for a client ID beside the secret when they
+            exchange it for a token.
         created_by (str): A name: of an account, an organization or an agent. Accounts and organizations share one
             namespace; an agent's name is unique within its organization. A name keeps the case it was created with, and any
             spelling that differs only in case refers to it; nothing else in the same namespace can take such a spelling.
@@ -35,6 +37,7 @@ class AgentSecretCreated:
     prefix: str
     created_at: datetime.datetime
     secret: str
+    client_id: UUID
     created_by: str | None = None
     expires_at: datetime.datetime | None = None
     last_used_at: datetime.datetime | None = None
@@ -45,6 +48,7 @@ class AgentSecretCreated:
         prefix = self.prefix
         created_at = self.created_at.isoformat()
         secret = self.secret
+        client_id = str(self.client_id)
         _created_by_value = UNSET if self.created_by is None else self.created_by
         created_by = _created_by_value
         _expires_at_value = UNSET if self.expires_at is None else self.expires_at
@@ -64,6 +68,7 @@ class AgentSecretCreated:
                 "prefix": prefix,
                 "created_at": created_at,
                 "secret": secret,
+                "client_id": client_id,
             }
         )
         if created_by is not UNSET:
@@ -86,6 +91,8 @@ class AgentSecretCreated:
 
         secret = d.pop("secret")
 
+        client_id = UUID(d.pop("client_id"))
+
         created_by = d.pop("created_by", UNSET)
 
         _expires_at = d.pop("expires_at", UNSET)
@@ -107,6 +114,7 @@ class AgentSecretCreated:
             prefix=prefix,
             created_at=created_at,
             secret=secret,
+            client_id=client_id,
             created_by=(None if isinstance(created_by, Unset) else created_by),
             expires_at=(None if isinstance(expires_at, Unset) else expires_at),
             last_used_at=(None if isinstance(last_used_at, Unset) else last_used_at),

@@ -68,7 +68,8 @@ def sync_detailed(
     `Authorization: Bearer <key>`.
 
     Args:
-        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit.
+        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit; the
+            expiry is always given.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -103,7 +104,8 @@ def sync(
     `Authorization: Bearer <key>`.
 
     Args:
-        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit.
+        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit; the
+            expiry is always given.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -133,7 +135,8 @@ async def asyncio_detailed(
     `Authorization: Bearer <key>`.
 
     Args:
-        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit.
+        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit; the
+            expiry is always given.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -166,7 +169,8 @@ async def asyncio(
     `Authorization: Bearer <key>`.
 
     Args:
-        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit.
+        body (CreateAPIKeyRequest): Creates an API key. A scope field left out sets no limit; the
+            expiry is always given.
 
     Raises:
         grepvine.APIError: The service answered with an error.

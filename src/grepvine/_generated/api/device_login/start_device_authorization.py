@@ -70,8 +70,9 @@ def sync_detailed(
     Args:
         body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
             what the device asks for; the person approving it sees them and may change them. A scope
-            field left out sets no limit. A request for an API key names it and its permissions; a
-            request for an agent secret sends `agent_secret` and none of the other fields.
+            field left out sets no limit. A request for an API key names it, its permissions and its
+            expiry (`expires_at`, null for never); a request for an agent secret sends `agent_secret`
+            and none of the other fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -108,8 +109,9 @@ def sync(
     Args:
         body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
             what the device asks for; the person approving it sees them and may change them. A scope
-            field left out sets no limit. A request for an API key names it and its permissions; a
-            request for an agent secret sends `agent_secret` and none of the other fields.
+            field left out sets no limit. A request for an API key names it, its permissions and its
+            expiry (`expires_at`, null for never); a request for an agent secret sends `agent_secret`
+            and none of the other fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -141,8 +143,9 @@ async def asyncio_detailed(
     Args:
         body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
             what the device asks for; the person approving it sees them and may change them. A scope
-            field left out sets no limit. A request for an API key names it and its permissions; a
-            request for an agent secret sends `agent_secret` and none of the other fields.
+            field left out sets no limit. A request for an API key names it, its permissions and its
+            expiry (`expires_at`, null for never); a request for an agent secret sends `agent_secret`
+            and none of the other fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -177,8 +180,9 @@ async def asyncio(
     Args:
         body (DeviceAuthorizationRequest): Starts a device authorization. The scope fields are
             what the device asks for; the person approving it sees them and may change them. A scope
-            field left out sets no limit. A request for an API key names it and its permissions; a
-            request for an agent secret sends `agent_secret` and none of the other fields.
+            field left out sets no limit. A request for an API key names it, its permissions and its
+            expiry (`expires_at`, null for never); a request for an agent secret sends `agent_secret`
+            and none of the other fields.
 
     Raises:
         grepvine.APIError: The service answered with an error.

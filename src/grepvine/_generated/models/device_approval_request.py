@@ -21,7 +21,7 @@ class DeviceApprovalRequest:
 
     Attributes:
         user_code (str): The code the device shows. Hyphens, surrounding spaces and case are ignored.
-        scope (KeyScope): What a key reaches and may do. A field left out sets no limit.
+        scope (KeyScope): What a key reaches and may do. A field left out sets no limit; the expiry is always given.
     """
 
     user_code: str
