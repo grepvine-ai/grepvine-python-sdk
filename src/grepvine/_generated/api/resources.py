@@ -2383,8 +2383,10 @@ class Agents:
     def list(
         self,
         organization: str,
-    ) -> AgentPage:
-        """List agents
+        *,
+        amount: int | None = None,
+    ) -> Iterator[Agent]:
+        """List agents: every result, page after page.
 
         Lists an organization's agents, ordered by name. Any member can list them; an agent cannot.
 
@@ -2393,6 +2395,40 @@ class Agents:
                 share one namespace; an agent's name is unique within its organization. A name keeps the
                 case it was created with, and any spelling that differs only in case refers to it; nothing
                 else in the same namespace can take such a spelling.
+            amount: Default: 50.
+
+        Returns:
+            An iterator over Agent, which requests each page as it is reached.
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        if amount is not None:
+            kwargs["amount"] = amount
+
+        return _pages(list_agents.sync_detailed, kwargs)
+
+    def list_page(
+        self,
+        organization: str,
+        *,
+        amount: int | None = None,
+        page: str | None = None,
+    ) -> AgentPage:
+        """List agents: one page.
+
+        Lists an organization's agents, ordered by name. Any member can list them; an agent cannot.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            amount: Default: 50.
+            page: The ``pagination.next_page_id`` of the previous page; the first page without it.
 
         Returns:
             AgentPage
@@ -2403,7 +2439,11 @@ class Agents:
         """
         kwargs: dict[str, Any] = {"client": self._client}
         kwargs["organization"] = organization
+        if amount is not None:
+            kwargs["amount"] = amount
 
+        if page is not None:
+            kwargs["page"] = page
         response = list_agents.sync_detailed(**kwargs)
         return cast(AgentPage, response.parsed)
 
@@ -5236,11 +5276,13 @@ class AsyncAgents:
         self.managers = AsyncManagers(client)
         self.secrets = AsyncSecrets(client)
 
-    async def list(
+    def list(
         self,
         organization: str,
-    ) -> AgentPage:
-        """List agents
+        *,
+        amount: int | None = None,
+    ) -> AsyncIterator[Agent]:
+        """List agents: every result, page after page.
 
         Lists an organization's agents, ordered by name. Any member can list them; an agent cannot.
 
@@ -5249,6 +5291,40 @@ class AsyncAgents:
                 share one namespace; an agent's name is unique within its organization. A name keeps the
                 case it was created with, and any spelling that differs only in case refers to it; nothing
                 else in the same namespace can take such a spelling.
+            amount: Default: 50.
+
+        Returns:
+            An async iterator over Agent, which requests each page as it is reached.
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        if amount is not None:
+            kwargs["amount"] = amount
+
+        return _async_pages(list_agents.asyncio_detailed, kwargs)
+
+    async def list_page(
+        self,
+        organization: str,
+        *,
+        amount: int | None = None,
+        page: str | None = None,
+    ) -> AgentPage:
+        """List agents: one page.
+
+        Lists an organization's agents, ordered by name. Any member can list them; an agent cannot.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            amount: Default: 50.
+            page: The ``pagination.next_page_id`` of the previous page; the first page without it.
 
         Returns:
             AgentPage
@@ -5259,7 +5335,11 @@ class AsyncAgents:
         """
         kwargs: dict[str, Any] = {"client": self._client}
         kwargs["organization"] = organization
+        if amount is not None:
+            kwargs["amount"] = amount
 
+        if page is not None:
+            kwargs["page"] = page
         response = await list_agents.asyncio_detailed(**kwargs)
         return cast(AgentPage, response.parsed)
 

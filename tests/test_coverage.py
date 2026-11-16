@@ -78,6 +78,7 @@ def check(target: object, name: str, operation: str, is_async: bool) -> None:
 def test_paged_operations_are_the_listings() -> None:
     assert PAGED == {
         "listAPIKeys",
+        "listAgents",
         "listDocuments",
         "listIndexes",
         "listOrganizationMembers",
