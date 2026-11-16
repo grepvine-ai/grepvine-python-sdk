@@ -5,21 +5,34 @@ from urllib.parse import quote
 import httpx
 
 from ...client import AuthenticatedClient, Client
-from ...types import Response
+from ...types import Response, UNSET
 
 from ...models.agent_page import AgentPage
 from ...models.error import Error
+from ...types import Unset
 
 
 def _get_kwargs(
     organization: str,
+    *,
+    amount: int | Unset = 50,
+    page: str | Unset = UNSET,
 ) -> dict[str, Any]:
+
+    params: dict[str, Any] = {}
+
+    params["amount"] = amount
+
+    params["page"] = page
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": "/organizations/{organization}/agents".format(
             organization=quote(str(organization), safe=""),
         ),
+        "params": params,
     }
 
     return _kwargs
@@ -63,6 +76,8 @@ def sync_detailed(
     organization: str,
     *,
     client: AuthenticatedClient | Client,
+    amount: int | Unset = 50,
+    page: str | Unset = UNSET,
 ) -> Response[AgentPage | Error]:
     """List agents
 
@@ -73,6 +88,8 @@ def sync_detailed(
             organizations share one namespace; an agent's name is unique within its organization. A
             name keeps the case it was created with, and any spelling that differs only in case refers
             to it; nothing else in the same namespace can take such a spelling.
+        amount (int | Unset):  Default: 50.
+        page (str | Unset):
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -84,6 +101,8 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         organization=organization,
+        amount=amount,
+        page=page,
     )
 
     response = client.get_httpx_client().request(
@@ -97,6 +116,8 @@ def sync(
     organization: str,
     *,
     client: AuthenticatedClient | Client,
+    amount: int | Unset = 50,
+    page: str | Unset = UNSET,
 ) -> AgentPage | Error | None:
     """List agents
 
@@ -107,6 +128,8 @@ def sync(
             organizations share one namespace; an agent's name is unique within its organization. A
             name keeps the case it was created with, and any spelling that differs only in case refers
             to it; nothing else in the same namespace can take such a spelling.
+        amount (int | Unset):  Default: 50.
+        page (str | Unset):
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -119,6 +142,8 @@ def sync(
     return sync_detailed(
         organization=organization,
         client=client,
+        amount=amount,
+        page=page,
     ).parsed
 
 
@@ -126,6 +151,8 @@ async def asyncio_detailed(
     organization: str,
     *,
     client: AuthenticatedClient | Client,
+    amount: int | Unset = 50,
+    page: str | Unset = UNSET,
 ) -> Response[AgentPage | Error]:
     """List agents
 
@@ -136,6 +163,8 @@ async def asyncio_detailed(
             organizations share one namespace; an agent's name is unique within its organization. A
             name keeps the case it was created with, and any spelling that differs only in case refers
             to it; nothing else in the same namespace can take such a spelling.
+        amount (int | Unset):  Default: 50.
+        page (str | Unset):
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -147,6 +176,8 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         organization=organization,
+        amount=amount,
+        page=page,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -158,6 +189,8 @@ async def asyncio(
     organization: str,
     *,
     client: AuthenticatedClient | Client,
+    amount: int | Unset = 50,
+    page: str | Unset = UNSET,
 ) -> AgentPage | Error | None:
     """List agents
 
@@ -168,6 +201,8 @@ async def asyncio(
             organizations share one namespace; an agent's name is unique within its organization. A
             name keeps the case it was created with, and any spelling that differs only in case refers
             to it; nothing else in the same namespace can take such a spelling.
+        amount (int | Unset):  Default: 50.
+        page (str | Unset):
 
     Raises:
         grepvine.APIError: The service answered with an error.
@@ -181,5 +216,7 @@ async def asyncio(
         await asyncio_detailed(
             organization=organization,
             client=client,
+            amount=amount,
+            page=page,
         )
     ).parsed

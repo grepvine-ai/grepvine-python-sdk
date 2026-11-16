@@ -9,6 +9,7 @@ from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
     from ..models.agent import Agent
+    from ..models.pagination import Pagination
 
 
 T = TypeVar("T", bound="AgentPage")
@@ -16,26 +17,33 @@ T = TypeVar("T", bound="AgentPage")
 
 @_attrs_define
 class AgentPage:
-    """An organization's agents.
+    """A page of an organization's agents.
 
     Attributes:
-        agents (list[Agent]):
+        results (list[Agent]): The agents on this page.
+        pagination (Pagination): A page may hold fewer results than the requested amount, possibly none, while has_next
+            is true; a query page stops at the server's soft time budget and next_page_id resumes exactly after the last
+            candidate it examined. Clients continue while has_next is true.
     """
 
-    agents: list[Agent]
+    results: list[Agent]
+    pagination: Pagination
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        agents = []
-        for agents_item_data in self.agents:
-            agents_item = agents_item_data.to_dict()
-            agents.append(agents_item)
+        results = []
+        for results_item_data in self.results:
+            results_item = results_item_data.to_dict()
+            results.append(results_item)
+
+        pagination = self.pagination.to_dict()
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "agents": agents,
+                "results": results,
+                "pagination": pagination,
             }
         )
 
@@ -44,17 +52,21 @@ class AgentPage:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent import Agent  # noqa: PLC0415
+        from ..models.pagination import Pagination  # noqa: PLC0415
 
         d = dict(src_dict)
-        agents = []
-        _agents = d.pop("agents")
-        for agents_item_data in _agents:
-            agents_item = Agent.from_dict(agents_item_data)
+        results = []
+        _results = d.pop("results")
+        for results_item_data in _results:
+            results_item = Agent.from_dict(results_item_data)
 
-            agents.append(agents_item)
+            results.append(results_item)
+
+        pagination = Pagination.from_dict(d.pop("pagination"))
 
         agent_page = cls(
-            agents=agents,
+            results=results,
+            pagination=pagination,
         )
 
         agent_page.additional_properties = d
