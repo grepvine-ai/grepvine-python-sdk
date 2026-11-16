@@ -55,6 +55,27 @@ async def test_missing_permission_detail(fx: Flavor, service: Service) -> None:
     assert raised.value.details == [detail]
 
 
+async def test_suspended_organization(fx: Flavor, service: Service) -> None:
+    service.reply(
+        httpx.Response(
+            200,
+            json={
+                "id": "00000000-0000-0000-0000-000000000001",
+                "name": "acme",
+                "role": "owner",
+                "suspended": True,
+                "members_create_agents": False,
+                "created_at": "2026-01-01T00:00:00Z",
+            },
+        ),
+        error(403, "organization_suspended", "organization is suspended"),
+    )
+    assert (await fx.run(fx.client.organizations.get("acme"))).suspended is True
+    with pytest.raises(grepvine.PermissionDeniedError) as raised:
+        await fx.run(fx.client.indexes.get("acme", "docs"))
+    assert raised.value.code == "organization_suspended"
+
+
 async def test_rate_limit_after_waiting_carries_retry_after(kind: str, service: Service) -> None:
     service.reply(error(429, "rate_limited", **{"Retry-After": "7"}))
     async with connect(kind, service, retry=grepvine.RetryPolicy(max_throttled_wait=0)) as fx:
