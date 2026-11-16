@@ -18,12 +18,25 @@ from collections.abc import (
 )
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Final, Literal, Protocol, Required, TypeAlias, TypedDict, TypeVar, overload
+from typing import (
+    Any,
+    Final,
+    Literal,
+    Protocol,
+    Required,
+    TypeAlias,
+    TypedDict,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from grepvine import _retry
 from grepvine._generated.api import resources
+from grepvine._generated.api.device_login import start_device_authorization
 from grepvine._generated.models import (
     DeviceAuthorization,
+    DeviceAuthorizationRequest,
     DeviceToken,
     DocumentPage,
     DocumentSummary,
@@ -31,6 +44,7 @@ from grepvine._generated.models import (
     IndexState,
     MutationResult,
     Pagination,
+    Permission,
 )
 from grepvine._generated.types import File
 from grepvine.errors import (
@@ -406,6 +420,32 @@ class AsyncDocuments(resources.AsyncDocuments):
         return results
 
 
+class _KeyRequest(DeviceAuthorizationRequest):
+    """A device login's key request; no ``expires_at`` asks for a key that never expires."""
+
+    def __init__(
+        self,
+        api_key_name: str,
+        permissions: Sequence[str],
+        agent: str | None,
+        organization: str | None,
+        indexes: Sequence[str] | None,
+        expires_at: datetime | None,
+    ) -> None:
+        super().__init__(
+            api_key_name=api_key_name,
+            permissions=[Permission(item) for item in permissions],
+            agent=agent,
+            organization=organization,
+            indexes=list(indexes or []),
+            expires_at=expires_at,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        # The service needs the expiry of every new key; null means never.
+        return {"expires_at": None} | super().to_dict()
+
+
 class DeviceLogin(resources.DeviceLogin):
     def authorize(
         self,
@@ -436,7 +476,7 @@ class DeviceLogin(resources.DeviceLogin):
         are what the key asks for; ``agent`` names an agent of ``organization``
         for the key to act as. The person approving sees them and may change
         them, so check what the returned key reaches. A field left out sets no
-        limit.
+        limit, and a key with no ``expires_at`` never expires.
 
         ``on_code`` receives the authorization to show the user: its
         ``verification_uri_complete`` and ``user_code``. Polling follows the
@@ -448,14 +488,9 @@ class DeviceLogin(resources.DeviceLogin):
             grepvine.WaitTimeoutError: The login was not approved within ``timeout`` seconds,
                 or before it expired.
         """
-        authorization = self.start(
-            api_key_name=api_key_name,
-            permissions=permissions,
-            agent=agent,
-            organization=organization,
-            indexes=indexes,
-            expires_at=expires_at,
-        )
+        body = _KeyRequest(api_key_name, permissions, agent, organization, indexes, expires_at)
+        response = start_device_authorization.sync_detailed(client=self._client, body=body)
+        authorization = cast(DeviceAuthorization, response.parsed)
         on_code(authorization)
         interval, deadline = _poll_interval(authorization, timeout)
         while _retry.monotonic() + interval <= deadline:
@@ -496,14 +531,9 @@ class AsyncDeviceLogin(resources.AsyncDeviceLogin):
         timeout: float | None = None,
     ) -> DeviceToken:
         """Start a device login and poll until the key is issued; see ``DeviceLogin.authorize``."""
-        authorization = await self.start(
-            api_key_name=api_key_name,
-            permissions=permissions,
-            agent=agent,
-            organization=organization,
-            indexes=indexes,
-            expires_at=expires_at,
-        )
+        body = _KeyRequest(api_key_name, permissions, agent, organization, indexes, expires_at)
+        response = await start_device_authorization.asyncio_detailed(client=self._client, body=body)
+        authorization = cast(DeviceAuthorization, response.parsed)
         on_code(authorization)
         interval, deadline = _poll_interval(authorization, timeout)
         while _retry.monotonic() + interval <= deadline:

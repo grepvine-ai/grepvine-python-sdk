@@ -63,12 +63,12 @@ class DeviceAuthorizationRequest:
         agent = _agent_value
         _organization_value = UNSET if self.organization is None else self.organization
         organization = _organization_value
-        _indexes_value = UNSET if self.indexes is None else self.indexes
+        _indexes_value = UNSET if not self.indexes else self.indexes
         indexes: list[str] | Unset = UNSET
         if not isinstance(_indexes_value, Unset):
             indexes = _indexes_value
 
-        _permissions_value = UNSET if self.permissions is None else self.permissions
+        _permissions_value = UNSET if not self.permissions else self.permissions
         permissions: list[str] | Unset = UNSET
         if not isinstance(_permissions_value, Unset):
             permissions = []

@@ -56,6 +56,7 @@ async def test_polls_until_issued_and_slows_down(
         "permissions": ["search", "read"],
         "organization": "acme",
         "indexes": ["logs"],
+        "expires_at": None,
     }
     assert service.json(1) == {"device_code": "dev-1"}
 

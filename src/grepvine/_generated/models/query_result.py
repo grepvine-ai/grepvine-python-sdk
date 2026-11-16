@@ -81,7 +81,7 @@ class QueryResult:
 
         text_truncated = self.text_truncated
         matches_truncated = self.matches_truncated
-        _lines_before_value = UNSET if self.lines_before is None else self.lines_before
+        _lines_before_value = UNSET if not self.lines_before else self.lines_before
         lines_before: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(_lines_before_value, Unset):
             lines_before = []
@@ -89,7 +89,7 @@ class QueryResult:
                 lines_before_item = lines_before_item_data.to_dict()
                 lines_before.append(lines_before_item)
 
-        _lines_after_value = UNSET if self.lines_after is None else self.lines_after
+        _lines_after_value = UNSET if not self.lines_after else self.lines_after
         lines_after: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(_lines_after_value, Unset):
             lines_after = []

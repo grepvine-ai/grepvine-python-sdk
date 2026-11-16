@@ -1,9 +1,16 @@
-"""Fields the service leaves out read as None, or [] for a list; None is left out of requests."""
+"""Absent fields read as None, or [] for a list; None and [] are left out of requests."""
 
 from __future__ import annotations
 
 import grepvine
-from grepvine.models import APIKey, DeleteObjectRecord, MutationResult, QueryResult
+from grepvine.models import (
+    APIKey,
+    CreateAPIKeyRequest,
+    DeleteObjectRecord,
+    MutationResult,
+    Permission,
+    QueryResult,
+)
 
 HIT = {
     "key": "a.txt",
@@ -54,6 +61,11 @@ def test_none_is_left_out_of_a_request() -> None:
     assert DeleteObjectRecord(key="a").to_dict() == {"key": "a"}
     assert DeleteObjectRecord.from_dict({"key": "a"}).to_dict() == {"key": "a"}
     assert DeleteObjectRecord(key="a", if_match="r1").to_dict() == {"key": "a", "if_match": "r1"}
+
+
+def test_an_empty_list_is_left_out_and_a_required_none_is_null() -> None:
+    request = CreateAPIKeyRequest(name="ci", permissions=[Permission.READ], expires_at=None)
+    assert request.to_dict() == {"name": "ci", "permissions": ["read"], "expires_at": None}
 
 
 def test_round_trip_keeps_what_was_sent() -> None:

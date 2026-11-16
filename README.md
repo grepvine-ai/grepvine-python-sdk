@@ -430,9 +430,10 @@ members, indexes, documents and searches with `PermissionDeniedError` and code
 A signed-in user manages their API keys through `client.api_keys`; only a
 session (see [Account](#account)) can create, list or revoke keys, not an API
 key. A key reaches one organization or every one of the account's, a list of
-indexes or all of them, with a set of permissions, until it expires. A field
-left out sets no limit, and a key never does more than its account's role
-allows:
+indexes or all of them, with a set of permissions, until it expires. A scope
+field left out sets no limit, and a key never does more than its account's
+role allows. `expires_at` is always given: a time at most one year ahead, or
+`None` for a key that never expires:
 
 ```python
 from datetime import UTC, datetime, timedelta
@@ -442,7 +443,7 @@ key = client.api_keys.create(
     permissions=["search", "read", "write"],
     organization="acme",
     indexes=["logs"],
-    expires_at=datetime.now(UTC) + timedelta(days=90),  # at most one year ahead
+    expires_at=datetime.now(UTC) + timedelta(days=90),  # or None: never expires
 )
 print(key.key)  # the secret, shown only now
 
@@ -453,9 +454,22 @@ client.api_keys.revoke(key.id)
 ```
 
 The permissions are `search`, `read`, `write`, `create_index` (needs every
-index in scope), `manage_index`, and `manage_members` and
-`manage_organization` (both need one organization). A listing shows each
+index in scope), `manage_index`, and `manage_members`, `manage_organization`
+and `manage_agents` (all three need one organization). A listing shows each
 key's `prefix` and scope, never its secret.
+
+With `agent`, the key acts as that agent of `organization` (see
+[Agents](#agents)) rather than as the account, within what the agent may do:
+
+```python
+key = client.api_keys.create(
+    name="nightly import",
+    agent="ci",
+    organization="acme",
+    permissions=["read", "write"],
+    expires_at=None,
+)
+```
 
 `client.connections` lists and revokes the apps a signed-in user connected
 through OAuth sign-in, such as MCP clients, with a session too. A revoked key stays in
@@ -523,7 +537,8 @@ client = grepvine.Client(api_key=key.key, endpoint=endpoint)
 ```
 
 `permissions`, and optionally `agent`, `organization`, `indexes` and
-`expires_at`, are what the key asks for, as in `api_keys.create`; with
+`expires_at`, are what the key asks for, as in `api_keys.create`, except
+that leaving out `expires_at` asks for a key that never expires; with
 `agent`, the key acts as that agent of `organization` for the person who
 approves it. The person approving sees them
 and may grant a narrower or wider scope, so check what the returned key
@@ -571,9 +586,32 @@ agent's managers to grant it.
 
 `client.agents` lists, creates, changes and deletes agents,
 `client.agents.managers` adds and removes their managers, and
-`client.agents.secrets` lists and revokes their secrets. They take a
+`client.agents.secrets` lists, creates and revokes their secrets. They take a
 signed-in session, or an API key of one organization with the `manage_agents`
-permission. Creating a secret takes a signed-in session.
+permission. An agent's permissions, and optionally its indexes, are the most
+it may do; they must be within your own:
+
+```python
+client.agents.create("acme", name="ci", permissions=["search", "read"], indexes=["support"])
+```
+
+Creating a secret takes a signed-in session. `expires_at` is always given: a
+time at most one year ahead, or `None` for a secret that never expires. The
+result carries the secret, shown only this once, and the agent's `client_id`,
+for OAuth libraries that ask for a client ID beside the secret:
+
+```python
+from datetime import UTC, datetime, timedelta
+
+created = client.agents.secrets.create(
+    "acme", "ci", expires_at=datetime.now(UTC) + timedelta(days=90)
+)
+print(created.secret, created.client_id)
+```
+
+An agent has at most two secrets, and creating a third raises `ConflictError`.
+To rotate a secret, create a second one, move the agent to it, then revoke the
+first by its `id` with `client.agents.secrets.revoke("acme", "ci", secret_id)`.
 
 ## Other requests
 

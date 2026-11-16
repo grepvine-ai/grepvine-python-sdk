@@ -174,7 +174,7 @@ class FakeGrepvine:
             "id": str(uuid.uuid4()),
             "name": name,
             "prefix": secret[:8],
-            **{k: v for k, v in scope.items() if k in SCOPE},
+            **{k: v for k, v in scope.items() if k in SCOPE and v is not None},
             "created_at": NOW,
             "user": user,
             "key": secret,
@@ -407,6 +407,27 @@ class FakeGrepvine:
             org.members[user] = "admin"
             org.members[body["user"]] = "owner"
             return 204, None
+        if rest[0] == "agents" and method == "POST":  # creates agents and secrets, keeps neither
+            self.org(name, user, ("owner", "admin"))
+            if rest[2:] == ["secrets"]:
+                expiry = {"expires_at": body["expires_at"]} if body["expires_at"] else {}
+                return 201, {
+                    "id": str(uuid.uuid4()),
+                    "prefix": "gvs_abcd",
+                    "created_at": NOW,
+                    **expiry,
+                    "secret": "gvs_abcdef",
+                    "client_id": str(uuid.uuid4()),
+                }
+            return 201, {
+                "description": "",
+                **body,
+                "id": str(uuid.uuid4()),
+                "managers": [user],
+                "created_at": NOW,
+                "disabled": False,
+                "needs_review": False,
+            }
         if rest[0] == "members":
             return self.members(method, rest[1:], body, request, self.org(name, user), user)
         return self.indexes(method, rest[1:], body, request, self.org(name, user))

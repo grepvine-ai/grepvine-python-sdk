@@ -38,7 +38,7 @@ class AgentCeiling:
             )
             permissions.append(componentsschemas_agent_permissions_item)
 
-        _indexes_value = UNSET if self.indexes is None else self.indexes
+        _indexes_value = UNSET if not self.indexes else self.indexes
         indexes: list[str] | Unset = UNSET
         if not isinstance(_indexes_value, Unset):
             indexes = _indexes_value
