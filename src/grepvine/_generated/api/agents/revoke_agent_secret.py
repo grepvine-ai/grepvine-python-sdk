@@ -72,7 +72,7 @@ def sync_detailed(
     """Revoke an agent secret
 
      Revokes one of the agent's secrets: it can't sign in with it any more, and the tokens exchanged for
-    it stop working at once. Its managers, owners and admins can revoke one.
+    it stop working everywhere within 10 seconds. Its managers, owners and admins can revoke one.
 
     Args:
         organization (str): A name: of an account, an organization or an agent. Accounts and
@@ -116,7 +116,7 @@ def sync(
     """Revoke an agent secret
 
      Revokes one of the agent's secrets: it can't sign in with it any more, and the tokens exchanged for
-    it stop working at once. Its managers, owners and admins can revoke one.
+    it stop working everywhere within 10 seconds. Its managers, owners and admins can revoke one.
 
     Args:
         organization (str): A name: of an account, an organization or an agent. Accounts and
@@ -155,7 +155,7 @@ async def asyncio_detailed(
     """Revoke an agent secret
 
      Revokes one of the agent's secrets: it can't sign in with it any more, and the tokens exchanged for
-    it stop working at once. Its managers, owners and admins can revoke one.
+    it stop working everywhere within 10 seconds. Its managers, owners and admins can revoke one.
 
     Args:
         organization (str): A name: of an account, an organization or an agent. Accounts and
@@ -197,7 +197,7 @@ async def asyncio(
     """Revoke an agent secret
 
      Revokes one of the agent's secrets: it can't sign in with it any more, and the tokens exchanged for
-    it stop working at once. Its managers, owners and admins can revoke one.
+    it stop working everywhere within 10 seconds. Its managers, owners and admins can revoke one.
 
     Args:
         organization (str): A name: of an account, an organization or an agent. Accounts and

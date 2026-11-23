@@ -409,6 +409,8 @@ for member in members.list("my-org"):
 members.remove("my-org", "carol")
 
 client.organizations.transfer_ownership("my-org", user="bob")  # to a member; you become an admin
+
+usage = client.organizations.usage("my-org", resolution="day")  # the last 30 days, by day
 ```
 
 Only the owner deletes an organization, with
