@@ -8,6 +8,7 @@ class Permission(StrEnum):
     MANAGE_MEMBERS = "manage_members"
     MANAGE_ORGANIZATION = "manage_organization"
     READ = "read"
+    READ_USAGE = "read_usage"
     SEARCH = "search"
     WRITE = "write"
 

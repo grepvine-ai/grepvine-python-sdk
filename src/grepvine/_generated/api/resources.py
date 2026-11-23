@@ -54,6 +54,7 @@ from ..models.mutation_batch_result import MutationBatchResult
 from ..models.mutation_result import MutationResult
 from ..models.organization import Organization
 from ..models.organization_page import OrganizationPage
+from ..models.organization_usage import OrganizationUsage
 from ..models.pending_device_authorization import PendingDeviceAuthorization
 from ..models.permission import Permission
 from ..models.put_document_form import PutDocumentForm
@@ -74,6 +75,7 @@ from ..models.update_index_request import UpdateIndexRequest
 from ..models.update_member_request import UpdateMemberRequest
 from ..models.update_member_request_role import UpdateMemberRequestRole
 from ..models.update_organization_request import UpdateOrganizationRequest
+from ..models.usage_resolution import UsageResolution
 from ..models.user import User
 from ..models.username_availability import UsernameAvailability
 from .agents import add_agent_manager
@@ -119,6 +121,7 @@ from .organizations import add_organization_member
 from .organizations import create_organization
 from .organizations import delete_organization
 from .organizations import get_organization
+from .organizations import get_organization_usage
 from .organizations import list_organization_members
 from .organizations import list_organizations
 from .organizations import remove_organization_member
@@ -695,7 +698,8 @@ class Secrets:
         """Revoke an agent secret
 
         Revokes one of the agent's secrets: it can't sign in with it any more, and the tokens exchanged
-        for it stop working at once. Its managers, owners and admins can revoke one.
+        for it stop working everywhere within 10 seconds. Its managers, owners and admins can revoke
+        one.
 
         Args:
             organization: A name: of an account, an organization or an agent. Accounts and organizations
@@ -946,6 +950,50 @@ class Organizations:
         kwargs["body"] = TransferOwnershipRequest(**fields)
 
         transfer_organization_ownership.sync_detailed(**kwargs)
+
+    def usage(
+        self,
+        organization: str,
+        *,
+        resolution: Literal["hour", "day", "month"],
+        index: str | None = None,
+    ) -> OrganizationUsage:
+        """Get organization usage
+
+        Returns what the organization stores and the requests it makes, for one index or all of them,
+        over a window that
+        ends now: the last 24 hours by hour, the last 30 days by day, or the last 12 months by month,
+        starting no earlier
+        than the hour, day or month the organization was created. Times are UTC.
+        Requires the owner or admin role; a key needs the `read_usage` permission. Usage can trail
+        activity by up to an
+        hour.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            resolution: The length of a usage bucket. One of ``"hour"``, ``"day"``, ``"month"``.
+            index: An index name, unique in its organization. A name keeps the case it was created with,
+                and any spelling that differs only in case refers to it; no other index in the organization
+                can take such a spelling.
+
+        Returns:
+            OrganizationUsage
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["resolution"] = UsageResolution(resolution)
+        if index is not None:
+            kwargs["index"] = index
+
+        response = get_organization_usage.sync_detailed(**kwargs)
+        return cast(OrganizationUsage, response.parsed)
 
 
 class Indexes:
@@ -1787,6 +1835,7 @@ class APIKeys:
                 "manage_members",
                 "manage_organization",
                 "manage_agents",
+                "read_usage",
             ]
         ],
         expires_at: datetime.datetime | None,
@@ -1806,7 +1855,7 @@ class APIKeys:
             name: A name to tell the key apart, 1 to 128 characters.
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
-                ``"manage_organization"``, ``"manage_agents"``.
+                ``"manage_organization"``, ``"manage_agents"``, ``"read_usage"``.
             expires_at: When the key stops working, at most one year ahead, or null for a key that never
                 expires.
             agent: A name: of an account, an organization or an agent. Accounts and organizations share
@@ -2128,6 +2177,7 @@ class DeviceLogin:
                 "manage_members",
                 "manage_organization",
                 "manage_agents",
+                "read_usage",
             ]
         ]
         | None = None,
@@ -2158,7 +2208,7 @@ class DeviceLogin:
                 one; a key's list is empty once every index it named is deleted.
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
-                ``"manage_organization"``, ``"manage_agents"``.
+                ``"manage_organization"``, ``"manage_agents"``, ``"read_usage"``.
             expires_at: When the key stops working, at most one year ahead, or null for a key that never
                 expires.
 
@@ -2461,6 +2511,7 @@ class Agents:
                 "manage_members",
                 "manage_organization",
                 "manage_agents",
+                "read_usage",
             ]
         ],
         description: str | None = None,
@@ -2485,7 +2536,7 @@ class Agents:
             permissions: What an agent may do, each named once: `search`, `read`, `write`,
                 `create_index` and `manage_index`, as for a key. `create_index` needs every index. Each one
                 of ``"search"``, ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``,
-                ``"manage_members"``, ``"manage_organization"``, ``"manage_agents"``.
+                ``"manage_members"``, ``"manage_organization"``, ``"manage_agents"``, ``"read_usage"``.
             description: What the agent is for, at most 1,024 characters.
             indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
                 every index of its organizations, including indexes created later. A request names at least
@@ -2560,7 +2611,8 @@ class Agents:
         and admins can change it, and only within their own permissions (and the key's, for a key with
         `manage_agents`); any of them can disable it. New permissions must also be allowed by every
         manager's role, or the change is refused with 409. Saving the permissions of an agent with no
-        managers makes you one. A disabled agent is refused at once, with every credential it has.
+        managers makes you one. A disabled agent is refused everywhere within 10 seconds, with every
+        credential it has.
 
         Args:
             organization: A name: of an account, an organization or an agent. Accounts and organizations
@@ -3590,7 +3642,8 @@ class AsyncSecrets:
         """Revoke an agent secret
 
         Revokes one of the agent's secrets: it can't sign in with it any more, and the tokens exchanged
-        for it stop working at once. Its managers, owners and admins can revoke one.
+        for it stop working everywhere within 10 seconds. Its managers, owners and admins can revoke
+        one.
 
         Args:
             organization: A name: of an account, an organization or an agent. Accounts and organizations
@@ -3841,6 +3894,50 @@ class AsyncOrganizations:
         kwargs["body"] = TransferOwnershipRequest(**fields)
 
         await transfer_organization_ownership.asyncio_detailed(**kwargs)
+
+    async def usage(
+        self,
+        organization: str,
+        *,
+        resolution: Literal["hour", "day", "month"],
+        index: str | None = None,
+    ) -> OrganizationUsage:
+        """Get organization usage
+
+        Returns what the organization stores and the requests it makes, for one index or all of them,
+        over a window that
+        ends now: the last 24 hours by hour, the last 30 days by day, or the last 12 months by month,
+        starting no earlier
+        than the hour, day or month the organization was created. Times are UTC.
+        Requires the owner or admin role; a key needs the `read_usage` permission. Usage can trail
+        activity by up to an
+        hour.
+
+        Args:
+            organization: A name: of an account, an organization or an agent. Accounts and organizations
+                share one namespace; an agent's name is unique within its organization. A name keeps the
+                case it was created with, and any spelling that differs only in case refers to it; nothing
+                else in the same namespace can take such a spelling.
+            resolution: The length of a usage bucket. One of ``"hour"``, ``"day"``, ``"month"``.
+            index: An index name, unique in its organization. A name keeps the case it was created with,
+                and any spelling that differs only in case refers to it; no other index in the organization
+                can take such a spelling.
+
+        Returns:
+            OrganizationUsage
+
+        Raises:
+            grepvine.APIError: The service answered with an error.
+            grepvine.TransportError: The request could not be delivered.
+        """
+        kwargs: dict[str, Any] = {"client": self._client}
+        kwargs["organization"] = organization
+        kwargs["resolution"] = UsageResolution(resolution)
+        if index is not None:
+            kwargs["index"] = index
+
+        response = await get_organization_usage.asyncio_detailed(**kwargs)
+        return cast(OrganizationUsage, response.parsed)
 
 
 class AsyncIndexes:
@@ -4682,6 +4779,7 @@ class AsyncAPIKeys:
                 "manage_members",
                 "manage_organization",
                 "manage_agents",
+                "read_usage",
             ]
         ],
         expires_at: datetime.datetime | None,
@@ -4701,7 +4799,7 @@ class AsyncAPIKeys:
             name: A name to tell the key apart, 1 to 128 characters.
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
-                ``"manage_organization"``, ``"manage_agents"``.
+                ``"manage_organization"``, ``"manage_agents"``, ``"read_usage"``.
             expires_at: When the key stops working, at most one year ahead, or null for a key that never
                 expires.
             agent: A name: of an account, an organization or an agent. Accounts and organizations share
@@ -5023,6 +5121,7 @@ class AsyncDeviceLogin:
                 "manage_members",
                 "manage_organization",
                 "manage_agents",
+                "read_usage",
             ]
         ]
         | None = None,
@@ -5053,7 +5152,7 @@ class AsyncDeviceLogin:
                 one; a key's list is empty once every index it named is deleted.
             permissions: The permissions a key carries, each named once. Each one of ``"search"``,
                 ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``, ``"manage_members"``,
-                ``"manage_organization"``, ``"manage_agents"``.
+                ``"manage_organization"``, ``"manage_agents"``, ``"read_usage"``.
             expires_at: When the key stops working, at most one year ahead, or null for a key that never
                 expires.
 
@@ -5356,6 +5455,7 @@ class AsyncAgents:
                 "manage_members",
                 "manage_organization",
                 "manage_agents",
+                "read_usage",
             ]
         ],
         description: str | None = None,
@@ -5380,7 +5480,7 @@ class AsyncAgents:
             permissions: What an agent may do, each named once: `search`, `read`, `write`,
                 `create_index` and `manage_index`, as for a key. `create_index` needs every index. Each one
                 of ``"search"``, ``"read"``, ``"write"``, ``"create_index"``, ``"manage_index"``,
-                ``"manage_members"``, ``"manage_organization"``, ``"manage_agents"``.
+                ``"manage_members"``, ``"manage_organization"``, ``"manage_agents"``, ``"read_usage"``.
             description: What the agent is for, at most 1,024 characters.
             indexes: The indexes a key reaches, by name, in the key's one organization. Omitted for
                 every index of its organizations, including indexes created later. A request names at least
@@ -5455,7 +5555,8 @@ class AsyncAgents:
         and admins can change it, and only within their own permissions (and the key's, for a key with
         `manage_agents`); any of them can disable it. New permissions must also be allowed by every
         manager's role, or the change is refused with 409. Saving the permissions of an agent with no
-        managers makes you one. A disabled agent is refused at once, with every credential it has.
+        managers makes you one. A disabled agent is refused everywhere within 10 seconds, with every
+        credential it has.
 
         Args:
             organization: A name: of an account, an organization or an agent. Accounts and organizations
