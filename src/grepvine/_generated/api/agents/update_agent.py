@@ -88,7 +88,8 @@ def sync_detailed(
     admins can change it, and only within their own permissions (and the key's, for a key with
     `manage_agents`); any of them can disable it. New permissions must also be allowed by every
     manager's role, or the change is refused with 409. Saving the permissions of an agent with no
-    managers makes you one. A disabled agent is refused at once, with every credential it has.
+    managers makes you one. A disabled agent is refused everywhere within 10 seconds, with every
+    credential it has.
 
     Args:
         organization (str): A name: of an account, an organization or an agent. Accounts and
@@ -135,7 +136,8 @@ def sync(
     admins can change it, and only within their own permissions (and the key's, for a key with
     `manage_agents`); any of them can disable it. New permissions must also be allowed by every
     manager's role, or the change is refused with 409. Saving the permissions of an agent with no
-    managers makes you one. A disabled agent is refused at once, with every credential it has.
+    managers makes you one. A disabled agent is refused everywhere within 10 seconds, with every
+    credential it has.
 
     Args:
         organization (str): A name: of an account, an organization or an agent. Accounts and
@@ -177,7 +179,8 @@ async def asyncio_detailed(
     admins can change it, and only within their own permissions (and the key's, for a key with
     `manage_agents`); any of them can disable it. New permissions must also be allowed by every
     manager's role, or the change is refused with 409. Saving the permissions of an agent with no
-    managers makes you one. A disabled agent is refused at once, with every credential it has.
+    managers makes you one. A disabled agent is refused everywhere within 10 seconds, with every
+    credential it has.
 
     Args:
         organization (str): A name: of an account, an organization or an agent. Accounts and
@@ -222,7 +225,8 @@ async def asyncio(
     admins can change it, and only within their own permissions (and the key's, for a key with
     `manage_agents`); any of them can disable it. New permissions must also be allowed by every
     manager's role, or the change is refused with 409. Saving the permissions of an agent with no
-    managers makes you one. A disabled agent is refused at once, with every credential it has.
+    managers makes you one. A disabled agent is refused everywhere within 10 seconds, with every
+    credential it has.
 
     Args:
         organization (str): A name: of an account, an organization or an agent. Accounts and
