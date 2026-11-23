@@ -407,6 +407,14 @@ class FakeGrepvine:
             org.members[user] = "admin"
             org.members[body["user"]] = "owner"
             return 204, None
+        if rest[0] == "usage":  # one empty bucket; nothing is counted
+            self.org(name, user, ("owner", "admin"))
+            requests = dict.fromkeys(("search", "read", "write", "manage", "total"), 0)
+            return 200, {
+                "resolution": request.url.params["resolution"],
+                "current": {"documents": 0, "stored_bytes": 0},
+                "buckets": [{"start": NOW, "requests": requests}],
+            }
         if rest[0] == "agents" and method == "POST":  # creates agents and secrets, keeps neither
             self.org(name, user, ("owner", "admin"))
             if rest[2:] == ["secrets"]:
