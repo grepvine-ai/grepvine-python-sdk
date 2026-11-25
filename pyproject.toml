@@ -18,6 +18,7 @@ classifiers = [
 ]
 dependencies = [
     "httpx>=0.28,<0.29",
+    "certifi>=2026.10.19",
     "attrs>=25",
     "python-dateutil>=2.9",
     "pyyaml>=6,<7",
